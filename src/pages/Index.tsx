@@ -5,7 +5,7 @@ import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import SortTabs from "@/components/SortTabs";
-import CategoryFilter from "@/components/CategoryFilter";
+
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
@@ -86,7 +86,7 @@ const Index = () => {
         <BannerAd />
 
         <SortTabs active={sort} onChange={setSort} />
-        <CategoryFilter active={category} onChange={handleCategoryChange} />
+        
 
         {/* Error */}
         {error && (
