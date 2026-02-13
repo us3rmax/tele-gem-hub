@@ -1,4 +1,5 @@
-import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Tag, Grid3X3, Mail, FileText } from "lucide-react";
+import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Tag, Grid3X3, Mail, FileText, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface MobileSidebarProps {
   open: boolean;
@@ -8,6 +9,7 @@ interface MobileSidebarProps {
 }
 
 const menuItems = [
+  { icon: Home, label: "Página Inicial", action: "home" },
   { icon: Send, label: "Enviar Grupo", action: "enviar" },
   { icon: User, label: "Minha Conta", action: "conta" },
   { icon: BookOpen, label: "Blog", action: "blog" },
@@ -28,6 +30,15 @@ const extraItems = [
 ];
 
 const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps) => {
+  const navigate = useNavigate();
+
+  const handleMenuClick = (action: string) => {
+    if (action === "home") {
+      navigate("/");
+      onClose();
+    }
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -51,7 +62,7 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {menuItems.map((item) => (
-            <button key={item.action} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+            <button key={item.action} onClick={() => handleMenuClick(item.action)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
               <item.icon className="h-4 w-4" />
               {item.label}
             </button>
