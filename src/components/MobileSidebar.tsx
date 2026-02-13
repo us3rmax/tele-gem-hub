@@ -38,6 +38,9 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
     } else if (action === "categorias") {
       navigate("/categorias");
       onClose();
+    } else if (action === "contato") {
+      navigate("/contato");
+      onClose();
     }
   };
 
