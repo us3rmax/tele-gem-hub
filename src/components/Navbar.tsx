@@ -10,7 +10,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
         <button
           onClick={onMenuClick}
-          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground lg:hidden"
+          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           aria-label="Menu"
         >
           <Menu className="h-5 w-5" />

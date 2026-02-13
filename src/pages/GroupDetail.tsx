@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Send, Users, Star, CheckCircle, Clock, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +42,8 @@ const GroupDetail = () => {
   const [related, setRelated] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sort, setSort] = useState("recentes");
 
   useEffect(() => {
     if (!id) return;
@@ -94,7 +97,8 @@ const GroupDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar onMenuClick={() => {}} />
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
         <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
           <Skeleton className="h-4 w-48" />
           <Skeleton className="aspect-video w-full rounded-xl" />
@@ -113,7 +117,8 @@ const GroupDetail = () => {
   if (notFound || !grupo) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar onMenuClick={() => {}} />
+        <Navbar onMenuClick={() => setSidebarOpen(true)} />
+        <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
         <div className="flex flex-col items-center justify-center py-32">
           <p className="text-xl font-semibold text-muted-foreground">Grupo não encontrado</p>
           <Link to="/" className="mt-4 text-primary hover:underline">
@@ -126,7 +131,8 @@ const GroupDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onMenuClick={() => {}} />
+      <Navbar onMenuClick={() => setSidebarOpen(true)} />
+      <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-4">
         {/* Breadcrumb */}
