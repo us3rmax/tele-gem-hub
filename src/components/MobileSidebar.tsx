@@ -1,4 +1,4 @@
-import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Tag, Grid3X3, Mail, FileText, Home } from "lucide-react";
+import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface MobileSidebarProps {
@@ -24,7 +24,6 @@ const sortItems = [
 
 const extraItems = [
   { icon: Grid3X3, label: "Categorias", action: "categorias" },
-  { icon: Tag, label: "Encontrar Tags", action: "tags" },
   { icon: Mail, label: "Contato", action: "contato" },
   { icon: FileText, label: "Termos de Uso", action: "termos" },
 ];
@@ -35,6 +34,9 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
   const handleMenuClick = (action: string) => {
     if (action === "home") {
       navigate("/");
+      onClose();
+    } else if (action === "categorias") {
+      navigate("/categorias");
       onClose();
     }
   };
@@ -83,7 +85,7 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
 
           <div className="my-3 border-t border-border" />
           {extraItems.map((item) => (
-            <button key={item.action} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+            <button key={item.action} onClick={() => handleMenuClick(item.action)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
               <item.icon className="h-4 w-4" />
               {item.label}
             </button>
