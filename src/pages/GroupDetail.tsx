@@ -148,20 +148,22 @@ const GroupDetail = () => {
         {/* Hero Section */}
         <section className="space-y-4">
           {/* Cover */}
-          <div className="relative aspect-video overflow-hidden rounded-xl border border-border">
-            {grupo.thumbnail_url ? (
-              <img
-                src={grupo.thumbnail_url}
-                alt={grupo.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${placeholderBg}`}>
-                <span className="text-7xl font-bold text-white/60 sm:text-8xl">
-                  {grupo.name.charAt(0)}
-                </span>
-              </div>
-            )}
+          <div className="mx-auto w-full max-w-[400px]">
+            <div className="relative aspect-square overflow-hidden rounded-xl border border-border">
+              {grupo.thumbnail_url ? (
+                <img
+                  src={grupo.thumbnail_url}
+                  alt={grupo.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${placeholderBg}`}>
+                  <span className="text-7xl font-bold text-white/60 sm:text-8xl">
+                    {grupo.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Info */}
