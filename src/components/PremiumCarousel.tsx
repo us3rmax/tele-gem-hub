@@ -56,7 +56,7 @@ const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
           return (
             <div
               key={grupo.id}
-              onClick={() => navigate(`/group/${grupo.id}`)}
+              onClick={() => window.open(grupo.telegram_link, "_blank")}
               className="group shrink-0 cursor-pointer overflow-hidden rounded-xl border border-amber-500/30 bg-card transition-all duration-300 hover:border-amber-500/60 hover:shadow-lg hover:shadow-amber-500/10"
               style={{ width: 200 }}
             >
