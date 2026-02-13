@@ -21,8 +21,8 @@ const GroupCard = ({ grupo }: { grupo: Grupo }) => {
       {/* Image */}
       <div className="relative h-32 overflow-hidden sm:h-36">
         <img
-          src={grupo.imagem_url}
-          alt={grupo.nome}
+          src={grupo.thumbnail_url || "https://picsum.photos/seed/default/400/300"}
+          alt={grupo.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
         />
@@ -30,40 +30,35 @@ const GroupCard = ({ grupo }: { grupo: Grupo }) => {
 
         {/* Badges */}
         <div className="absolute left-2 top-2 flex gap-1.5">
-          {grupo.premium && (
+          {grupo.is_premium && (
             <span className="rounded-md bg-premium px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-foreground">
               Premium
             </span>
           )}
-          {grupo.hot && (
-            <span className="rounded-md bg-hot px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-              Hot 🔥
-            </span>
-          )}
         </div>
 
-        <span className="absolute right-2 top-2 text-xs text-white/70">{timeAgo(grupo.criado_em)}</span>
+        <span className="absolute right-2 top-2 text-xs text-white/70">{timeAgo(grupo.created_at)}</span>
       </div>
 
       {/* Content */}
       <div className="p-3 sm:p-4">
         <div className="flex items-start gap-1.5">
-          <h3 className="line-clamp-1 flex-1 text-sm font-semibold text-card-foreground">{grupo.nome}</h3>
-          {grupo.verificado && <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-verified" />}
+          <h3 className="line-clamp-1 flex-1 text-sm font-semibold text-card-foreground">{grupo.name}</h3>
+          {grupo.is_verified && <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-verified" />}
         </div>
 
         <span className="mt-1.5 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
-          {grupo.categoria}
+          {grupo.category}
         </span>
 
         <div className="mt-3 flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="h-3.5 w-3.5" />
-            {formatMembers(grupo.membros)}
+            {formatMembers(grupo.member_count)}
           </span>
 
           <a
-            href={grupo.link_telegram}
+            href={grupo.telegram_link}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"

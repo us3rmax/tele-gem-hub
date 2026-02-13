@@ -1,13 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import SortTabs from "@/components/SortTabs";
-import CategoryFilter from "@/components/CategoryFilter";
 import Pagination from "@/components/Pagination";
-import { mockGrupos } from "@/data/mock";
+import { supabase } from "@/lib/supabase";
+import type { Grupo } from "@/data/mock";
 
 const PER_PAGE = 12;
 
@@ -15,37 +15,47 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sort, setSort] = useState("recentes");
-  const [category, setCategory] = useState("Todos");
+  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const page = Number(searchParams.get("page") || "1");
 
-  const filtered = useMemo(() => {
-    let list = [...mockGrupos];
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoading(true);
+      let query = supabase.from("groups").select("*");
 
-    if (category !== "Todos") {
-      list = list.filter((g) => g.categoria === category);
-    }
+      switch (sort) {
+        case "vistos":
+          query = query.order("member_count", { ascending: false });
+          break;
+        case "votados":
+          query = query.order("member_count", { ascending: false });
+          break;
+        case "hot":
+          query = query.order("is_premium", { ascending: false }).order("member_count", { ascending: false });
+          break;
+        default:
+          query = query.order("created_at", { ascending: false });
+      }
 
-    switch (sort) {
-      case "vistos":
-        list.sort((a, b) => b.visualizacoes - a.visualizacoes);
-        break;
-      case "votados":
-        list.sort((a, b) => b.votos - a.votos);
-        break;
-      case "hot":
-        list.sort((a, b) => (b.hot ? 1 : 0) - (a.hot ? 1 : 0) || b.visualizacoes - a.visualizacoes);
-        break;
-      default:
-        list.sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime());
-    }
+      const { data, error } = await query;
 
-    return list;
-  }, [sort, category]);
+      if (error) {
+        console.error("Error fetching groups:", error);
+        setGrupos([]);
+      } else {
+        setGrupos(data as Grupo[]);
+      }
+      setLoading(false);
+    };
 
-  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+    fetchGroups();
+  }, [sort]);
+
+  const totalPages = Math.ceil(grupos.length / PER_PAGE);
   const currentPage = Math.min(page, totalPages) || 1;
-  const paged = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const paged = grupos.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   const handlePageChange = (p: number) => {
     setSearchParams({ page: String(p) });
@@ -64,16 +74,19 @@ const Index = () => {
         {/* Sort */}
         <SortTabs active={sort} onChange={setSort} />
 
-
         {/* Grid */}
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {paged.map((grupo) => (
-            <GroupCard key={grupo.id} grupo={grupo} />
-          ))}
-        </section>
+        {loading ? (
+          <p className="py-12 text-center text-muted-foreground">Carregando grupos...</p>
+        ) : (
+          <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {paged.map((grupo) => (
+              <GroupCard key={grupo.id} grupo={grupo} />
+            ))}
+          </section>
+        )}
 
-        {paged.length === 0 && (
-          <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado nesta categoria.</p>
+        {!loading && paged.length === 0 && (
+          <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>
         )}
 
         {/* Pagination */}
