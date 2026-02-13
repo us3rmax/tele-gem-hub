@@ -1,4 +1,5 @@
 import { Users, CheckCircle, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
 
 function timeAgo(dateStr: string) {
@@ -31,10 +32,21 @@ function getPlaceholderBg(category: string) {
 }
 
 const GroupCard = ({ grupo }: { grupo: Grupo }) => {
+  const navigate = useNavigate();
   const hasThumbnail = !!grupo.thumbnail_url;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking the "Entrar" link
+    const target = e.target as HTMLElement;
+    if (target.closest("a")) return;
+    navigate(`/group/${grupo.id}`);
+  };
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+    <div
+      onClick={handleCardClick}
+      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+    >
       {/* Image / Placeholder */}
       <div className="relative h-32 overflow-hidden sm:h-36">
         {hasThumbnail ? (
