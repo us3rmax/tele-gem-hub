@@ -5,7 +5,7 @@ import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import SortTabs from "@/components/SortTabs";
-
+import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
@@ -17,8 +17,8 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sort, setSort] = useState("recentes");
-  const [category, setCategory] = useState("Todos");
   const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [premiumGrupos, setPremiumGrupos] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,11 +28,18 @@ const Index = () => {
     const fetchGroups = async () => {
       setLoading(true);
       setError(null);
-      let query = supabase.from("groups").select("*");
 
-      if (category !== "Todos") {
-        query = query.eq("category", category);
-      }
+      // Fetch premium groups
+      const { data: premiumData } = await supabase
+        .from("groups")
+        .select("*")
+        .eq("is_premium", true)
+        .order("member_count", { ascending: false });
+
+      setPremiumGrupos((premiumData as Grupo[]) || []);
+
+      // Fetch regular groups
+      let query = supabase.from("groups").select("*").eq("is_premium", false);
 
       switch (sort) {
         case "vistos":
@@ -42,7 +49,7 @@ const Index = () => {
           query = query.order("member_count", { ascending: false });
           break;
         case "hot":
-          query = query.order("is_premium", { ascending: false }).order("member_count", { ascending: false });
+          query = query.order("member_count", { ascending: false });
           break;
         default:
           query = query.order("created_at", { ascending: false });
@@ -61,7 +68,7 @@ const Index = () => {
     };
 
     fetchGroups();
-  }, [sort, category]);
+  }, [sort]);
 
   const totalPages = Math.ceil(grupos.length / PER_PAGE);
   const currentPage = Math.min(page, totalPages) || 1;
@@ -72,11 +79,6 @@ const Index = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleCategoryChange = (cat: string) => {
-    setCategory(cat);
-    setSearchParams({ page: "1" });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
@@ -85,15 +87,15 @@ const Index = () => {
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
         <BannerAd />
 
-        <SortTabs active={sort} onChange={setSort} />
-        
+        {/* Premium Carousel */}
+        {!loading && <PremiumCarousel grupos={premiumGrupos} />}
 
-        {/* Error */}
+        <SortTabs active={sort} onChange={setSort} />
+
         {error && (
           <p className="py-12 text-center text-destructive">{error}</p>
         )}
 
-        {/* Loading skeleton */}
         {loading ? (
           <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -110,7 +112,7 @@ const Index = () => {
         ) : (
           <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {paged.map((grupo) => (
-              <GroupCard key={grupo.id} grupo={grupo} />
+              <GroupCard key={grupo.id} grupo={grupo} hideBadges />
             ))}
           </section>
         )}

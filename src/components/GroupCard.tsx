@@ -31,7 +31,7 @@ function getPlaceholderBg(category: string) {
   return categoryColors[category] || "from-gray-500 to-gray-700";
 }
 
-const GroupCard = ({ grupo }: { grupo: Grupo }) => {
+const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: boolean }) => {
   const navigate = useNavigate();
   const hasThumbnail = !!grupo.thumbnail_url;
 
@@ -61,18 +61,20 @@ const GroupCard = ({ grupo }: { grupo: Grupo }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
 
         {/* Badges */}
-        <div className="absolute left-2 top-2 flex gap-1.5">
-          {grupo.is_premium && (
-            <span className="flex items-center gap-1 rounded-md bg-amber-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-              <Star className="h-3 w-3" /> Premium
-            </span>
-          )}
-          {grupo.is_verified && (
-            <span className="flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-              <CheckCircle className="h-3 w-3" /> Verificado
-            </span>
-          )}
-        </div>
+        {!hideBadges && (
+          <div className="absolute left-2 top-2 flex gap-1.5">
+            {grupo.is_premium && (
+              <span className="flex items-center gap-1 rounded-md bg-amber-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                <Star className="h-3 w-3" /> Premium
+              </span>
+            )}
+            {grupo.is_verified && (
+              <span className="flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                <CheckCircle className="h-3 w-3" /> Verificado
+              </span>
+            )}
+          </div>
+        )}
 
         <span className="absolute right-2 top-2 text-xs text-white/70">{timeAgo(grupo.created_at)}</span>
       </div>
