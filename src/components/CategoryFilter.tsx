@@ -1,4 +1,4 @@
-const categories = ["Todos", "Crypto", "NFTs", "DeFi", "Trading", "Airdrops", "Play2Earn", "Web3", "Metaverse"];
+const categories = ["Todos", "Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
 
 interface CategoryFilterProps {
   active: string;
