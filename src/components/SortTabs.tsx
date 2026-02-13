@@ -13,7 +13,7 @@ interface SortTabsProps {
 }
 
 const SortTabs = ({ active, onChange }: SortTabsProps) => (
-  <div className="flex gap-2 overflow-x-auto pb-1">
+  <div className="flex gap-2 overflow-x-auto scrollbar-hide">
     {tabs.map((tab) => (
       <button
         key={tab.id}
