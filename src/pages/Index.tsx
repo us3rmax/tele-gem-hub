@@ -63,7 +63,6 @@ const Index = () => {
 
         {/* Filters */}
         <div className="space-y-3">
-          <SortTabs active={sort} onChange={setSort} />
           <CategoryFilter active={category} onChange={setCategory} />
         </div>
 
