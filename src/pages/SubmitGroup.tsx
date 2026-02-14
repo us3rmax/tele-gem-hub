@@ -120,6 +120,9 @@ const SubmitGroup = () => {
       setThumbnailUrl("");
       setErrors({});
       fetchSubmissions();
+
+      // Fire-and-forget: notify admin if pending threshold reached
+      supabase.functions.invoke("notify-admin", { method: "POST" }).catch(() => {});
     }
     setSubmitting(false);
   };
