@@ -7,6 +7,7 @@ interface SEOProps {
   ogImage?: string;
   ogType?: string;
   canonicalUrl?: string;
+  jsonLd?: Record<string, unknown>;
 }
 
 const SITE_URL = "https://canais18.com";
@@ -18,6 +19,7 @@ const SEO = ({
   ogImage = `${SITE_URL}/favicon.ico`,
   ogType = "website",
   canonicalUrl,
+  jsonLd,
 }: SEOProps) => {
   const url = canonicalUrl || (typeof window !== "undefined" ? window.location.href : SITE_URL);
 
@@ -42,6 +44,9 @@ const SEO = ({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
+      {jsonLd && (
+        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+      )}
     </Helmet>
   );
 };
