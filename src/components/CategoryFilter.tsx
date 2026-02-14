@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const categories = ["Todos", "Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
 
 interface CategoryFilterProps {
@@ -6,11 +8,15 @@ interface CategoryFilterProps {
 }
 
 const CategoryFilter = ({ active, onChange }: CategoryFilterProps) => (
-  <div className="flex gap-2 overflow-x-auto pb-1">
+  <nav aria-label="Categorias" className="flex gap-2 overflow-x-auto pb-1">
     {categories.map((cat) => (
-      <button
+      <Link
         key={cat}
-        onClick={() => onChange(cat)}
+        to={cat === "Todos" ? "/" : `/categorias/${encodeURIComponent(cat)}`}
+        onClick={(e) => {
+          e.preventDefault();
+          onChange(cat);
+        }}
         className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
           active === cat
             ? "bg-primary/15 text-primary ring-1 ring-primary/30"
@@ -18,9 +24,9 @@ const CategoryFilter = ({ active, onChange }: CategoryFilterProps) => (
         }`}
       >
         {cat}
-      </button>
+      </Link>
     ))}
-  </div>
+  </nav>
 );
 
 export default CategoryFilter;

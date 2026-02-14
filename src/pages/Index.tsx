@@ -85,12 +85,19 @@ const Index = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
+        <h1 className="sr-only">Grupos e Canais do Telegram</h1>
+
         <BannerAd />
 
         {/* Premium Carousel */}
         {!loading && <PremiumCarousel grupos={premiumGrupos} />}
 
-        <SortTabs active={sort} onChange={setSort} />
+        <section className="space-y-3">
+          <h2 className="text-lg font-bold text-foreground">
+            {sort === "recentes" ? "Grupos Recentes" : sort === "vistos" ? "Mais Vistos" : sort === "votados" ? "Mais Votados" : "Em Alta"}
+          </h2>
+          <SortTabs active={sort} onChange={setSort} />
+        </section>
 
         {error && (
           <p className="py-12 text-center text-destructive">{error}</p>
