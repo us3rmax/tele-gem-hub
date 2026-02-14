@@ -7,6 +7,7 @@ import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
+import { extractIdFromSlug } from "@/lib/slug";
 import type { Grupo } from "@/data/mock";
 
 function timeAgo(dateStr: string) {
@@ -36,7 +37,7 @@ const categoryColors: Record<string, string> = {
 };
 
 const GroupDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [grupo, setGrupo] = useState<Grupo | null>(null);
   const [related, setRelated] = useState<Grupo[]>([]);
@@ -46,7 +47,8 @@ const GroupDetail = () => {
   const [sort, setSort] = useState("recentes");
 
   useEffect(() => {
-    if (!id) return;
+    if (!slug) return;
+    const groupId = extractIdFromSlug(slug);
     const fetchGroup = async () => {
       setLoading(true);
       setNotFound(false);
@@ -54,7 +56,7 @@ const GroupDetail = () => {
       const { data, error } = await supabase
         .from("groups")
         .select("*")
-        .eq("id", id)
+        .eq("id", groupId)
         .single();
 
       if (error || !data) {
@@ -66,15 +68,14 @@ const GroupDetail = () => {
       setGrupo(data as Grupo);
 
       // Increment views
-      // Fire-and-forget view increment
-      void supabase.rpc("increment_views", { group_id: id });
+      void supabase.rpc("increment_views", { group_id: data.id });
 
       // Fetch related
       const { data: relatedData } = await supabase
         .from("groups")
         .select("*")
         .eq("category", data.category)
-        .neq("id", id)
+        .neq("id", data.id)
         .limit(8);
 
       if (relatedData) {
@@ -88,7 +89,7 @@ const GroupDetail = () => {
 
     fetchGroup();
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [id]);
+  }, [slug]);
 
   const placeholderBg = grupo
     ? categoryColors[grupo.category] || "from-gray-500 to-gray-700"
