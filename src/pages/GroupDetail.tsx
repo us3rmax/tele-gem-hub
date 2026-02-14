@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Send, Users, Star, CheckCircle, Clock, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import SEO from "@/components/SEO";
+import { groupPath } from "@/lib/slug";
 import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
@@ -132,6 +134,18 @@ const GroupDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${grupo.name} - Grupo Telegram | TGIndex`}
+        description={
+          grupo.description
+            ? grupo.description.slice(0, 160)
+            : `Entre no grupo ${grupo.name} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${grupo.category}`
+        }
+        keywords={`grupo telegram ${grupo.category}, ${grupo.name}, canal telegram`}
+        ogImage={grupo.thumbnail_url || undefined}
+        ogType="article"
+        canonicalUrl={`https://web3-group-nexus.lovable.app${groupPath(grupo)}`}
+      />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
