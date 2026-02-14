@@ -231,8 +231,8 @@ const GroupDetail = () => {
         {related.length > 0 && (
           <section className="space-y-4">
             <div>
-              <h2 className="text-xl font-bold text-foreground">🔗 Grupos relacionados</h2>
-              <p className="text-sm text-muted-foreground">Mais grupos de {grupo.category}</p>
+            <h2 className="text-xl font-bold text-foreground">🔗 Grupos Relacionados de {grupo.category}</h2>
+              <p className="text-sm text-muted-foreground">Outros grupos que você pode gostar</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {related.map((g) => (
