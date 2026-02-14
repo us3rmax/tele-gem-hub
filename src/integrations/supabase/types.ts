@@ -184,6 +184,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      disable_expired_banners: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
