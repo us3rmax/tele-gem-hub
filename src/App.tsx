@@ -13,6 +13,7 @@ const Categories = lazy(() => import("./pages/Categories"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
+const SubmitGroup = lazy(() => import("./pages/SubmitGroup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
               <Routes>
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/register" element={<Register />} />
+                <Route path="/submit" element={<SubmitGroup />} />
                 <Route path="/group/:slug" element={<GroupDetail />} />
                 <Route path="/categorias" element={<Categories />} />
                 <Route path="/categorias/:name" element={<Categories />} />
