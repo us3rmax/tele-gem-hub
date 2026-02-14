@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
@@ -81,6 +82,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="TGIndex - Diretório de Grupos e Canais do Telegram"
+        description="Encontre os melhores grupos e canais do Telegram. Diversas categorias disponíveis. 151+ grupos verificados e atualizados diariamente."
+        keywords="grupos telegram, canais telegram, telegram brasil, grupos whatsapp telegram"
+        canonicalUrl="https://web3-group-nexus.lovable.app/"
+      />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
