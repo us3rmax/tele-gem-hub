@@ -132,6 +132,21 @@ const GroupDetail = () => {
         ogImage={grupo.thumbnail_url || undefined}
         ogType="article"
         canonicalUrl={`https://canais18.com${groupPath(grupo)}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": grupo.name,
+          "description": seoDescription,
+          "image": grupo.thumbnail_url || undefined,
+          "datePublished": grupo.created_at,
+          "dateModified": grupo.created_at,
+          "author": { "@type": "Organization", "name": "Canais18" },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Canais18",
+            "logo": { "@type": "ImageObject", "url": "https://canais18.com/logo.png" }
+          }
+        }}
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
