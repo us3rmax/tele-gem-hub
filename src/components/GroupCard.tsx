@@ -43,6 +43,8 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
           <img
             src={grupo.thumbnail_url!}
             alt={grupo.name}
+            width={400}
+            height={144}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
           />

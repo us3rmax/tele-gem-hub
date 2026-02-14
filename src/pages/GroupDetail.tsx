@@ -174,7 +174,10 @@ const GroupDetail = () => {
                 <img
                   src={grupo.thumbnail_url}
                   alt={grupo.name}
+                  width={400}
+                  height={400}
                   className="h-full w-full object-cover"
+                  loading="eager"
                 />
               ) : (
                 <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${placeholderBg}`}>
