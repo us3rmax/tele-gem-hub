@@ -1,4 +1,4 @@
-import { Menu, Search, User, LogOut, Shield } from "lucide-react";
+import { Menu, Search, User, LogOut, Shield, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -50,6 +50,12 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/submit" className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Enviar Canal
+                  </Link>
+                </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin" className="flex items-center gap-2">
