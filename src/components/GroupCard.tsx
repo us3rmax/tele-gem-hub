@@ -1,6 +1,7 @@
 import { Users, CheckCircle, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
+import { groupPath } from "@/lib/slug";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -36,7 +37,7 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
   const hasThumbnail = !!grupo.thumbnail_url;
 
   const handleCardClick = () => {
-    navigate(`/group/${grupo.id}`);
+    navigate(groupPath(grupo));
   };
 
   return (
