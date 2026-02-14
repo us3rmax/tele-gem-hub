@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
 
 const Register = () => {
@@ -11,8 +12,9 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, signIn } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +23,25 @@ const Register = () => {
 
     const { error } = await signUp(email, password);
     if (error) {
-      setError(error.message);
+      const msg = error.message.toLowerCase().includes("rate limit")
+        ? "Aguarde alguns minutos antes de tentar novamente."
+        : error.message;
+      setError(msg);
       setLoading(false);
-    } else {
-      navigate("/");
+      return;
     }
+
+    // Auto-login after signup
+    const { error: loginError } = await signIn(email, password);
+    if (loginError) {
+      // Signup succeeded but auto-login failed (e.g. email confirmation required)
+      setError("Conta criada, mas não foi possível fazer login automaticamente. Tente fazer login manualmente.");
+      setLoading(false);
+      return;
+    }
+
+    toast({ title: "Conta criada com sucesso!" });
+    navigate("/");
   };
 
   return (
