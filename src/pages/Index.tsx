@@ -83,16 +83,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Canais Telegram Brasil | Canais18 - Diretório de Canais Verificados"
-        description="Encontre os melhores canais do Telegram Brasil. Diversas categorias disponíveis. 151+ canais verificados e atualizados diariamente. Entre agora!"
-        keywords="canais telegram, telegram brasil, canais verificados, grupos telegram"
+        title="Canais Telegram 18+ | Canais18 - Putaria, Porno, Grupos Adultos"
+        description="Encontre os melhores canais telegram 18+. Putaria, porno, novinhas, amadoras, vazados e mais. 151+ canais verificados e atualizados diariamente. Entre agora!"
+        keywords="canais 18, canais telegram 18, telegram adulto, canais putaria telegram, canais porno telegram, telegram 18+"
         canonicalUrl="https://canais18.com/"
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
-        <h1 className="sr-only">Grupos e Canais do Telegram</h1>
+        <h1 className="sr-only">Canais Telegram 18+ Brasil</h1>
 
         <BannerAd />
 
@@ -101,14 +101,18 @@ const Index = () => {
 
         <section className="space-y-3">
           <h2 className="text-lg font-bold text-foreground">
-            {sort === "recentes" ? "Grupos Recentes" : sort === "vistos" ? "Mais Vistos" : sort === "votados" ? "Mais Votados" : "Em Alta"}
+            {sort === "recentes"
+              ? "Canais Recentes"
+              : sort === "vistos"
+                ? "Canais Mais Vistos"
+                : sort === "votados"
+                  ? "Canais Mais Votados"
+                  : "Canais em Alta"}
           </h2>
           <SortTabs active={sort} onChange={setSort} />
         </section>
 
-        {error && (
-          <p className="py-12 text-center text-destructive">{error}</p>
-        )}
+        {error && <p className="py-12 text-center text-destructive">{error}</p>}
 
         {loading ? (
           <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
