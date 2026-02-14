@@ -83,10 +83,10 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="TGIndex - Diretório de Grupos e Canais do Telegram"
-        description="Encontre os melhores grupos e canais do Telegram. Diversas categorias disponíveis. 151+ grupos verificados e atualizados diariamente."
-        keywords="grupos telegram, canais telegram, telegram brasil, grupos whatsapp telegram"
-        canonicalUrl="https://web3-group-nexus.lovable.app/"
+        title="Canais Telegram Brasil | Canais18 - Diretório de Canais Verificados"
+        description="Encontre os melhores canais do Telegram Brasil. Diversas categorias disponíveis. 151+ canais verificados e atualizados diariamente. Entre agora!"
+        keywords="canais telegram, telegram brasil, canais verificados, grupos telegram"
+        canonicalUrl="https://canais18.com/"
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
