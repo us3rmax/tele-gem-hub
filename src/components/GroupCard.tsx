@@ -58,7 +58,7 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
             <span className="text-3xl font-bold text-white/80">{grupo.name.charAt(0)}</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+        
 
         {/* Badges */}
         {!hideBadges && (
