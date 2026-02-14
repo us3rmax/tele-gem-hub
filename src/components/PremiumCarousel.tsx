@@ -68,7 +68,7 @@ const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
                     <span className="text-2xl font-bold text-white/80">{grupo.name.charAt(0)}</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
+                
                 <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-amber-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                   <Star className="h-3 w-3" /> Premium
                 </span>
