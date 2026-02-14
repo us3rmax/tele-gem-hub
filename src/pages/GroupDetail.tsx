@@ -135,16 +135,12 @@ const GroupDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`${grupo.name} - Grupo Telegram | TGIndex`}
-        description={
-          grupo.description
-            ? grupo.description.slice(0, 160)
-            : `Entre no grupo ${grupo.name} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${grupo.category}`
-        }
-        keywords={`grupo telegram ${grupo.category}, ${grupo.name}, canal telegram`}
+        title={`${grupo.name} - Canal Telegram | Canais18`}
+        description={`Entre no canal ${grupo.name} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${grupo.category}. Conteúdo exclusivo atualizado.`}
+        keywords={`canal telegram, ${grupo.category}, ${grupo.name}`}
         ogImage={grupo.thumbnail_url || undefined}
         ogType="article"
-        canonicalUrl={`https://web3-group-nexus.lovable.app${groupPath(grupo)}`}
+        canonicalUrl={`https://canais18.com${groupPath(grupo)}`}
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
