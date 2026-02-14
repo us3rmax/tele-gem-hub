@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Send, Users, Star, CheckCircle, Clock, ChevronRight } from "lucide-react";
+import { Send, Users, Star, CheckCircle, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import { groupPath } from "@/lib/slug";
@@ -12,15 +12,6 @@ import { supabase } from "@/lib/supabase";
 import { extractIdFromSlug } from "@/lib/slug";
 import type { Grupo } from "@/data/mock";
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `Há ${mins} minutos`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `Há ${hrs} horas`;
-  const days = Math.floor(hrs / 24);
-  return `Há ${days} dias`;
-}
 
 function formatMembers(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
@@ -190,9 +181,6 @@ const GroupDetail = () => {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" /> {formatMembers(grupo.member_count)} membros
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" /> {timeAgo(grupo.created_at)}
               </span>
             </div>
 
