@@ -3,14 +3,6 @@ import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
 import { groupPath } from "@/lib/slug";
 
-function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
-}
 
 function formatMembers(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
@@ -77,7 +69,7 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
           </div>
         )}
 
-        <span className="absolute right-2 top-2 text-xs text-white/70">{timeAgo(grupo.created_at)}</span>
+        
       </div>
 
       {/* Content */}
