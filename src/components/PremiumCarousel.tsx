@@ -62,7 +62,7 @@ const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
             >
               <div className="relative h-28 overflow-hidden">
                 {grupo.thumbnail_url ? (
-                  <img src={grupo.thumbnail_url} alt={grupo.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+                  <img src={grupo.thumbnail_url} alt={grupo.name} width={200} height={112} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
                 ) : (
                   <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${gradient} transition-transform duration-500 group-hover:scale-110`}>
                     <span className="text-2xl font-bold text-white/80">{grupo.name.charAt(0)}</span>
