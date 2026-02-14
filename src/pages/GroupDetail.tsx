@@ -165,7 +165,7 @@ const GroupDetail = () => {
           <span className="truncate text-foreground">{grupo.name}</span>
         </nav>
 
-        <BannerAd />
+        <BannerAd position="top" />
 
         <section className="space-y-4">
           <div className="mx-auto w-full max-w-[400px]">
@@ -252,7 +252,7 @@ const GroupDetail = () => {
           </section>
         )}
 
-        <BannerAd />
+        <BannerAd position="bottom" />
       </main>
     </div>
   );

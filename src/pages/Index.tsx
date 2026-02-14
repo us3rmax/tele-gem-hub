@@ -111,7 +111,7 @@ const Index = () => {
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
         <h1 className="sr-only">Canais Telegram Brasil</h1>
 
-        <BannerAd />
+        <BannerAd position="top" />
 
         {/* Premium Carousel */}
         {!loading && <PremiumCarousel grupos={premiumGrupos} />}
@@ -157,6 +157,8 @@ const Index = () => {
         )}
 
         <Pagination current={currentPage} total={totalPages} onChange={handlePageChange} />
+
+        <BannerAd position="bottom" />
       </main>
     </div>
   );

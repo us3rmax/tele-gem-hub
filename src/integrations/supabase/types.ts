@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       banners: {
         Row: {
+          clicks: number
           created_at: string | null
           created_by: string | null
           expires_at: string | null
@@ -27,6 +28,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          clicks?: number
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
@@ -38,6 +40,7 @@ export type Database = {
           title: string
         }
         Update: {
+          clicks?: number
           created_at?: string | null
           created_by?: string | null
           expires_at?: string | null
@@ -187,6 +190,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_banner_clicks: {
+        Args: { banner_id: string }
+        Returns: undefined
       }
     }
     Enums: {
