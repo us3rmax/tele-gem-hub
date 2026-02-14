@@ -224,7 +224,7 @@ const GroupDetail = () => {
         </section>
 
         <section className="rounded-xl border border-border bg-card p-6">
-          <h2 className="text-lg font-semibold text-card-foreground">📝 Sobre o Canal</h2>
+          <h2 className="text-lg font-semibold text-card-foreground">Sobre o Canal</h2>
           {grupo.description ? (
             <p className="mt-3 text-base leading-relaxed text-muted-foreground">{grupo.description}</p>
           ) : (
@@ -235,7 +235,7 @@ const GroupDetail = () => {
         {related.length > 0 && (
           <section className="space-y-4">
             <div>
-              <h2 className="text-xl font-bold text-foreground">🔗 Canais Relacionados de {grupo.category}</h2>
+              <h2 className="text-xl font-bold text-foreground">Canais Relacionados de {grupo.category}</h2>
               <p className="text-sm text-muted-foreground">Mais canais de {grupo.category} que você pode gostar</p>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
