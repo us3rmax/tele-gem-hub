@@ -211,7 +211,7 @@ const GroupDetail = () => {
               </div>
             )}
 
-            
+            <a
               href={grupo.telegram_link}
               target="_blank"
               rel="noopener noreferrer"
