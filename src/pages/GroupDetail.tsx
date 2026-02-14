@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Send, Users, Star, CheckCircle, Clock, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
@@ -40,7 +40,6 @@ const categoryColors: Record<string, string> = {
 
 const GroupDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const [grupo, setGrupo] = useState<Grupo | null>(null);
   const [related, setRelated] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,10 +68,8 @@ const GroupDetail = () => {
 
       setGrupo(data as Grupo);
 
-      // Increment views
       void supabase.rpc("increment_views", { group_id: data.id });
 
-      // Fetch related
       const { data: relatedData } = await supabase
         .from("groups")
         .select("*")
@@ -81,7 +78,6 @@ const GroupDetail = () => {
         .limit(8);
 
       if (relatedData) {
-        // Shuffle
         const shuffled = relatedData.sort(() => Math.random() - 0.5);
         setRelated(shuffled as Grupo[]);
       }
@@ -132,7 +128,6 @@ const GroupDetail = () => {
     );
   }
 
-  // SEO description - use group description or fallback
   const seoDescription = grupo.description 
     ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? '...' : '')
     : `Entre no canal ${grupo.name} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${grupo.category}. Conteúdo exclusivo 18+ atualizado.`;
@@ -151,7 +146,6 @@ const GroupDetail = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-4">
-        {/* Breadcrumb */}
         <nav className="flex items-center gap-1 text-sm text-muted-foreground">
           <Link to="/" className="transition-colors hover:text-foreground">Canais18</Link>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -167,9 +161,7 @@ const GroupDetail = () => {
 
         <BannerAd />
 
-        {/* Hero Section */}
         <section className="space-y-4">
-          {/* Cover */}
           <div className="mx-auto w-full max-w-[400px]">
             <div className="relative aspect-square overflow-hidden rounded-xl border border-border">
               {grupo.thumbnail_url ? (
@@ -188,7 +180,6 @@ const GroupDetail = () => {
             </div>
           </div>
 
-          {/* Info */}
           <div className="space-y-3">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">{grupo.name}</h1>
 
@@ -220,7 +211,6 @@ const GroupDetail = () => {
               </div>
             )}
 
-            {/* CTA */}
             
               href={grupo.telegram_link}
               target="_blank"
@@ -233,7 +223,6 @@ const GroupDetail = () => {
           </div>
         </section>
 
-        {/* Description */}
         <section className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-card-foreground">📝 Sobre o Canal</h2>
           {grupo.description ? (
@@ -243,7 +232,6 @@ const GroupDetail = () => {
           )}
         </section>
 
-        {/* Related Groups */}
         {related.length > 0 && (
           <section className="space-y-4">
             <div>
