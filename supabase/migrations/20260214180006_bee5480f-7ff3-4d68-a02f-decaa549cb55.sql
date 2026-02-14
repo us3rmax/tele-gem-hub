@@ -1,0 +1,2 @@
+
+ALTER TABLE public.groups ENABLE ROW LEVEL SECURITY;
