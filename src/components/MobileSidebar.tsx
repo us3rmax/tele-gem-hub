@@ -1,5 +1,6 @@
 import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileSidebarProps {
   open: boolean;
@@ -10,8 +11,8 @@ interface MobileSidebarProps {
 
 const menuItems = [
   { icon: Home, label: "Página Inicial", action: "home" },
-  { icon: Send, label: "Enviar Grupo", action: "enviar" },
-  { icon: User, label: "Minha Conta", action: "conta" },
+  { icon: Send, label: "Enviar Grupo", action: "enviar", requiresAuth: true },
+  { icon: User, label: "Minha Conta", action: "conta", requiresAuth: true },
   { icon: BookOpen, label: "Blog", action: "blog" },
 ];
 
@@ -30,16 +31,32 @@ const extraItems = [
 
 const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleMenuClick = (action: string) => {
-    if (action === "home") {
-      navigate("/");
-      onClose();
-    } else if (action === "categorias") {
-      navigate("/categorias");
-      onClose();
-    } else if (action === "contato") {
-      navigate("/contato");
+  const authGuard = (path: string) => {
+    if (user) {
+      navigate(path);
+    } else {
+      navigate(`/auth/login?returnUrl=${encodeURIComponent(path)}`);
+    }
+    onClose();
+  };
+
+  const handleMenuClick = (action: string, requiresAuth?: boolean) => {
+    const routes: Record<string, string> = {
+      home: "/",
+      enviar: "/submit",
+      conta: "/submit",
+      categorias: "/categorias",
+      contato: "/contato",
+    };
+    const path = routes[action];
+    if (!path) return;
+
+    if (requiresAuth) {
+      authGuard(path);
+    } else {
+      navigate(path);
       onClose();
     }
   };
@@ -67,7 +84,7 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {menuItems.map((item) => (
-            <button key={item.action} onClick={() => handleMenuClick(item.action)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+            <button key={item.action} onClick={() => handleMenuClick(item.action, item.requiresAuth)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
               <item.icon className="h-4 w-4" />
               {item.label}
             </button>
