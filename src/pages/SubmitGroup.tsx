@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X } from "lucide-react";
+import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X, AlertTriangle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const CATEGORIES = [
   "Amadoras", "Cornos", "Coroas", "Lésbicas", "Novinhas", "Nudes",
@@ -53,6 +54,7 @@ const SubmitGroup = () => {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPromo, setSelectedPromo] = useState<"premium" | "banner" | null>(null);
+  const [rulesAccepted, setRulesAccepted] = useState(false);
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
@@ -232,6 +234,51 @@ const SubmitGroup = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-6">
+          {/* Content Policy Disclaimer */}
+          <div className="rounded-lg border-l-4 border-red-500 bg-red-500/10 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
+              <h3 className="font-bold text-foreground">⚠️ Regras Importantes</h3>
+            </div>
+
+            <div className="space-y-2 text-sm text-foreground">
+              <div>
+                <p className="font-semibold text-red-400">🚫 PROIBIDO:</p>
+                <ul className="ml-4 mt-1 space-y-0.5 text-muted-foreground list-disc">
+                  <li>Fotos explícitas na imagem do grupo (capa/thumbnail)</li>
+                  <li>Conteúdo ilegal (menores de idade, violência extrema, etc)</li>
+                  <li>Links para conteúdo que viole leis brasileiras</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-green-400">✅ PERMITIDO:</p>
+                <ul className="ml-4 mt-1 space-y-0.5 text-muted-foreground list-disc">
+                  <li>Conteúdo adulto consensual entre adultos (+18)</li>
+                  <li>Fotos sugestivas (sem nudez explícita na capa)</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-yellow-400">⚖️ IMPORTANTE:</p>
+                <ul className="ml-4 mt-1 space-y-0.5 text-muted-foreground list-disc">
+                  <li>Todos os links são analisados pela nossa equipe</li>
+                  <li>Conteúdo ilegal resultará em:</li>
+                  <ul className="ml-4 space-y-0.5 list-disc">
+                    <li>Rejeição imediata do grupo</li>
+                    <li>Denúncia às autoridades</li>
+                    <li>Denúncia na plataforma Telegram</li>
+                    <li>Bloqueio permanente da sua conta</li>
+                  </ul>
+                </ul>
+              </div>
+
+              <p className="text-xs text-muted-foreground pt-1 italic">
+                Ao enviar, você confirma que o conteúdo está em conformidade com as leis brasileiras.
+              </p>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Canal *</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do seu canal" />
@@ -381,7 +428,20 @@ const SubmitGroup = () => {
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={submitting}>
+          {/* Rules acceptance checkbox */}
+          <div className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-4">
+            <Checkbox
+              id="rules-accepted"
+              checked={rulesAccepted}
+              onCheckedChange={(checked) => setRulesAccepted(checked === true)}
+              className="mt-0.5"
+            />
+            <Label htmlFor="rules-accepted" className="text-sm font-medium text-foreground cursor-pointer leading-snug">
+              ✅ Li e concordo com as regras acima
+            </Label>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={submitting || !rulesAccepted}>
             {submitting ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
             ) : (
