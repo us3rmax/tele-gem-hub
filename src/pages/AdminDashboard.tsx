@@ -596,12 +596,12 @@ const AdminDashboard = () => {
   const handleBannerPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setBannerPhotoError("Imagem muito grande (máx 5MB)");
+    if (file.type !== "image/gif") {
+      setBannerPhotoError("Apenas arquivos GIF são permitidos");
       return;
     }
-    if (!file.type.startsWith("image/")) {
-      setBannerPhotoError("Arquivo deve ser uma imagem");
+    if (file.size > 5 * 1024 * 1024) {
+      setBannerPhotoError("Imagem muito grande (máx 5MB)");
       return;
     }
     setBannerPhotoFile(file);
@@ -1186,7 +1186,7 @@ const AdminDashboard = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Imagem do Banner *</Label>
+              <Label>Imagem do Banner * (formato GIF)</Label>
               <div
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50"
                 onClick={() => bannerFileRef.current?.click()}
@@ -1217,7 +1217,7 @@ const AdminDashboard = () => {
               <input
                 ref={bannerFileRef}
                 type="file"
-                accept="image/*"
+                accept="image/gif"
                 className="hidden"
                 onChange={handleBannerPhotoChange}
               />
