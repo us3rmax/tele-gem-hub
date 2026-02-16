@@ -20,30 +20,85 @@ const categoryColors: Record<string, string> = {
 
 const AUTOPLAY_INTERVAL = 1500;
 const RESUME_DELAY = 2000;
+const CLONE_COUNT = 3; // how many items to clone on each side
 
 const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
   const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAdjusting = useRef(false);
+
+  // Build items with clones for infinite loop
+  const cloneCount = Math.min(CLONE_COUNT, grupos.length);
+  const items = grupos.length > 0
+    ? [
+        ...grupos.slice(-cloneCount).map((g, i) => ({ ...g, _key: `clone-end-${i}` })),
+        ...grupos.map((g) => ({ ...g, _key: g.id })),
+        ...grupos.slice(0, cloneCount).map((g, i) => ({ ...g, _key: `clone-start-${i}` })),
+      ]
+    : [];
+
+  // Set initial scroll to skip the prepended clones
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || grupos.length === 0) return;
+    // Each card is 200px + 12px gap
+    const cardWidth = 212;
+    el.scrollLeft = cloneCount * cardWidth;
+  }, [grupos.length, cloneCount]);
+
+  // Handle seamless loop on scroll end
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || grupos.length <= 1) return;
+
+    const cardWidth = 212;
+    const realStart = cloneCount * cardWidth;
+    const realEnd = realStart + grupos.length * cardWidth;
+
+    const handleScroll = () => {
+      if (isAdjusting.current) return;
+
+      if (el.scrollLeft <= 0) {
+        isAdjusting.current = true;
+        el.style.scrollBehavior = "auto";
+        el.scrollLeft = el.scrollLeft + grupos.length * cardWidth;
+        el.style.scrollBehavior = "";
+        isAdjusting.current = false;
+      } else if (el.scrollLeft >= realEnd - el.clientWidth + cardWidth) {
+        // Check if we've scrolled past the real items into trailing clones
+        const maxRealScroll = (cloneCount + grupos.length) * cardWidth - el.clientWidth;
+        if (el.scrollLeft >= maxRealScroll) {
+          isAdjusting.current = true;
+          el.style.scrollBehavior = "auto";
+          el.scrollLeft = el.scrollLeft - grupos.length * cardWidth;
+          el.style.scrollBehavior = "";
+          isAdjusting.current = false;
+        }
+      }
+    };
+
+    el.addEventListener("scrollend", handleScroll);
+    // Fallback for browsers without scrollend
+    let timeout: ReturnType<typeof setTimeout>;
+    const handleScrollFallback = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(handleScroll, 150);
+    };
+    el.addEventListener("scroll", handleScrollFallback);
+
+    return () => {
+      el.removeEventListener("scrollend", handleScroll);
+      el.removeEventListener("scroll", handleScrollFallback);
+      clearTimeout(timeout);
+    };
+  }, [grupos.length, cloneCount]);
 
   const scroll = useCallback((dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
     const amount = 210;
-    if (dir === "right") {
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      if (el.scrollLeft >= maxScroll - 5) {
-        el.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        el.scrollBy({ left: amount, behavior: "smooth" });
-      }
-    } else {
-      if (el.scrollLeft <= 5) {
-        el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "smooth" });
-      } else {
-        el.scrollBy({ left: -amount, behavior: "smooth" });
-      }
-    }
+    el.scrollBy({ left: dir === "right" ? amount : -amount, behavior: "smooth" });
   }, []);
 
   // Autoplay
@@ -98,11 +153,11 @@ const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
         onTouchStart={handleInteractionStart}
         onTouchEnd={handleInteractionEnd}
       >
-        {grupos.map((grupo) => {
+        {items.map((grupo) => {
           const gradient = categoryColors[grupo.category] || "from-gray-500 to-gray-700";
           return (
             <div
-              key={grupo.id}
+              key={grupo._key}
               onClick={() => window.open(grupo.telegram_link, "_blank")}
               className="group shrink-0 cursor-pointer overflow-hidden rounded-xl border border-amber-500/30 bg-card transition-all duration-300 hover:border-amber-500/60 hover:shadow-lg hover:shadow-amber-500/10"
               style={{ width: 200 }}
