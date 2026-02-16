@@ -830,6 +830,15 @@ const AdminDashboard = () => {
                     {/* Requested */}
                     <div className="space-y-2 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Solicitado</p>
+                      {/* Photo comparison */}
+                      {req.changes.thumbnail_url && (
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Nova Foto:</p>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-yellow-500">
+                            <img src={req.changes.thumbnail_url} alt="Nova" className="h-full w-full object-cover" />
+                          </div>
+                        </div>
+                      )}
                       <div className="space-y-1.5">
                         {req.changes.name ? (
                           <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-sm font-semibold text-foreground">{req.changes.name}</p>
