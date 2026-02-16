@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, Link2, Calendar, Send, Pencil, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import EmailConfirmationGuard from "@/components/EmailConfirmationGuard";
 
 const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
 
@@ -235,6 +236,7 @@ const MyGroups = () => {
           <p className="mt-1 text-sm text-muted-foreground">Acompanhe o desempenho dos seus canais</p>
         </div>
 
+        <EmailConfirmationGuard user={user}>
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -309,6 +311,7 @@ const MyGroups = () => {
             ))}
           </div>
         )}
+        </EmailConfirmationGuard>
       </main>
 
       {/* Edit Request Modal */}
