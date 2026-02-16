@@ -165,6 +165,7 @@ export type Database = {
           is_verified: boolean
           member_count: number
           name: string
+          submitted_by: string | null
           telegram_link: string
           thumbnail_url: string | null
           views: number
@@ -179,6 +180,7 @@ export type Database = {
           is_verified?: boolean
           member_count?: number
           name: string
+          submitted_by?: string | null
           telegram_link: string
           thumbnail_url?: string | null
           views?: number
@@ -193,6 +195,7 @@ export type Database = {
           is_verified?: boolean
           member_count?: number
           name?: string
+          submitted_by?: string | null
           telegram_link?: string
           thumbnail_url?: string | null
           views?: number
