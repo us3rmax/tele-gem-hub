@@ -118,6 +118,10 @@ const AdminDashboard = () => {
     expires_at: "",
   });
   const [bannerSaving, setBannerSaving] = useState(false);
+  const [bannerPhotoFile, setBannerPhotoFile] = useState<File | null>(null);
+  const [bannerPhotoPreview, setBannerPhotoPreview] = useState<string | null>(null);
+  const [bannerPhotoError, setBannerPhotoError] = useState<string | null>(null);
+  const bannerFileRef = useRef<HTMLInputElement>(null);
 
   // Manual group creation state
   const [groupModalOpen, setGroupModalOpen] = useState(false);
@@ -358,6 +362,8 @@ const AdminDashboard = () => {
   };
 
   const openBannerModal = (banner?: Banner) => {
+    setBannerPhotoFile(null);
+    setBannerPhotoError(null);
     if (banner) {
       setEditingBanner(banner);
       setBannerForm({
@@ -367,23 +373,64 @@ const AdminDashboard = () => {
         position: banner.position,
         expires_at: banner.expires_at ? banner.expires_at.slice(0, 16) : "",
       });
+      setBannerPhotoPreview(banner.image_url);
     } else {
       setEditingBanner(null);
       setBannerForm({ title: "", image_url: "", link_url: "", position: "top", expires_at: "" });
+      setBannerPhotoPreview(null);
     }
     setBannerModalOpen(true);
   };
 
+  const handleBannerPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setBannerPhotoError("Imagem muito grande (máx 5MB)");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setBannerPhotoError("Arquivo deve ser uma imagem");
+      return;
+    }
+    setBannerPhotoFile(file);
+    setBannerPhotoPreview(URL.createObjectURL(file));
+    setBannerPhotoError(null);
+  };
+
   const handleBannerSave = async () => {
-    if (!bannerForm.title.trim() || !bannerForm.image_url.trim()) {
-      toast({ title: "Preencha título e URL da imagem", variant: "destructive" });
+    if (!bannerForm.title.trim()) {
+      toast({ title: "Preencha o título", variant: "destructive" });
+      return;
+    }
+    // For new banners, file is required. For editing, file is optional (keep existing).
+    if (!editingBanner && !bannerPhotoFile) {
+      setBannerPhotoError("Imagem é obrigatória");
       return;
     }
 
     setBannerSaving(true);
+
+    let imageUrl = bannerForm.image_url;
+
+    if (bannerPhotoFile) {
+      const ext = bannerPhotoFile.name.split(".").pop();
+      const filePath = `public/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("banner-images")
+        .upload(filePath, bannerPhotoFile, { contentType: bannerPhotoFile.type });
+
+      if (uploadError) {
+        toast({ title: "Erro ao enviar imagem", description: uploadError.message, variant: "destructive" });
+        setBannerSaving(false);
+        return;
+      }
+      imageUrl = supabase.storage.from("banner-images").getPublicUrl(filePath).data.publicUrl;
+    }
+
     const payload: any = {
       title: bannerForm.title.trim(),
-      image_url: bannerForm.image_url.trim(),
+      image_url: imageUrl,
       link_url: bannerForm.link_url.trim() || null,
       position: bannerForm.position,
       expires_at: bannerForm.expires_at ? new Date(bannerForm.expires_at).toISOString() : null,
@@ -727,16 +774,43 @@ const AdminDashboard = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="banner-image">URL da Imagem *</Label>
-              <Input
-                id="banner-image"
-                value={bannerForm.image_url}
-                onChange={(e) => setBannerForm((f) => ({ ...f, image_url: e.target.value }))}
-                placeholder="https://..."
+              <Label>Imagem do Banner *</Label>
+              <div
+                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50"
+                onClick={() => bannerFileRef.current?.click()}
+              >
+                {bannerPhotoPreview ? (
+                  <div className="relative w-full">
+                    <img src={bannerPhotoPreview} alt="Preview" className="max-h-[120px] w-full rounded-lg object-contain" />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 rounded-full bg-background/80 p-1 hover:bg-background"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBannerPhotoFile(null);
+                        setBannerPhotoPreview(editingBanner ? editingBanner.image_url : null);
+                        if (bannerFileRef.current) bannerFileRef.current.value = "";
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Clique para selecionar imagem</span>
+                  </>
+                )}
+              </div>
+              <input
+                ref={bannerFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerPhotoChange}
               />
-              {bannerForm.image_url && (
-                <img src={bannerForm.image_url} alt="Preview" className="mt-2 max-w-[200px] rounded-lg border border-border" />
-              )}
+              <p className="text-xs text-muted-foreground">Recomendado: 728x90px (desktop) ou 320x50px (mobile). Máx 5MB.</p>
+              {bannerPhotoError && <p className="text-xs text-destructive">{bannerPhotoError}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="banner-link">URL do Link (opcional)</Label>
