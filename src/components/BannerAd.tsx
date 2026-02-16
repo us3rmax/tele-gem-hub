@@ -31,10 +31,11 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
 
       if (data && data.length > 0) {
         // For top position, take up to 2 banners; others take 1
-        if (position === "top" && data.length >= 2) {
-          // Shuffle and pick 2
+        if (position === "top" && data.length >= 3) {
           const shuffled = [...data].sort(() => Math.random() - 0.5);
-          setBanners(shuffled.slice(0, 2) as Banner[]);
+          setBanners(shuffled.slice(0, 3) as Banner[]);
+        } else if (position === "top" && data.length === 2) {
+          setBanners([...data].sort(() => Math.random() - 0.5) as Banner[]);
         } else {
           const selected = data[Math.floor(Math.random() * data.length)] as Banner;
           setBanners([selected]);
@@ -53,8 +54,9 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
   if (loading) {
     return position === "top" ? (
       <div className="flex flex-col gap-4 md:flex-row">
-        <Skeleton className="aspect-square w-full rounded-xl md:w-1/2" />
-        <Skeleton className="aspect-square w-full rounded-xl md:w-1/2" />
+        <Skeleton className="aspect-square w-full rounded-xl md:w-1/3" />
+        <Skeleton className="aspect-square w-full rounded-xl md:w-1/3" />
+        <Skeleton className="aspect-square w-full rounded-xl md:w-1/3" />
       </div>
     ) : (
       <Skeleton className="h-[50px] w-full rounded-xl sm:h-[90px]" />
@@ -91,7 +93,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => handleClick(banner.id)}
-          className={`block ${banners.length > 1 ? "w-full md:w-1/2" : "w-full"}`}
+          className={`block ${banners.length > 1 ? "w-full md:flex-1" : "w-full"}`}
         >
           {image}
         </a>
@@ -99,7 +101,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     }
 
     return (
-      <div key={banner.id} className={banners.length > 1 ? "w-full md:w-1/2" : "w-full"}>
+      <div key={banner.id} className={banners.length > 1 ? "w-full md:flex-1" : "w-full"}>
         {image}
       </div>
     );
