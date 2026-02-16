@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SEO from "@/components/SEO";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { supabase } from "@/integrations/supabase/client";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAACeD94GpcENqZjWY";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -13,6 +17,8 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
   const returnUrl = searchParams.get("returnUrl") || "/";
@@ -27,11 +33,31 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!turnstileToken) {
+      setError("Falha na verificação de segurança. Recarregue a página.");
+      return;
+    }
+
     setLoading(true);
+
+    const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
+      body: { token: turnstileToken },
+    });
+
+    if (!verification?.success) {
+      setError("Falha na verificação de segurança. Tente novamente.");
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
+      setLoading(false);
+      return;
+    }
 
     const { error } = await signIn(email, password);
     if (error) {
       setError(error.message);
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       setLoading(false);
     } else {
       navigate(returnUrl);
@@ -79,6 +105,15 @@ const Login = () => {
               minLength={6}
             />
           </div>
+
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+            options={{ size: "invisible" }}
+          />
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Entrando..." : "Entrar"}
