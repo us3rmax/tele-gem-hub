@@ -53,6 +53,50 @@ export type Database = {
         }
         Relationships: []
       }
+      group_edit_requests: {
+        Row: {
+          changes: Json
+          created_at: string
+          group_id: string
+          id: string
+          rejection_reason: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          changes: Json
+          created_at?: string
+          group_id: string
+          id?: string
+          rejection_reason?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          changes?: Json
+          created_at?: string
+          group_id?: string
+          id?: string
+          rejection_reason?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_edit_requests_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_submissions: {
         Row: {
           category: string
@@ -113,6 +157,7 @@ export type Database = {
       groups: {
         Row: {
           category: string
+          clicks_count: number
           created_at: string
           description: string | null
           id: string
@@ -126,6 +171,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          clicks_count?: number
           created_at?: string
           description?: string | null
           id?: string
@@ -139,6 +185,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          clicks_count?: number
           created_at?: string
           description?: string | null
           id?: string
