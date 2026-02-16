@@ -52,6 +52,7 @@ const SubmitGroup = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedPromo, setSelectedPromo] = useState<"premium" | "banner" | null>(null);
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
@@ -157,25 +158,38 @@ const SubmitGroup = () => {
       return;
     }
 
-    const { error } = await supabase.from("group_submissions").insert({
+    const insertPayload: any = {
       name: name.trim(),
       category,
       telegram_link: telegramLink.trim(),
       description: description.trim(),
       thumbnail_url: photoUrl,
       submitted_by: user.id,
-    });
+    };
+
+    if (selectedPromo) {
+      insertPayload.is_paid = true;
+      insertPayload.payment_type = selectedPromo;
+      insertPayload.payment_amount = selectedPromo === "premium" ? 29.9 : 49.9;
+      insertPayload.payment_status = "pending";
+    }
+
+    const { error } = await supabase.from("group_submissions").insert(insertPayload);
 
     if (error) {
       toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Canal enviado!", description: "Aguarde aprovação (24-48h)" });
+      const successMsg = selectedPromo
+        ? "Grupo enviado! Você receberá instruções de pagamento por email."
+        : "Aguarde aprovação (24-48h)";
+      toast({ title: "Canal enviado!", description: successMsg });
       setName("");
       setCategory("");
       setTelegramLink("");
       setDescription("");
       removePhoto();
       setErrors({});
+      setSelectedPromo(null);
       fetchSubmissions();
       supabase.functions.invoke("notify-admin", { method: "POST" }).catch(() => {});
     }
@@ -292,6 +306,79 @@ const SubmitGroup = () => {
               {description.trim().length}/50
             </p>
             {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+          </div>
+
+          {/* Promotion Options */}
+          <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+            <div>
+              <h3 className="text-base font-bold text-foreground">💎 Opções de Destaque <span className="text-xs font-normal text-muted-foreground">(Opcional)</span></h3>
+              <p className="text-xs text-muted-foreground">Aumente a visibilidade do seu canal</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {/* Premium Card */}
+              <button
+                type="button"
+                onClick={() => setSelectedPromo(selectedPromo === "premium" ? null : "premium")}
+                className={`rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedPromo === "premium"
+                    ? "border-yellow-500 bg-yellow-500/10"
+                    : "border-border hover:border-yellow-500/50"
+                }`}
+              >
+                <div className="mb-2 text-2xl">⭐</div>
+                <h4 className="font-bold text-foreground">Canal em Destaque</h4>
+                <p className="text-lg font-bold text-yellow-500">R$ 29,90<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>✓ Aparece no carrossel de destaques</li>
+                  <li>✓ Badge 'Premium' dourado</li>
+                  <li>✓ Prioridade nas buscas</li>
+                  <li>✓ 3x mais visualizações</li>
+                </ul>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "premium" ? "border-yellow-500 bg-yellow-500" : "border-muted-foreground"}`}>
+                    {selectedPromo === "premium" && <span className="text-[10px] text-white">✓</span>}
+                  </div>
+                  <span className="text-xs font-medium text-foreground">Adicionar Destaque</span>
+                </div>
+              </button>
+
+              {/* Banner Card */}
+              <button
+                type="button"
+                onClick={() => setSelectedPromo(selectedPromo === "banner" ? null : "banner")}
+                className={`rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedPromo === "banner"
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="mb-2 text-2xl">📢</div>
+                <h4 className="font-bold text-foreground">Banner Publicitário</h4>
+                <p className="text-lg font-bold text-primary">R$ 49,90<span className="text-xs font-normal text-muted-foreground">/semana</span></p>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>✓ Banner no topo do site</li>
+                  <li>✓ Milhares de visualizações</li>
+                  <li>✓ Link direto para seu canal</li>
+                  <li>✓ Máxima visibilidade</li>
+                </ul>
+                <div className="mt-3 flex items-center gap-2">
+                  <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "banner" ? "border-primary bg-primary" : "border-muted-foreground"}`}>
+                    {selectedPromo === "banner" && <span className="text-[10px] text-white">✓</span>}
+                  </div>
+                  <span className="text-xs font-medium text-foreground">Adicionar Banner</span>
+                </div>
+              </button>
+            </div>
+
+            {selectedPromo && (
+              <div className="flex items-center justify-between rounded-lg bg-secondary px-4 py-2">
+                <span className="text-sm font-medium text-foreground">Total:</span>
+                <span className="text-lg font-bold text-foreground">
+                  R$ {selectedPromo === "premium" ? "29,90" : "49,90"}
+                </span>
+              </div>
+            )}
           </div>
 
           <Button type="submit" className="w-full" disabled={submitting}>
