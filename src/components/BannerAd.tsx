@@ -140,7 +140,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     );
   };
 
-  const isSquareLayout = position === "top" && banners.length > 1;
+  const isSquareLayout = position === "top";
 
   if (banners.length > 1) {
     return (
