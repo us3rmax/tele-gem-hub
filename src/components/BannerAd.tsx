@@ -53,10 +53,10 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
 
   if (loading) {
     return position === "top" ? (
-      <div className="flex flex-col gap-4 md:flex-row">
-        <Skeleton className="aspect-square w-full rounded-xl md:w-1/3" />
-        <Skeleton className="aspect-square w-full rounded-xl md:w-1/3" />
-        <Skeleton className="aspect-square w-full rounded-xl md:w-1/3" />
+      <div className="flex flex-row gap-2">
+        <Skeleton className="aspect-square w-1/3 rounded-xl" />
+        <Skeleton className="aspect-square w-1/3 rounded-xl" />
+        <Skeleton className="aspect-square w-1/3 rounded-xl" />
       </div>
     ) : (
       <Skeleton className="h-[50px] w-full rounded-xl sm:h-[90px]" />
@@ -93,7 +93,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => handleClick(banner.id)}
-          className={`block ${banners.length > 1 ? "w-full md:flex-1" : "w-full"}`}
+          className={`block ${banners.length > 1 ? "flex-1 min-w-0" : "w-full"}`}
         >
           {image}
         </a>
@@ -101,7 +101,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     }
 
     return (
-      <div key={banner.id} className={banners.length > 1 ? "w-full md:flex-1" : "w-full"}>
+      <div key={banner.id} className={banners.length > 1 ? "flex-1 min-w-0" : "w-full"}>
         {image}
       </div>
     );
@@ -111,7 +111,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
 
   if (banners.length > 1) {
     return (
-      <div className="flex flex-col gap-4 md:flex-row">
+      <div className="flex flex-row gap-2">
         {banners.map((b) => renderBanner(b, true))}
       </div>
     );
