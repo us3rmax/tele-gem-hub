@@ -1,6 +1,5 @@
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Star, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
 
 function formatMembers(n: number) {
@@ -19,15 +18,56 @@ const categoryColors: Record<string, string> = {
   Putaria: "from-rose-500 to-red-600",
 };
 
+const AUTOPLAY_INTERVAL = 1500;
+const RESUME_DELAY = 2000;
+
 const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+  const [paused, setPaused] = useState(false);
+  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const scroll = (dir: "left" | "right") => {
-    if (!scrollRef.current) return;
-    const amount = 260;
-    scrollRef.current.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
-  };
+  const scroll = useCallback((dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = 210;
+    if (dir === "right") {
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (el.scrollLeft >= maxScroll - 5) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: amount, behavior: "smooth" });
+      }
+    } else {
+      if (el.scrollLeft <= 5) {
+        el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: -amount, behavior: "smooth" });
+      }
+    }
+  }, []);
+
+  // Autoplay
+  useEffect(() => {
+    if (paused || grupos.length <= 1) return;
+    const id = setInterval(() => scroll("right"), AUTOPLAY_INTERVAL);
+    return () => clearInterval(id);
+  }, [paused, scroll, grupos.length]);
+
+  const handleInteractionStart = useCallback(() => {
+    setPaused(true);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+  }, []);
+
+  const handleInteractionEnd = useCallback(() => {
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => setPaused(false), RESUME_DELAY);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    };
+  }, []);
 
   if (grupos.length === 0) return null;
 
@@ -41,16 +81,23 @@ const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
           <p className="text-xs text-muted-foreground">Mais bem avaliados</p>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => scroll("left")} className="rounded-lg bg-secondary p-1.5 text-muted-foreground transition-colors hover:text-foreground">
+          <button onClick={() => { handleInteractionStart(); scroll("left"); handleInteractionEnd(); }} className="rounded-lg bg-secondary p-1.5 text-muted-foreground transition-colors hover:text-foreground">
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button onClick={() => scroll("right")} className="rounded-lg bg-secondary p-1.5 text-muted-foreground transition-colors hover:text-foreground">
+          <button onClick={() => { handleInteractionStart(); scroll("right"); handleInteractionEnd(); }} className="rounded-lg bg-secondary p-1.5 text-muted-foreground transition-colors hover:text-foreground">
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      <div ref={scrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto scrollbar-hide pb-1"
+        onMouseEnter={handleInteractionStart}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={handleInteractionStart}
+        onTouchEnd={handleInteractionEnd}
+      >
         {grupos.map((grupo) => {
           const gradient = categoryColors[grupo.category] || "from-gray-500 to-gray-700";
           return (
