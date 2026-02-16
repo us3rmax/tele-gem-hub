@@ -52,6 +52,8 @@ import {
   LayoutDashboard,
   Upload,
   X,
+  ArrowRight,
+  FileEdit,
 } from "lucide-react";
 
 const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
@@ -84,6 +86,28 @@ interface Banner {
   is_active: boolean;
   expires_at: string | null;
   created_at: string;
+}
+
+interface EditRequest {
+  id: string;
+  group_id: string;
+  requested_by: string;
+  changes: Record<string, string>;
+  status: string;
+  rejection_reason: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  // joined data
+  group?: {
+    id: string;
+    name: string;
+    description: string | null;
+    category: string;
+    telegram_link: string;
+    thumbnail_url: string | null;
+  };
+  requester_email?: string;
 }
 
 // --- Component ---
@@ -139,6 +163,12 @@ const AdminDashboard = () => {
   });
   const [groupErrors, setGroupErrors] = useState<Record<string, string>>({});
 
+  // Edit requests state
+  const [editRequests, setEditRequests] = useState<EditRequest[]>([]);
+  const [editRequestsLoading, setEditRequestsLoading] = useState(false);
+  const [editRejectModalOpen, setEditRejectModalOpen] = useState(false);
+  const [editRejectTarget, setEditRejectTarget] = useState<EditRequest | null>(null);
+  const [editRejectReason, setEditRejectReason] = useState("");
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -173,6 +203,8 @@ const AdminDashboard = () => {
     if (!user || !isAdmin) return;
     if (activeTab === "banners") {
       fetchBanners();
+    } else if (activeTab === "edits") {
+      fetchEditRequests();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -340,6 +372,117 @@ const AdminDashboard = () => {
       resetGroupModal();
     }
     setGroupSaving(false);
+  };
+
+  // --- Edit Requests logic ---
+
+  const fetchEditRequests = async () => {
+    setEditRequestsLoading(true);
+    const { data, error } = await supabase
+      .from("group_edit_requests")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching edit requests:", error);
+      setEditRequests([]);
+      setEditRequestsLoading(false);
+      return;
+    }
+
+    const requests = (data || []) as EditRequest[];
+
+    // Fetch group data and requester emails
+    const groupIds = [...new Set(requests.map((r) => r.group_id))];
+    const userIds = [...new Set(requests.map((r) => r.requested_by))];
+
+    const [{ data: groupsData }, { data: profilesData }] = await Promise.all([
+      groupIds.length > 0
+        ? supabase.from("groups").select("id, name, description, category, telegram_link, thumbnail_url").in("id", groupIds)
+        : Promise.resolve({ data: [] }),
+      userIds.length > 0
+        ? supabase.from("profiles").select("id, email").in("id", userIds)
+        : Promise.resolve({ data: [] }),
+    ]);
+
+    const groupMap = new Map((groupsData || []).map((g: any) => [g.id, g]));
+    const profileMap = new Map((profilesData || []).map((p: any) => [p.id, p.email]));
+
+    const enriched = requests.map((r) => ({
+      ...r,
+      group: groupMap.get(r.group_id) || undefined,
+      requester_email: profileMap.get(r.requested_by) || "Desconhecido",
+    }));
+
+    setEditRequests(enriched);
+    setEditRequestsLoading(false);
+  };
+
+  const handleApproveEdit = async (req: EditRequest) => {
+    if (!req.group || !user) return;
+    setActionLoading(req.id);
+
+    // Apply changes to group
+    const updatePayload: any = {};
+    Object.entries(req.changes).forEach(([key, value]) => {
+      updatePayload[key] = value;
+    });
+
+    const { error: updateGroupError } = await supabase
+      .from("groups")
+      .update(updatePayload)
+      .eq("id", req.group_id);
+
+    if (updateGroupError) {
+      toast({ title: "Erro ao aplicar alterações", description: updateGroupError.message, variant: "destructive" });
+      setActionLoading(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("group_edit_requests")
+      .update({ status: "approved", reviewed_at: new Date().toISOString(), reviewed_by: user.id })
+      .eq("id", req.id);
+
+    if (error) {
+      toast({ title: "Erro ao atualizar solicitação", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Alterações aprovadas!" });
+      setEditRequests((prev) => prev.filter((r) => r.id !== req.id));
+    }
+    setActionLoading(null);
+  };
+
+  const openEditRejectModal = (req: EditRequest) => {
+    setEditRejectTarget(req);
+    setEditRejectReason("");
+    setEditRejectModalOpen(true);
+  };
+
+  const handleRejectEdit = async () => {
+    if (!editRejectTarget || !user) return;
+    setActionLoading(editRejectTarget.id);
+
+    const { error } = await supabase
+      .from("group_edit_requests")
+      .update({
+        status: "rejected",
+        rejection_reason: editRejectReason.trim() || null,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id,
+      })
+      .eq("id", editRejectTarget.id);
+
+    if (error) {
+      toast({ title: "Erro ao rejeitar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Edição rejeitada" });
+      setEditRequests((prev) => prev.filter((r) => r.id !== editRejectTarget.id));
+    }
+    setEditRejectModalOpen(false);
+    setEditRejectTarget(null);
+    setActionLoading(null);
   };
 
   // --- Banners logic ---
@@ -548,6 +691,15 @@ const AdminDashboard = () => {
               <XCircle className="h-4 w-4" />
               Rejeitados
             </TabsTrigger>
+            <TabsTrigger value="edits" className="flex-1 gap-2">
+              <FileEdit className="h-4 w-4" />
+              Edições
+              {editRequests.length > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-orange-600/20 text-orange-400 border-orange-600/30">
+                  {editRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="banners" className="flex-1 gap-2">
               <LayoutDashboard className="h-4 w-4" />
               Banners
@@ -634,6 +786,92 @@ const AdminDashboard = () => {
               )}
             </TabsContent>
           ))}
+
+          {/* Edit Requests tab */}
+          <TabsContent value="edits" className="mt-4 space-y-4">
+            {editRequestsLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : editRequests.length === 0 ? (
+              <p className="py-12 text-center text-muted-foreground">Nenhuma edição pendente</p>
+            ) : (
+              editRequests.map((req) => (
+                <div key={req.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                  {/* Comparison header */}
+                  <div className="grid grid-cols-1 gap-0 md:grid-cols-[1fr_auto_1fr]">
+                    {/* Current */}
+                    <div className="space-y-2 border-b border-border p-4 md:border-b-0 md:border-r">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Atual</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                          {req.group?.thumbnail_url ? (
+                            <img src={req.group.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">{req.group?.name || "—"}</p>
+                          <Badge variant="outline" className="text-xs">{req.group?.category || "—"}</Badge>
+                        </div>
+                      </div>
+                      {req.group?.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">{req.group.description}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground truncate">{req.group?.telegram_link}</p>
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="hidden items-center px-2 md:flex">
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+
+                    {/* Requested */}
+                    <div className="space-y-2 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Solicitado</p>
+                      <div className="space-y-1.5">
+                        {req.changes.name ? (
+                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-sm font-semibold text-foreground">{req.changes.name}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Sem alteração no nome</p>
+                        )}
+                        {req.changes.category ? (
+                          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">{req.changes.category}</Badge>
+                        ) : null}
+                        {req.changes.description ? (
+                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-xs text-foreground line-clamp-2">{req.changes.description}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">Sem alteração na descrição</p>
+                        )}
+                        {req.changes.telegram_link ? (
+                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-xs text-foreground truncate">{req.changes.telegram_link}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Meta + Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span>Solicitado por: <strong className="text-foreground">{req.requester_email}</strong></span>
+                      <span>{formatDate(req.created_at)}</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => handleApproveEdit(req)} disabled={actionLoading === req.id} className="bg-green-600 text-white hover:bg-green-700">
+                        {actionLoading === req.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1 h-4 w-4" />}
+                        Aprovar
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => openEditRejectModal(req)} disabled={actionLoading === req.id}>
+                        <XCircle className="mr-1 h-4 w-4" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </TabsContent>
 
           {/* Banners tab */}
           <TabsContent value="banners" className="mt-4 space-y-4">
@@ -871,6 +1109,33 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reject Edit Modal */}
+      <Dialog open={editRejectModalOpen} onOpenChange={setEditRejectModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar Edição</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Rejeitando edição do grupo: <strong>{editRejectTarget?.group?.name}</strong>
+            </p>
+            <Textarea
+              placeholder="Motivo da rejeição (opcional)"
+              value={editRejectReason}
+              onChange={(e) => setEditRejectReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditRejectModalOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleRejectEdit} disabled={actionLoading !== null}>
+              {actionLoading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Confirmar Rejeição
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Manual Group Creation Modal */}
       <Dialog open={groupModalOpen} onOpenChange={(open) => { if (!open) resetGroupModal(); }}>
