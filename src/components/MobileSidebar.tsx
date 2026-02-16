@@ -1,4 +1,4 @@
-import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home } from "lucide-react";
+import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home, FolderOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -12,7 +12,7 @@ interface MobileSidebarProps {
 const menuItems = [
   { icon: Home, label: "Página Inicial", action: "home" },
   { icon: Send, label: "Enviar Grupo", action: "enviar", requiresAuth: true },
-  { icon: User, label: "Minha Conta", action: "conta", requiresAuth: true },
+  { icon: FolderOpen, label: "Meus Grupos", action: "meusgrupos", requiresAuth: true },
   { icon: BookOpen, label: "Blog", action: "blog" },
 ];
 
@@ -46,7 +46,7 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
     const routes: Record<string, string> = {
       home: "/",
       enviar: "/submit",
-      conta: "/submit",
+      meusgrupos: "/my-groups",
       categorias: "/categorias",
       contato: "/contato",
     };

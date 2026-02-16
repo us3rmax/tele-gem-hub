@@ -16,6 +16,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const SubmitGroup = lazy(() => import("./pages/SubmitGroup"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const MyGroups = lazy(() => import("./pages/MyGroups"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
                 <Route path="/auth/login" element={<Login />} />
                 <Route path="/auth/register" element={<Register />} />
                 <Route path="/submit" element={<SubmitGroup />} />
+                <Route path="/my-groups" element={<MyGroups />} />
                 <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
                 <Route path="/group/:slug" element={<GroupDetail />} />
                 <Route path="/categorias" element={<Categories />} />
