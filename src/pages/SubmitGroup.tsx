@@ -20,6 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X } from "lucide-react";
 import EmailConfirmationGuard from "@/components/EmailConfirmationGuard";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAACeD94GpcENqZjWY";
 
 const CATEGORIES = [
   "Amadoras", "Cornos", "Coroas", "Lésbicas", "Novinhas", "Nudes",
@@ -55,6 +58,8 @@ const SubmitGroup = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPromo, setSelectedPromo] = useState<"premium" | null>(null);
   const [botError, setBotError] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
@@ -152,7 +157,25 @@ const SubmitGroup = () => {
     e.preventDefault();
     if (!validate() || !user || !photoFile) return;
 
+    if (!turnstileToken) {
+      toast({ title: "Falha na verificação de segurança", description: "Recarregue a página.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
+
+    // Verify turnstile token server-side
+    const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
+      body: { token: turnstileToken },
+    });
+
+    if (!verification?.success) {
+      toast({ title: "Falha na verificação", description: "Tente novamente.", variant: "destructive" });
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
+      setSubmitting(false);
+      return;
+    }
 
     const photoUrl = await uploadPhoto(photoFile);
     if (!photoUrl) {
@@ -192,6 +215,8 @@ const SubmitGroup = () => {
       removePhoto();
       setErrors({});
       setSelectedPromo(null);
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       fetchSubmissions();
       supabase.functions.invoke("notify-admin", { method: "POST" }).catch(() => {});
     }
@@ -366,6 +391,15 @@ const SubmitGroup = () => {
           <p className="text-xs text-muted-foreground text-center">
             Ao enviar, você confirma que o conteúdo não viola leis brasileiras. Conteúdo ilegal será denunciado às autoridades e ao Telegram.
           </p>
+
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+            options={{ size: "invisible" }}
+          />
 
           <Button type="submit" className="w-full" disabled={submitting || botError}>
             {submitting ? (

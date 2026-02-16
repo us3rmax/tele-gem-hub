@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { supabase } from "@/integrations/supabase/client";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAACeD94GpcENqZjWY";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const { signUp, signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -19,29 +25,45 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!turnstileToken) {
+      setError("Falha na verificação de segurança. Recarregue a página.");
+      return;
+    }
+
     setLoading(true);
 
-    const { error, session } = await signUp(email, password);
-    if (error) {
-      const msg = error.message.toLowerCase().includes("rate limit")
-        ? "Aguarde alguns minutos antes de tentar novamente."
-        : error.message;
-      setError(msg);
+    // Verify turnstile token server-side
+    const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
+      body: { token: turnstileToken },
+    });
+
+    if (!verification?.success) {
+      setError("Falha na verificação de segurança. Tente novamente.");
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       setLoading(false);
       return;
     }
 
-    console.log("[Register] signup done, session:", session);
+    const { error, session } = await signUp(email, password);
+    if (error) {
+      const msg = error.message.toLowerCase().includes("rate limit")
+        ? "Você foi verificado! Tente novamente em 1 minuto."
+        : error.message;
+      setError(msg);
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
+      setLoading(false);
+      return;
+    }
 
-    // If Supabase returned a session, user is auto-confirmed → go home
     if (session) {
       toast({ title: "Conta criada com sucesso!" });
       navigate("/");
       return;
     }
 
-    // No session = email confirmation is required
-    // Try auto-login anyway (in case confirm is off but session wasn't returned)
     const { error: loginError } = await signIn(email, password);
     if (!loginError) {
       toast({ title: "Conta criada com sucesso!" });
@@ -49,9 +71,6 @@ const Register = () => {
       return;
     }
 
-    console.log("[Register] auto-login failed:", loginError.message);
-
-    // Graceful fallback: redirect to login with email pre-filled
     toast({ title: "Conta criada!", description: "Verifique seu email ou faça login." });
     navigate(`/auth/login?email=${encodeURIComponent(email)}`);
     setLoading(false);
@@ -97,6 +116,15 @@ const Register = () => {
               minLength={6}
             />
           </div>
+
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onError={() => setTurnstileToken(null)}
+            onExpire={() => setTurnstileToken(null)}
+            options={{ size: "invisible" }}
+          />
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Criando..." : "Criar Conta"}
