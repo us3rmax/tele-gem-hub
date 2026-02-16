@@ -26,6 +26,7 @@ export type Database = {
           link_url: string | null
           position: string
           title: string
+          video_url: string | null
         }
         Insert: {
           clicks?: number
@@ -38,6 +39,7 @@ export type Database = {
           link_url?: string | null
           position: string
           title: string
+          video_url?: string | null
         }
         Update: {
           clicks?: number
@@ -50,6 +52,7 @@ export type Database = {
           link_url?: string | null
           position?: string
           title?: string
+          video_url?: string | null
         }
         Relationships: []
       }

@@ -148,6 +148,12 @@ const AdminDashboard = () => {
   const [bannerPhotoPreview, setBannerPhotoPreview] = useState<string | null>(null);
   const [bannerPhotoError, setBannerPhotoError] = useState<string | null>(null);
   const bannerFileRef = useRef<HTMLInputElement>(null);
+  const [bannerVideoFile, setBannerVideoFile] = useState<File | null>(null);
+  const [bannerVideoPreview, setBannerVideoPreview] = useState<string | null>(null);
+  const [bannerVideoError, setBannerVideoError] = useState<string | null>(null);
+  const bannerVideoRef = useRef<HTMLInputElement>(null);
+
+
 
   // Manual group creation state
   const [groupModalOpen, setGroupModalOpen] = useState(false);
@@ -575,6 +581,9 @@ const AdminDashboard = () => {
   const openBannerModal = (banner?: Banner) => {
     setBannerPhotoFile(null);
     setBannerPhotoError(null);
+    setBannerVideoFile(null);
+    setBannerVideoPreview(null);
+    setBannerVideoError(null);
     if (banner) {
       setEditingBanner(banner);
       setBannerForm({
@@ -609,20 +618,44 @@ const AdminDashboard = () => {
     setBannerPhotoError(null);
   };
 
+  const handleBannerVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      setBannerVideoError("Apenas arquivos de vídeo são permitidos");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      setBannerVideoError("Vídeo muito grande (máx 20MB)");
+      return;
+    }
+    setBannerVideoFile(file);
+    setBannerVideoPreview(URL.createObjectURL(file));
+    setBannerVideoError(null);
+  };
+
   const handleBannerSave = async () => {
     if (!bannerForm.title.trim()) {
       toast({ title: "Preencha o título", variant: "destructive" });
       return;
     }
-    // For new banners, file is required. For editing, file is optional (keep existing).
-    if (!editingBanner && !bannerPhotoFile) {
-      setBannerPhotoError("Imagem é obrigatória");
-      return;
+    const isHero = bannerForm.position === "hero";
+    // Hero requires video; regular requires image
+    if (isHero) {
+      if (!editingBanner && !bannerVideoFile) {
+        setBannerVideoError("Vídeo é obrigatório para banner hero");
+        return;
+      }
+    } else {
+      if (!editingBanner && !bannerPhotoFile) {
+        setBannerPhotoError("Imagem é obrigatória");
+        return;
+      }
     }
 
     setBannerSaving(true);
 
-    let imageUrl = bannerForm.image_url;
+    let imageUrl = bannerForm.image_url || "hero-placeholder";
 
     if (bannerPhotoFile) {
       const ext = bannerPhotoFile.name.split(".").pop();
@@ -639,12 +672,29 @@ const AdminDashboard = () => {
       imageUrl = supabase.storage.from("banner-images").getPublicUrl(filePath).data.publicUrl;
     }
 
+    let videoUrl: string | null = null;
+    if (bannerVideoFile) {
+      const ext = bannerVideoFile.name.split(".").pop();
+      const filePath = `public/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("banner-images")
+        .upload(filePath, bannerVideoFile, { contentType: bannerVideoFile.type });
+
+      if (uploadError) {
+        toast({ title: "Erro ao enviar vídeo", description: uploadError.message, variant: "destructive" });
+        setBannerSaving(false);
+        return;
+      }
+      videoUrl = supabase.storage.from("banner-images").getPublicUrl(filePath).data.publicUrl;
+    }
+
     const payload: any = {
       title: bannerForm.title.trim(),
       image_url: imageUrl,
       link_url: bannerForm.link_url.trim() || null,
       position: bannerForm.position,
       expires_at: bannerForm.expires_at ? new Date(bannerForm.expires_at).toISOString() : null,
+      ...(videoUrl && { video_url: videoUrl }),
     };
 
     if (editingBanner) {
@@ -1243,9 +1293,51 @@ const AdminDashboard = () => {
                   <SelectItem value="top">Top</SelectItem>
                   <SelectItem value="middle">Middle</SelectItem>
                   <SelectItem value="bottom">Bottom</SelectItem>
+                  <SelectItem value="hero">Hero (Vídeo)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {bannerForm.position === "hero" && (
+              <div className="space-y-2">
+                <Label>Vídeo do Banner * (MP4, WebM)</Label>
+                <div
+                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50"
+                  onClick={() => bannerVideoRef.current?.click()}
+                >
+                  {bannerVideoPreview ? (
+                    <div className="relative w-full">
+                      <video src={bannerVideoPreview} autoPlay loop muted playsInline className="max-h-[120px] w-full rounded-lg object-contain" />
+                      <button
+                        type="button"
+                        className="absolute right-1 top-1 rounded-full bg-background/80 p-1 hover:bg-background"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBannerVideoFile(null);
+                          setBannerVideoPreview(null);
+                          if (bannerVideoRef.current) bannerVideoRef.current.value = "";
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">Clique para selecionar vídeo</span>
+                    </>
+                  )}
+                </div>
+                <input
+                  ref={bannerVideoRef}
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  className="hidden"
+                  onChange={handleBannerVideoChange}
+                />
+                <p className="text-xs text-muted-foreground">Máx 20MB. O vídeo rodará em loop no banner.</p>
+                {bannerVideoError && <p className="text-xs text-destructive">{bannerVideoError}</p>}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="banner-expires">Data de Expiração (opcional)</Label>
               <Input
