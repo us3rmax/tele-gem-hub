@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import HeroBanner from "@/components/HeroBanner";
 
 interface Banner {
   id: string;
@@ -11,6 +12,7 @@ interface Banner {
   is_active: boolean;
   expires_at: string | null;
   clicks: number;
+  video_url: string | null;
 }
 
 interface BannerAdProps {
@@ -19,10 +21,30 @@ interface BannerAdProps {
 
 const BannerAd = ({ position = "top" }: BannerAdProps) => {
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [heroBanner, setHeroBanner] = useState<Banner | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBanners = async () => {
+      if (position === "top") {
+        // First check for hero banner
+        const { data: heroData } = await supabase
+          .from("banners")
+          .select("*")
+          .eq("position", "hero")
+          .eq("is_active", true);
+
+        if (heroData && heroData.length > 0) {
+          const selected = heroData[Math.floor(Math.random() * heroData.length)] as Banner;
+          if (selected.video_url) {
+            setHeroBanner(selected);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Regular banners
       const { data } = await supabase
         .from("banners")
         .select("*")
@@ -30,7 +52,6 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
         .eq("is_active", true);
 
       if (data && data.length > 0) {
-        // For top position, take up to 2 banners; others take 1
         if (position === "top" && data.length >= 3) {
           const shuffled = [...data].sort(() => Math.random() - 0.5);
           setBanners(shuffled.slice(0, 3) as Banner[]);
@@ -63,6 +84,18 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     );
   }
 
+  // Hero video banner takes priority
+  if (heroBanner) {
+    return (
+      <HeroBanner
+        id={heroBanner.id}
+        title={heroBanner.title}
+        video_url={heroBanner.video_url!}
+        link_url={heroBanner.link_url}
+      />
+    );
+  }
+
   if (banners.length === 0) {
     return (
       <div className="flex h-[50px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 sm:h-[90px]">
@@ -73,7 +106,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
 
   const renderBanner = (banner: Banner, isSquare: boolean) => {
     const image = (
-      <div className={`relative w-full overflow-hidden rounded-xl ${isSquare ? "" : ""}`}>
+      <div className="relative w-full overflow-hidden rounded-xl">
         <img
           src={banner.image_url}
           alt={banner.title}
