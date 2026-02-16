@@ -884,6 +884,12 @@ const AdminDashboard = () => {
               />
             </div>
 
+            {premiumGroups.length > 6 && (
+              <div className="rounded-lg border-l-4 border-yellow-500 bg-yellow-500/10 p-3 text-sm text-foreground">
+                ⚠️ Existem <strong>{premiumGroups.length}</strong> grupos premium. Apenas os <strong>6 mais recentes</strong> aparecem no carrossel da homepage. Considere remover premium dos mais antigos.
+              </div>
+            )}
+
             {premiumLoading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -897,7 +903,7 @@ const AdminDashboard = () => {
                   const q = premiumSearch.toLowerCase();
                   return g.name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q);
                 })
-                .map((group) => (
+                .map((group, index) => (
                   <div key={group.id} className="overflow-hidden rounded-xl border-2 border-yellow-500/30 bg-card">
                     <div className="flex gap-4 p-4">
                       <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
@@ -912,6 +918,11 @@ const AdminDashboard = () => {
                           <h3 className="font-bold text-foreground">{group.name}</h3>
                           <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">⭐ Premium</Badge>
                           <Badge variant="outline">{group.category}</Badge>
+                          {index < 6 ? (
+                            <Badge className="bg-green-600/20 text-green-400 border-green-600/30">✓ No Carrossel</Badge>
+                          ) : (
+                            <Badge className="bg-muted text-muted-foreground border-border">Fora do Carrossel</Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           <span>{group.member_count} membros</span>
