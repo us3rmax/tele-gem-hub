@@ -59,7 +59,11 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_paid: boolean | null
           name: string
+          payment_amount: number | null
+          payment_status: string | null
+          payment_type: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -73,7 +77,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_paid?: boolean | null
           name: string
+          payment_amount?: number | null
+          payment_status?: string | null
+          payment_type?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -87,7 +95,11 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_paid?: boolean | null
           name?: string
+          payment_amount?: number | null
+          payment_status?: string | null
+          payment_type?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null

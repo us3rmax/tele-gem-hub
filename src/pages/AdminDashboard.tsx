@@ -66,6 +66,8 @@ interface Submission {
   created_at: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  is_paid: boolean | null;
+  payment_type: string | null;
 }
 
 interface Banner {
@@ -132,7 +134,12 @@ const AdminDashboard = () => {
       console.error("Error fetching submissions:", error);
       setSubmissions([]);
     } else {
-      setSubmissions((data as Submission[]) || []);
+      const sorted = ((data as Submission[]) || []).sort((a, b) => {
+        if (a.is_paid && !b.is_paid) return -1;
+        if (!a.is_paid && b.is_paid) return 1;
+        return 0;
+      });
+      setSubmissions(sorted);
     }
     setLoading(false);
   }, []);
@@ -403,7 +410,7 @@ const AdminDashboard = () => {
                 </p>
               ) : (
                 submissions.map((sub) => (
-                  <div key={sub.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                  <div key={sub.id} className={`overflow-hidden rounded-xl border bg-card ${sub.is_paid ? 'border-yellow-500/50' : 'border-border'}`}>
                     <div className="flex gap-4 p-4">
                       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                         {sub.thumbnail_url ? (
@@ -415,8 +422,20 @@ const AdminDashboard = () => {
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-lg font-bold text-foreground">{sub.name}</h3>
-                          <Badge variant="outline">{sub.category}</Badge>
+                          <div className="flex items-center gap-1.5">
+                            {sub.is_paid && (
+                              <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-bold">
+                                💎 PAGO
+                              </Badge>
+                            )}
+                            <Badge variant="outline">{sub.category}</Badge>
+                          </div>
                         </div>
+                        {sub.is_paid && sub.payment_type && (
+                          <p className="text-xs font-medium text-yellow-500">
+                            {sub.payment_type === 'premium' ? 'Premium (Destaque)' : sub.payment_type === 'banner' ? 'Banner Publicitário' : sub.payment_type}
+                          </p>
+                        )}
                         {sub.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">{sub.description}</p>
                         )}
