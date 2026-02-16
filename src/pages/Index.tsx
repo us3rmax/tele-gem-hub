@@ -36,7 +36,7 @@ const Index = () => {
         .select("*")
         .eq("is_premium", true)
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(10);
 
       setPremiumGrupos((premiumData as Grupo[]) || []);
 

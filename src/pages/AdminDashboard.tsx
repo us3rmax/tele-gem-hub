@@ -884,9 +884,9 @@ const AdminDashboard = () => {
               />
             </div>
 
-            {premiumGroups.length > 6 && (
+            {premiumGroups.length > 10 && (
               <div className="rounded-lg border-l-4 border-yellow-500 bg-yellow-500/10 p-3 text-sm text-foreground">
-                ⚠️ Existem <strong>{premiumGroups.length}</strong> grupos premium. Apenas os <strong>6 mais recentes</strong> aparecem no carrossel da homepage. Considere remover premium dos mais antigos.
+                ⚠️ Existem <strong>{premiumGroups.length}</strong> grupos premium. Apenas os <strong>10 mais recentes</strong> aparecem no carrossel da homepage. Considere remover premium dos mais antigos.
               </div>
             )}
 
@@ -918,7 +918,7 @@ const AdminDashboard = () => {
                           <h3 className="font-bold text-foreground">{group.name}</h3>
                           <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">⭐ Premium</Badge>
                           <Badge variant="outline">{group.category}</Badge>
-                          {index < 6 ? (
+                          {index < 10 ? (
                             <Badge className="bg-green-600/20 text-green-400 border-green-600/30">✓ No Carrossel</Badge>
                           ) : (
                             <Badge className="bg-muted text-muted-foreground border-border">Fora do Carrossel</Badge>
