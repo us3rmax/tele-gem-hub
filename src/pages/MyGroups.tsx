@@ -65,6 +65,8 @@ const MyGroups = () => {
   const [editingGroup, setEditingGroup] = useState<UserGroup | null>(null);
   const [editForm, setEditForm] = useState({ name: "", description: "", category: "", telegram_link: "" });
   const [editSaving, setEditSaving] = useState(false);
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -141,18 +143,49 @@ const MyGroups = () => {
       category: group.category,
       telegram_link: group.telegram_link,
     });
+    setEditPhotoFile(null);
+    setEditPhotoPreview(null);
     setEditModalOpen(true);
+  };
+
+  const handleEditPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "Imagem deve ter no máximo 2MB", variant: "destructive" });
+      return;
+    }
+    setEditPhotoFile(file);
+    setEditPhotoPreview(URL.createObjectURL(file));
   };
 
   const handleEditSubmit = async () => {
     if (!editingGroup || !user) return;
     setEditSaving(true);
 
-    const changes: Record<string, string> = {};
+    const changes: Record<string, string | null> = {};
     if (editForm.name !== editingGroup.name) changes.name = editForm.name;
     if (editForm.description !== (editingGroup.description || "")) changes.description = editForm.description;
     if (editForm.category !== editingGroup.category) changes.category = editForm.category;
     if (editForm.telegram_link !== editingGroup.telegram_link) changes.telegram_link = editForm.telegram_link;
+
+    // Upload new photo if selected
+    if (editPhotoFile) {
+      const ext = editPhotoFile.name.split(".").pop();
+      const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("group-photos")
+        .upload(filePath, editPhotoFile, { contentType: editPhotoFile.type });
+
+      if (uploadError) {
+        toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
+        setEditSaving(false);
+        return;
+      }
+
+      const publicUrl = supabase.storage.from("group-photos").getPublicUrl(filePath).data.publicUrl;
+      changes.thumbnail_url = publicUrl;
+    }
 
     if (Object.keys(changes).length === 0) {
       toast({ title: "Nenhuma alteração detectada", variant: "destructive" });
@@ -293,6 +326,29 @@ const MyGroups = () => {
           </Alert>
 
           <div className="space-y-4">
+            {/* Photo upload */}
+            <div className="space-y-2">
+              <Label>Nova Foto do Canal (opcional)</Label>
+              {editingGroup?.thumbnail_url && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Foto Atual:</p>
+                  <img src={editingGroup.thumbnail_url} alt="Atual" className="h-16 w-16 rounded-lg object-cover" />
+                </div>
+              )}
+              {editPhotoPreview && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Nova Foto:</p>
+                  <img src={editPhotoPreview} alt="Nova" className="h-16 w-16 rounded-lg object-cover border-2 border-yellow-500" />
+                </div>
+              )}
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleEditPhotoChange}
+              />
+              <p className="text-xs text-muted-foreground">Máx 2MB</p>
+            </div>
+
             <div className="space-y-2">
               <Label>Nome do Canal</Label>
               <Input
