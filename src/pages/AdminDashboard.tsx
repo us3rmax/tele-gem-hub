@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -49,7 +50,11 @@ import {
   Pencil,
   Trash2,
   LayoutDashboard,
+  Upload,
+  X,
 } from "lucide-react";
+
+const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
 
 // --- Types ---
 
@@ -113,6 +118,22 @@ const AdminDashboard = () => {
     expires_at: "",
   });
   const [bannerSaving, setBannerSaving] = useState(false);
+
+  // Manual group creation state
+  const [groupModalOpen, setGroupModalOpen] = useState(false);
+  const [groupSaving, setGroupSaving] = useState(false);
+  const [groupPhotoFile, setGroupPhotoFile] = useState<File | null>(null);
+  const [groupPhotoPreview, setGroupPhotoPreview] = useState<string | null>(null);
+  const groupFileRef = useRef<HTMLInputElement>(null);
+  const [groupForm, setGroupForm] = useState({
+    name: "",
+    category: "",
+    telegram_link: "",
+    description: "",
+    is_premium: false,
+    is_verified: false,
+  });
+  const [groupErrors, setGroupErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -232,6 +253,89 @@ const AdminDashboard = () => {
       setSubmissions((prev) => prev.filter((s) => s.id !== sub.id));
     }
     setActionLoading(null);
+  };
+
+  // --- Manual Group Creation ---
+
+  const handleGroupPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setGroupErrors((prev) => ({ ...prev, photo: "Imagem deve ter no máximo 2MB" }));
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setGroupErrors((prev) => ({ ...prev, photo: "Arquivo deve ser uma imagem" }));
+      return;
+    }
+    setGroupPhotoFile(file);
+    setGroupPhotoPreview(URL.createObjectURL(file));
+    setGroupErrors((prev) => { const { photo, ...rest } = prev; return rest; });
+  };
+
+  const resetGroupModal = () => {
+    setGroupForm({ name: "", category: "", telegram_link: "", description: "", is_premium: false, is_verified: false });
+    setGroupPhotoFile(null);
+    setGroupPhotoPreview(null);
+    setGroupErrors({});
+    setGroupModalOpen(false);
+  };
+
+  const validateGroupForm = () => {
+    const errors: Record<string, string> = {};
+    if (!groupForm.name.trim()) errors.name = "Nome é obrigatório";
+    if (!groupForm.category) errors.category = "Categoria é obrigatória";
+    if (!groupForm.telegram_link.trim()) {
+      errors.telegram_link = "Link é obrigatório";
+    } else if (!groupForm.telegram_link.startsWith("https://t.me/")) {
+      errors.telegram_link = "Link deve começar com https://t.me/";
+    } else if (groupForm.telegram_link.toLowerCase().endsWith("_bot")) {
+      errors.telegram_link = "Links de bots não são permitidos";
+    }
+    if (groupForm.description.length < 50) errors.description = "Descrição deve ter no mínimo 50 caracteres";
+    if (!groupPhotoFile) errors.photo = "Foto é obrigatória";
+    setGroupErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleGroupSave = async () => {
+    if (!validateGroupForm() || !user) return;
+    setGroupSaving(true);
+
+    // Upload photo
+    const ext = groupPhotoFile!.name.split(".").pop();
+    const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("group-photos")
+      .upload(filePath, groupPhotoFile!, { contentType: groupPhotoFile!.type });
+
+    if (uploadError) {
+      toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
+      setGroupSaving(false);
+      return;
+    }
+
+    const publicUrl = supabase.storage.from("group-photos").getPublicUrl(filePath).data.publicUrl;
+
+    const { error } = await supabase.from("groups").insert({
+      name: groupForm.name.trim(),
+      category: groupForm.category,
+      telegram_link: groupForm.telegram_link.trim(),
+      description: groupForm.description.trim(),
+      thumbnail_url: publicUrl,
+      is_premium: groupForm.is_premium,
+      is_verified: groupForm.is_verified,
+      member_count: 0,
+      views: 0,
+    });
+
+    if (error) {
+      toast({ title: "Erro ao criar grupo", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Grupo adicionado com sucesso!" });
+      resetGroupModal();
+    }
+    setGroupSaving(false);
   };
 
   // --- Banners logic ---
@@ -370,7 +474,13 @@ const AdminDashboard = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={() => {}} activeSort="" />
 
       <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard Admin</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Dashboard Admin</h1>
+          <Button size="sm" onClick={() => setGroupModalOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" />
+            Adicionar Grupo Manualmente
+          </Button>
+        </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full">
@@ -687,6 +797,122 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manual Group Creation Modal */}
+      <Dialog open={groupModalOpen} onOpenChange={(open) => { if (!open) resetGroupModal(); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar Grupo Manualmente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome do Canal *</Label>
+              <Input
+                value={groupForm.name}
+                onChange={(e) => setGroupForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Nome do canal"
+              />
+              {groupErrors.name && <p className="text-xs text-destructive">{groupErrors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Categoria *</Label>
+              <Select value={groupForm.category} onValueChange={(v) => setGroupForm((f) => ({ ...f, category: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {GROUP_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {groupErrors.category && <p className="text-xs text-destructive">{groupErrors.category}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Link do Telegram *</Label>
+              <Input
+                value={groupForm.telegram_link}
+                onChange={(e) => setGroupForm((f) => ({ ...f, telegram_link: e.target.value }))}
+                placeholder="https://t.me/seucanalaqui"
+              />
+              {groupErrors.telegram_link && <p className="text-xs text-destructive">{groupErrors.telegram_link}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição *</Label>
+              <Textarea
+                value={groupForm.description}
+                onChange={(e) => setGroupForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Descreva o conteúdo do canal (mínimo 50 caracteres)"
+                rows={3}
+              />
+              <div className="flex items-center justify-between">
+                {groupErrors.description && <p className="text-xs text-destructive">{groupErrors.description}</p>}
+                <span className={`ml-auto text-xs ${groupForm.description.length >= 50 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                  {groupForm.description.length}/50
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Foto do Canal *</Label>
+              <input
+                ref={groupFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleGroupPhotoChange}
+              />
+              {groupPhotoPreview ? (
+                <div className="relative inline-block">
+                  <img src={groupPhotoPreview} alt="Preview" className="h-24 w-24 rounded-lg border border-border object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { setGroupPhotoFile(null); setGroupPhotoPreview(null); }}
+                    className="absolute -right-2 -top-2 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => groupFileRef.current?.click()}>
+                  <Upload className="mr-1 h-4 w-4" />
+                  Selecionar foto
+                </Button>
+              )}
+              {groupErrors.photo && <p className="text-xs text-destructive">{groupErrors.photo}</p>}
+            </div>
+
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="group-premium"
+                  checked={groupForm.is_premium}
+                  onCheckedChange={(v) => setGroupForm((f) => ({ ...f, is_premium: !!v }))}
+                />
+                <Label htmlFor="group-premium" className="cursor-pointer text-sm">⭐ Colocar em destaque (Premium)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="group-verified"
+                  checked={groupForm.is_verified}
+                  onCheckedChange={(v) => setGroupForm((f) => ({ ...f, is_verified: !!v }))}
+                />
+                <Label htmlFor="group-verified" className="cursor-pointer text-sm">✓ Verificado</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetGroupModal}>Cancelar</Button>
+            <Button onClick={handleGroupSave} disabled={groupSaving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              {groupSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Adicionar Grupo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
