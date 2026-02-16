@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X, AlertTriangle } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X } from "lucide-react";
 
 const CATEGORIES = [
   "Amadoras", "Cornos", "Coroas", "Lésbicas", "Novinhas", "Nudes",
@@ -53,8 +52,8 @@ const SubmitGroup = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPromo, setSelectedPromo] = useState<"premium" | "banner" | null>(null);
-  const [rulesAccepted, setRulesAccepted] = useState(false);
+  const [selectedPromo, setSelectedPromo] = useState<"premium" | null>(null);
+  const [botError, setBotError] = useState(false);
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
@@ -171,8 +170,8 @@ const SubmitGroup = () => {
 
     if (selectedPromo) {
       insertPayload.is_paid = true;
-      insertPayload.payment_type = selectedPromo;
-      insertPayload.payment_amount = selectedPromo === "premium" ? 29.9 : 49.9;
+      insertPayload.payment_type = "premium";
+      insertPayload.payment_amount = 29.9;
       insertPayload.payment_status = "pending";
     }
 
@@ -234,51 +233,6 @@ const SubmitGroup = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-6">
-          {/* Content Policy Disclaimer */}
-          <div className="rounded-lg border-l-4 border-red-500 bg-red-500/10 p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500 shrink-0" />
-              <h3 className="font-bold text-foreground">⚠️ Regras Importantes</h3>
-            </div>
-
-            <div className="space-y-2 text-sm text-foreground">
-              <div>
-                <p className="font-semibold text-red-400">🚫 PROIBIDO:</p>
-                <ul className="ml-4 mt-1 space-y-0.5 text-muted-foreground list-disc">
-                  <li>Fotos explícitas na imagem do grupo (capa/thumbnail)</li>
-                  <li>Conteúdo ilegal (menores de idade, violência extrema, etc)</li>
-                  <li>Links para conteúdo que viole leis brasileiras</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-semibold text-green-400">✅ PERMITIDO:</p>
-                <ul className="ml-4 mt-1 space-y-0.5 text-muted-foreground list-disc">
-                  <li>Conteúdo adulto consensual entre adultos (+18)</li>
-                  <li>Fotos sugestivas (sem nudez explícita na capa)</li>
-                </ul>
-              </div>
-
-              <div>
-                <p className="font-semibold text-yellow-400">⚖️ IMPORTANTE:</p>
-                <ul className="ml-4 mt-1 space-y-0.5 text-muted-foreground list-disc">
-                  <li>Todos os links são analisados pela nossa equipe</li>
-                  <li>Conteúdo ilegal resultará em:</li>
-                  <ul className="ml-4 space-y-0.5 list-disc">
-                    <li>Rejeição imediata do grupo</li>
-                    <li>Denúncia às autoridades</li>
-                    <li>Denúncia na plataforma Telegram</li>
-                    <li>Bloqueio permanente da sua conta</li>
-                  </ul>
-                </ul>
-              </div>
-
-              <p className="text-xs text-muted-foreground pt-1 italic">
-                Ao enviar, você confirma que o conteúdo está em conformidade com as leis brasileiras.
-              </p>
-            </div>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Canal *</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do seu canal" />
@@ -300,8 +254,13 @@ const SubmitGroup = () => {
 
           <div className="space-y-2">
             <Label htmlFor="telegram_link">Link do Telegram *</Label>
-            <Input id="telegram_link" value={telegramLink} onChange={(e) => setTelegramLink(e.target.value)} placeholder="https://t.me/seu_canal" />
-            {errors.telegramLink && <p className="text-xs text-destructive">{errors.telegramLink}</p>}
+            <Input id="telegram_link" value={telegramLink} onChange={(e) => {
+              const val = e.target.value;
+              setTelegramLink(val);
+              setBotError(val.trim().toLowerCase().endsWith("_bot"));
+            }} placeholder="https://t.me/seu_canal" />
+            {botError && <p className="text-xs text-destructive">❌ Não é permitido envio de bots. Envie um grupo ou canal.</p>}
+            {errors.telegramLink && !botError && <p className="text-xs text-destructive">{errors.telegramLink}</p>}
           </div>
 
           {/* Photo Upload */}
@@ -336,6 +295,7 @@ const SubmitGroup = () => {
               className="hidden"
             />
             {errors.photo && <p className="text-xs text-destructive">{errors.photo}</p>}
+            <p className="text-sm italic text-yellow-500">⚠️ Não envie fotos explícitas na capa (nudez visível será rejeitada)</p>
           </div>
 
           {/* Description */}
@@ -362,86 +322,49 @@ const SubmitGroup = () => {
               <p className="text-xs text-muted-foreground">Aumente a visibilidade do seu canal</p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              {/* Premium Card */}
-              <button
-                type="button"
-                onClick={() => setSelectedPromo(selectedPromo === "premium" ? null : "premium")}
-                className={`rounded-xl border-2 p-4 text-left transition-all ${
-                  selectedPromo === "premium"
-                    ? "border-yellow-500 bg-yellow-500/10"
-                    : "border-border hover:border-yellow-500/50"
-                }`}
-              >
-                <div className="mb-2 text-2xl">⭐</div>
-                <h4 className="font-bold text-foreground">Canal em Destaque</h4>
-                <p className="text-lg font-bold text-yellow-500">R$ 29,90<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
-                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <li>✓ Aparece no carrossel de destaques</li>
-                  <li>✓ Badge 'Premium' dourado</li>
-                  <li>✓ Prioridade nas buscas</li>
-                  <li>✓ 3x mais visualizações</li>
-                </ul>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "premium" ? "border-yellow-500 bg-yellow-500" : "border-muted-foreground"}`}>
-                    {selectedPromo === "premium" && <span className="text-[10px] text-white">✓</span>}
-                  </div>
-                  <span className="text-xs font-medium text-foreground">Adicionar Destaque</span>
+            <button
+              type="button"
+              onClick={() => setSelectedPromo(selectedPromo === "premium" ? null : "premium")}
+              className={`rounded-xl border-2 p-4 text-left transition-all ${
+                selectedPromo === "premium"
+                  ? "border-yellow-500 bg-yellow-500/10"
+                  : "border-border hover:border-yellow-500/50"
+              }`}
+            >
+              <div className="mb-2 text-2xl">⭐</div>
+              <h4 className="font-bold text-foreground">Canal em Destaque</h4>
+              <p className="text-lg font-bold text-yellow-500">R$ 29,90<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
+              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <li>✓ Aparece no carrossel de destaques</li>
+                <li>✓ Badge 'Premium' dourado</li>
+                <li>✓ Prioridade nas buscas</li>
+                <li>✓ 3x mais visualizações</li>
+              </ul>
+              <div className="mt-3 flex items-center gap-2">
+                <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "premium" ? "border-yellow-500 bg-yellow-500" : "border-muted-foreground"}`}>
+                  {selectedPromo === "premium" && <span className="text-[10px] text-white">✓</span>}
                 </div>
-              </button>
-
-              {/* Banner Card */}
-              <button
-                type="button"
-                onClick={() => setSelectedPromo(selectedPromo === "banner" ? null : "banner")}
-                className={`rounded-xl border-2 p-4 text-left transition-all ${
-                  selectedPromo === "banner"
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <div className="mb-2 text-2xl">📢</div>
-                <h4 className="font-bold text-foreground">Banner Publicitário</h4>
-                <p className="text-lg font-bold text-primary">R$ 49,90<span className="text-xs font-normal text-muted-foreground">/semana</span></p>
-                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                  <li>✓ Banner no topo do site</li>
-                  <li>✓ Milhares de visualizações</li>
-                  <li>✓ Link direto para seu canal</li>
-                  <li>✓ Máxima visibilidade</li>
-                </ul>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "banner" ? "border-primary bg-primary" : "border-muted-foreground"}`}>
-                    {selectedPromo === "banner" && <span className="text-[10px] text-white">✓</span>}
-                  </div>
-                  <span className="text-xs font-medium text-foreground">Adicionar Banner</span>
-                </div>
-              </button>
-            </div>
+                <span className="text-xs font-medium text-foreground">Adicionar Destaque</span>
+              </div>
+            </button>
 
             {selectedPromo && (
               <div className="flex items-center justify-between rounded-lg bg-secondary px-4 py-2">
                 <span className="text-sm font-medium text-foreground">Total:</span>
-                <span className="text-lg font-bold text-foreground">
-                  R$ {selectedPromo === "premium" ? "29,90" : "49,90"}
-                </span>
+                <span className="text-lg font-bold text-foreground">R$ 29,90</span>
               </div>
             )}
+
+            <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/advertise")}>
+              📢 Anunciar com Banner — Quer máxima visibilidade? Anuncie com banner →
+            </Button>
           </div>
 
-          {/* Rules acceptance checkbox */}
-          <div className="flex items-start gap-3 rounded-lg border border-border bg-secondary/50 p-4">
-            <Checkbox
-              id="rules-accepted"
-              checked={rulesAccepted}
-              onCheckedChange={(checked) => setRulesAccepted(checked === true)}
-              className="mt-0.5"
-            />
-            <Label htmlFor="rules-accepted" className="text-sm font-medium text-foreground cursor-pointer leading-snug">
-              ✅ Li e concordo com as regras acima
-            </Label>
-          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Ao enviar, você confirma que o conteúdo não viola leis brasileiras. Conteúdo ilegal será denunciado às autoridades e ao Telegram.
+          </p>
 
-          <Button type="submit" className="w-full" disabled={submitting || !rulesAccepted}>
+          <Button type="submit" className="w-full" disabled={submitting || botError}>
             {submitting ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
             ) : (

@@ -17,6 +17,7 @@ const Register = lazy(() => import("./pages/Register"));
 const SubmitGroup = lazy(() => import("./pages/SubmitGroup"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const MyGroups = lazy(() => import("./pages/MyGroups"));
+const Advertise = lazy(() => import("./pages/Advertise"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/categorias" element={<Categories />} />
                 <Route path="/categorias/:name" element={<Categories />} />
                 <Route path="/contato" element={<Contact />} />
+                <Route path="/advertise" element={<Advertise />} />
                 <Route path="/" element={<Index />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
