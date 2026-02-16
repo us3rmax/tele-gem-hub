@@ -18,37 +18,50 @@ interface BannerAdProps {
 }
 
 const BannerAd = ({ position = "top" }: BannerAdProps) => {
-  const [banner, setBanner] = useState<Banner | null>(null);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBanner = async () => {
+    const fetchBanners = async () => {
       const { data } = await supabase
         .from("banners")
         .select("*")
-        .eq("position", position);
+        .eq("position", position)
+        .eq("is_active", true);
 
       if (data && data.length > 0) {
-        const selected = data[Math.floor(Math.random() * data.length)] as Banner;
-        setBanner(selected);
+        // For top position, take up to 2 banners; others take 1
+        if (position === "top" && data.length >= 2) {
+          // Shuffle and pick 2
+          const shuffled = [...data].sort(() => Math.random() - 0.5);
+          setBanners(shuffled.slice(0, 2) as Banner[]);
+        } else {
+          const selected = data[Math.floor(Math.random() * data.length)] as Banner;
+          setBanners([selected]);
+        }
       }
       setLoading(false);
     };
 
-    fetchBanner();
+    fetchBanners();
   }, [position]);
 
-  const handleClick = () => {
-    if (banner?.id) {
-      supabase.rpc("increment_banner_clicks" as never, { banner_id: banner.id } as never).then(() => {}, () => {});
-    }
+  const handleClick = (bannerId: string) => {
+    supabase.rpc("increment_banner_clicks" as never, { banner_id: bannerId } as never).then(() => {}, () => {});
   };
 
   if (loading) {
-    return <Skeleton className="h-[50px] w-full rounded-xl sm:h-[90px]" />;
+    return position === "top" ? (
+      <div className="flex flex-col gap-4 md:flex-row">
+        <Skeleton className="aspect-square w-full rounded-xl md:w-1/2" />
+        <Skeleton className="aspect-square w-full rounded-xl md:w-1/2" />
+      </div>
+    ) : (
+      <Skeleton className="h-[50px] w-full rounded-xl sm:h-[90px]" />
+    );
   }
 
-  if (!banner) {
+  if (banners.length === 0) {
     return (
       <div className="flex h-[50px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 sm:h-[90px]">
         <span className="text-xs text-muted-foreground">Espaço disponível para anúncio</span>
@@ -56,35 +69,53 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     );
   }
 
-  const image = (
-    <div className="relative w-full overflow-hidden rounded-xl">
-      <img
-        src={banner.image_url}
-        alt={banner.title}
-        className="h-[50px] w-full object-cover sm:h-[90px]"
-        loading="lazy"
-      />
-      <span className="absolute right-2 top-1 rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white/70">
-        Anúncio
-      </span>
-    </div>
-  );
+  const renderBanner = (banner: Banner, isSquare: boolean) => {
+    const image = (
+      <div className={`relative w-full overflow-hidden rounded-xl ${isSquare ? "" : ""}`}>
+        <img
+          src={banner.image_url}
+          alt={banner.title}
+          className={isSquare ? "aspect-square w-full object-cover" : "h-[50px] w-full object-cover sm:h-[90px]"}
+        />
+        <span className="absolute right-2 top-1 rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white/70">
+          Anúncio
+        </span>
+      </div>
+    );
 
-  if (banner.link_url) {
+    if (banner.link_url) {
+      return (
+        <a
+          key={banner.id}
+          href={banner.link_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => handleClick(banner.id)}
+          className={`block ${banners.length > 1 ? "w-full md:w-1/2" : "w-full"}`}
+        >
+          {image}
+        </a>
+      );
+    }
+
     return (
-      <a
-        href={banner.link_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={handleClick}
-        className="block"
-      >
+      <div key={banner.id} className={banners.length > 1 ? "w-full md:w-1/2" : "w-full"}>
         {image}
-      </a>
+      </div>
+    );
+  };
+
+  const isSquareLayout = position === "top" && banners.length > 1;
+
+  if (banners.length > 1) {
+    return (
+      <div className="flex flex-col gap-4 md:flex-row">
+        {banners.map((b) => renderBanner(b, true))}
+      </div>
     );
   }
 
-  return image;
+  return renderBanner(banners[0], isSquareLayout);
 };
 
 export default BannerAd;
