@@ -596,8 +596,8 @@ const AdminDashboard = () => {
   const handleBannerPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== "image/gif") {
-      setBannerPhotoError("Apenas arquivos GIF são permitidos");
+    if (file.type !== "image/gif" && file.type !== "image/webp") {
+      setBannerPhotoError("Apenas arquivos GIF e WebP são permitidos");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -1186,7 +1186,7 @@ const AdminDashboard = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label>Imagem do Banner * (formato GIF)</Label>
+              <Label>Imagem do Banner * (GIF ou WebP)</Label>
               <div
                 className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50"
                 onClick={() => bannerFileRef.current?.click()}
@@ -1217,7 +1217,7 @@ const AdminDashboard = () => {
               <input
                 ref={bannerFileRef}
                 type="file"
-                accept="image/gif"
+                accept="image/gif,image/webp"
                 className="hidden"
                 onChange={handleBannerPhotoChange}
               />
