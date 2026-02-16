@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,14 +7,22 @@ import { Label } from "@/components/ui/label";
 import SEO from "@/components/SEO";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const prefillEmail = searchParams.get("email") || "";
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") || "/";
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (prefillEmail && passwordRef.current) {
+      passwordRef.current.focus();
+    }
+  }, [prefillEmail]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +70,7 @@ const Login = () => {
             <Label htmlFor="password">Senha</Label>
             <Input
               id="password"
+              ref={passwordRef}
               type="password"
               placeholder="••••••••"
               value={password}
