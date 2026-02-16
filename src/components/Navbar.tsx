@@ -1,5 +1,5 @@
 import { Menu, Search, User, LogOut, Shield, Send } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -14,6 +14,15 @@ interface NavbarProps {
 
 const Navbar = ({ onMenuClick }: NavbarProps) => {
   const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAuthLink = (path: string) => {
+    if (user) {
+      navigate(path);
+    } else {
+      navigate(`/auth/login?returnUrl=${encodeURIComponent(path)}`);
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -40,6 +49,14 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
+
+          <button
+            onClick={() => handleAuthLink("/submit")}
+            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:flex"
+          >
+            <Send className="h-4 w-4" />
+            Enviar Grupo
+          </button>
 
           {user ? (
             <DropdownMenu>
