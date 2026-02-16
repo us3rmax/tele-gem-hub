@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X } from "lucide-react";
+import EmailConfirmationGuard from "@/components/EmailConfirmationGuard";
 
 const CATEGORIES = [
   "Amadoras", "Cornos", "Coroas", "Lésbicas", "Novinhas", "Nudes",
@@ -232,6 +233,8 @@ const SubmitGroup = () => {
           </p>
         </div>
 
+        <EmailConfirmationGuard user={user}>
+
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-6">
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Canal *</Label>
@@ -400,6 +403,7 @@ const SubmitGroup = () => {
             </div>
           )}
         </section>
+        </EmailConfirmationGuard>
       </main>
     </div>
   );
