@@ -54,6 +54,8 @@ import {
   X,
   ArrowRight,
   FileEdit,
+  Star,
+  Search,
 } from "lucide-react";
 
 const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
@@ -169,6 +171,21 @@ const AdminDashboard = () => {
   const [editRejectModalOpen, setEditRejectModalOpen] = useState(false);
   const [editRejectTarget, setEditRejectTarget] = useState<EditRequest | null>(null);
   const [editRejectReason, setEditRejectReason] = useState("");
+
+  // Premium groups state
+  interface PremiumGroup {
+    id: string;
+    name: string;
+    category: string;
+    thumbnail_url: string | null;
+    is_premium: boolean;
+    member_count: number;
+    created_at: string;
+  }
+  const [premiumGroups, setPremiumGroups] = useState<PremiumGroup[]>([]);
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [premiumSearch, setPremiumSearch] = useState("");
+
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -205,6 +222,8 @@ const AdminDashboard = () => {
       fetchBanners();
     } else if (activeTab === "edits") {
       fetchEditRequests();
+    } else if (activeTab === "premium") {
+      fetchPremiumGroups();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -485,6 +504,55 @@ const AdminDashboard = () => {
     setActionLoading(null);
   };
 
+  // --- Premium Groups logic ---
+
+  const fetchPremiumGroups = async () => {
+    setPremiumLoading(true);
+    const { data, error } = await supabase
+      .from("groups")
+      .select("id, name, category, thumbnail_url, is_premium, member_count, created_at")
+      .eq("is_premium", true)
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Error fetching premium groups:", error);
+      setPremiumGroups([]);
+    } else {
+      setPremiumGroups((data as PremiumGroup[]) || []);
+    }
+    setPremiumLoading(false);
+  };
+
+  const handleTogglePremium = async (groupId: string, newValue: boolean) => {
+    const { error } = await supabase.from("groups").update({ is_premium: newValue }).eq("id", groupId);
+    if (error) {
+      toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Status premium atualizado" });
+      if (!newValue) {
+        setPremiumGroups((prev) => prev.filter((g) => g.id !== groupId));
+      }
+    }
+  };
+
+  const handleMakePremium = async (subName: string, telegramLink: string) => {
+    // Find the group by telegram_link to get its ID
+    const { data, error } = await supabase
+      .from("groups")
+      .select("id")
+      .eq("telegram_link", telegramLink)
+      .maybeSingle();
+    if (error || !data) {
+      toast({ title: "Grupo não encontrado na base", variant: "destructive" });
+      return;
+    }
+    const { error: updateError } = await supabase.from("groups").update({ is_premium: true }).eq("id", data.id);
+    if (updateError) {
+      toast({ title: "Erro ao promover", description: updateError.message, variant: "destructive" });
+    } else {
+      toast({ title: "Grupo promovido a premium! ⭐" });
+    }
+  };
+
   // --- Banners logic ---
 
   const fetchBanners = async () => {
@@ -700,6 +768,15 @@ const AdminDashboard = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="premium" className="flex-1 gap-2">
+              <Star className="h-4 w-4" />
+              Premium
+              {premiumGroups.length > 0 && (
+                <Badge variant="secondary" className="ml-1 bg-yellow-600/20 text-yellow-400 border-yellow-600/30">
+                  {premiumGroups.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="banners" className="flex-1 gap-2">
               <LayoutDashboard className="h-4 w-4" />
               Banners
@@ -773,6 +850,14 @@ const AdminDashboard = () => {
                         </Button>
                       </div>
                     )}
+                    {tab === "approved" && (
+                      <div className="flex gap-2 border-t border-border px-4 py-3">
+                        <Button size="sm" variant="outline" onClick={() => handleMakePremium(sub.name, sub.telegram_link)} className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+                          <Star className="mr-1 h-4 w-4" />
+                          Tornar Premium
+                        </Button>
+                      </div>
+                    )}
                     {tab === "rejected" && (
                       <div className="flex gap-2 border-t border-border px-4 py-3">
                         <Button size="sm" variant="outline" onClick={() => handleRevert(sub)} disabled={actionLoading === sub.id}>
@@ -786,6 +871,75 @@ const AdminDashboard = () => {
               )}
             </TabsContent>
           ))}
+
+          {/* Premium Groups tab */}
+          <TabsContent value="premium" className="mt-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou categoria..."
+                value={premiumSearch}
+                onChange={(e) => setPremiumSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {premiumLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : premiumGroups.length === 0 ? (
+              <p className="py-12 text-center text-muted-foreground">Nenhum grupo premium</p>
+            ) : (
+              premiumGroups
+                .filter((g) => {
+                  if (!premiumSearch.trim()) return true;
+                  const q = premiumSearch.toLowerCase();
+                  return g.name.toLowerCase().includes(q) || g.category.toLowerCase().includes(q);
+                })
+                .map((group) => (
+                  <div key={group.id} className="overflow-hidden rounded-xl border-2 border-yellow-500/30 bg-card">
+                    <div className="flex gap-4 p-4">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                        {group.thumbnail_url ? (
+                          <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-foreground">{group.name}</h3>
+                          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">⭐ Premium</Badge>
+                          <Badge variant="outline">{group.category}</Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>{group.member_count} membros</span>
+                          <span>Criado: {formatDate(group.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={group.is_premium}
+                          onCheckedChange={(val) => handleTogglePremium(group.id, val)}
+                        />
+                        <span className="text-xs text-muted-foreground">Premium</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="ml-auto"
+                        onClick={() => handleTogglePremium(group.id, false)}
+                      >
+                        Remover Premium
+                      </Button>
+                    </div>
+                  </div>
+                ))
+            )}
+          </TabsContent>
 
           {/* Edit Requests tab */}
           <TabsContent value="edits" className="mt-4 space-y-4">
