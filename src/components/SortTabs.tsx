@@ -1,10 +1,10 @@
 import { Clock, Eye, ThumbsUp, Flame } from "lucide-react";
 
 const tabs = [
+  { id: "hot", label: "Em alta", icon: Flame },
   { id: "recentes", label: "Recentes", icon: Clock },
   { id: "vistos", label: "Mais vistos", icon: Eye },
   { id: "votados", label: "Mais votados", icon: ThumbsUp },
-  { id: "hot", label: "Em alta", icon: Flame },
 ];
 
 interface SortTabsProps {
