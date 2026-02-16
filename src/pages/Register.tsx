@@ -21,7 +21,7 @@ const Register = () => {
     setError("");
     setLoading(true);
 
-    const { error } = await signUp(email, password);
+    const { error, session } = await signUp(email, password);
     if (error) {
       const msg = error.message.toLowerCase().includes("rate limit")
         ? "Aguarde alguns minutos antes de tentar novamente."
@@ -31,17 +31,30 @@ const Register = () => {
       return;
     }
 
-    // Auto-login after signup
-    const { error: loginError } = await signIn(email, password);
-    if (loginError) {
-      // Signup succeeded but auto-login failed (e.g. email confirmation required)
-      setError("Conta criada, mas não foi possível fazer login automaticamente. Tente fazer login manualmente.");
-      setLoading(false);
+    console.log("[Register] signup done, session:", session);
+
+    // If Supabase returned a session, user is auto-confirmed → go home
+    if (session) {
+      toast({ title: "Conta criada com sucesso!" });
+      navigate("/");
       return;
     }
 
-    toast({ title: "Conta criada com sucesso!" });
-    navigate("/");
+    // No session = email confirmation is required
+    // Try auto-login anyway (in case confirm is off but session wasn't returned)
+    const { error: loginError } = await signIn(email, password);
+    if (!loginError) {
+      toast({ title: "Conta criada com sucesso!" });
+      navigate("/");
+      return;
+    }
+
+    console.log("[Register] auto-login failed:", loginError.message);
+
+    // Graceful fallback: redirect to login with email pre-filled
+    toast({ title: "Conta criada!", description: "Verifique seu email ou faça login." });
+    navigate(`/auth/login?email=${encodeURIComponent(email)}`);
+    setLoading(false);
   };
 
   return (
