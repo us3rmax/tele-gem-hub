@@ -17,7 +17,7 @@ const PER_PAGE = 12;
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sort, setSort] = useState("recentes");
+  const [sort, setSort] = useState("hot");
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [premiumGrupos, setPremiumGrupos] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,15 +117,7 @@ const Index = () => {
         {!loading && <PremiumCarousel grupos={premiumGrupos} />}
 
         <section className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">
-            {sort === "recentes"
-              ? "Canais Telegram Recentes"
-              : sort === "vistos"
-                ? "Canais Telegram Mais Vistos"
-                : sort === "votados"
-                  ? "Canais Telegram Mais Votados"
-                  : "Canais Telegram em Alta"}
-          </h2>
+          <h2 className="text-lg font-bold text-foreground">Canais e Grupos</h2>
           <SortTabs active={sort} onChange={setSort} />
         </section>
 
