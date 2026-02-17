@@ -166,6 +166,7 @@ const AdminDashboard = () => {
     category: "",
     telegram_link: "",
     description: "",
+    member_count: "",
     is_premium: false,
     is_verified: false,
   });
@@ -336,7 +337,7 @@ const AdminDashboard = () => {
   };
 
   const resetGroupModal = () => {
-    setGroupForm({ name: "", category: "", telegram_link: "", description: "", is_premium: false, is_verified: false });
+    setGroupForm({ name: "", category: "", telegram_link: "", description: "", member_count: "", is_premium: false, is_verified: false });
     setGroupPhotoFile(null);
     setGroupPhotoPreview(null);
     setGroupErrors({});
@@ -384,7 +385,7 @@ const AdminDashboard = () => {
       thumbnail_url: publicUrl,
       is_premium: groupForm.is_premium,
       is_verified: groupForm.is_verified,
-      member_count: 0,
+      member_count: groupForm.member_count ? parseInt(groupForm.member_count, 10) || 0 : 0,
       views: 0,
     });
 
@@ -1459,6 +1460,17 @@ const AdminDashboard = () => {
                 placeholder="https://t.me/seucanalaqui"
               />
               {groupErrors.telegram_link && <p className="text-xs text-destructive">{groupErrors.telegram_link}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Número de Membros</Label>
+              <Input
+                type="number"
+                value={groupForm.member_count}
+                onChange={(e) => setGroupForm((f) => ({ ...f, member_count: e.target.value }))}
+                placeholder="Ex: 5000"
+                min="0"
+              />
             </div>
 
             <div className="space-y-2">
