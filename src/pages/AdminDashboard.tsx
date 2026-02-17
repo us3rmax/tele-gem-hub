@@ -55,6 +55,7 @@ import {
   ArrowRight,
   FileEdit,
   Star,
+  Copy,
   Search,
 } from "lucide-react";
 
@@ -747,6 +748,24 @@ const AdminDashboard = () => {
     setDeleteBannerId(null);
   };
 
+  const handleBannerDuplicate = async (banner: Banner) => {
+    const payload: any = {
+      title: `${banner.title} (cópia)`,
+      image_url: banner.image_url,
+      link_url: banner.link_url,
+      position: banner.position,
+      is_active: false,
+      expires_at: null,
+    };
+    const { error } = await supabase.from("banners" as any).insert(payload);
+    if (error) {
+      toast({ title: "Erro ao duplicar banner", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Banner duplicado!" });
+      fetchBanners();
+    }
+  };
+
   const isExpired = (banner: Banner) =>
     banner.expires_at ? new Date(banner.expires_at) < new Date() : false;
 
@@ -1194,6 +1213,10 @@ const AdminDashboard = () => {
                         <Button size="sm" variant="outline" onClick={() => openBannerModal(banner)}>
                           <Pencil className="mr-1 h-3 w-3" />
                           Editar
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleBannerDuplicate(banner)}>
+                          <Copy className="mr-1 h-3 w-3" />
+                          Duplicar
                         </Button>
                         <Button size="sm" variant="destructive" onClick={() => setDeleteBannerId(banner.id)}>
                           <Trash2 className="mr-1 h-3 w-3" />
