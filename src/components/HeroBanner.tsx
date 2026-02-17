@@ -33,24 +33,24 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         {/* Spacer */}
         <div />
 
-        {/* CTA Button */}
-        {link_url ?
-        <a
-          href={link_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleClick}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg">
-            Começar grátis
-            <Send className="h-5 w-5 shrink-0 rotate-[-30deg]" />
-          </a> :
-
-        <div
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-base font-bold text-white shadow-lg sm:text-lg">
-            Entrar agora
-            <Send className="h-5 w-5 shrink-0 rotate-[-30deg]" />
-          </div>
-        }
+        {/* CTA Button + Icon */}
+        <div className="mt-4 flex items-center gap-3">
+          {link_url ?
+          <a
+            href={link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleClick}
+            className="flex-1 rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg">
+              Começar grátis
+            </a> :
+          <div
+            className="flex-1 rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg sm:text-lg">
+              Entrar agora
+            </div>
+          }
+          <Send className="h-7 w-7 shrink-0 text-[hsl(200,100%,60%)] rotate-[-30deg]" />
+        </div>
       </div>
 
     </div>);
