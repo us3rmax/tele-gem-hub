@@ -32,7 +32,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
       <div className="relative z-10 flex min-h-[220px] flex-col justify-between p-5 sm:p-7">
         {/* Top row: title + Telegram icon */}
         <div className="flex items-start justify-between">
-          <h3 className="text-xl font-extrabold italic text-white sm:text-2xl">{title}</h3>
+          
           <Send className="h-8 w-8 shrink-0 text-[hsl(200,100%,60%)] rotate-[-30deg]" />
         </div>
 
