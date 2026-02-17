@@ -14,7 +14,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
   };
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl" style={{ minHeight: 220 }}>
+    <div className="relative w-full overflow-hidden rounded-2xl">
       {/* Video background */}
       <video
         src={video_url}
@@ -29,7 +29,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
       <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,50%,10%)/0.85] via-[hsl(220,50%,10%)/0.7] to-[hsl(220,50%,10%)/0.5]" />
 
       {/* Content */}
-      <div className="relative z-10 flex h-full flex-col justify-end p-5 sm:p-7">
+      <div className="relative z-10 flex min-h-[220px] flex-col justify-between p-5 sm:p-7">
         {/* Top row: title + Telegram icon */}
         <div className="flex items-start justify-between">
           <h3 className="text-xl font-extrabold italic text-white sm:text-2xl">{title}</h3>
