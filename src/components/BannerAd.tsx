@@ -57,6 +57,14 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
           setBanners(shuffled.slice(0, 3) as Banner[]);
         } else if (position === "top" && data.length === 2) {
           setBanners([...data].sort(() => Math.random() - 0.5) as Banner[]);
+        } else if (position === "bottom") {
+          // Bottom banners: show up to 3 in square format like top
+          if (data.length >= 3) {
+            const shuffled = [...data].sort(() => Math.random() - 0.5);
+            setBanners(shuffled.slice(0, 3) as Banner[]);
+          } else {
+            setBanners([...data].sort(() => Math.random() - 0.5) as Banner[]);
+          }
         } else {
           const selected = data[Math.floor(Math.random() * data.length)] as Banner;
           setBanners([selected]);
@@ -112,9 +120,6 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
           alt={banner.title}
           className={isSquare ? "aspect-square w-full object-cover" : "h-[50px] w-full object-cover sm:h-[90px]"}
         />
-        <span className="absolute right-2 top-1 rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white/70">
-          Anúncio
-        </span>
       </div>
     );
 
@@ -140,12 +145,12 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     );
   };
 
-  const isSquareLayout = position === "top";
+  const isSquareLayout = position === "top" || position === "bottom";
 
   if (banners.length > 1) {
     return (
       <div className="flex flex-row gap-2">
-        {banners.map((b) => renderBanner(b, true))}
+        {banners.map((b) => renderBanner(b, isSquareLayout))}
       </div>
     );
   }

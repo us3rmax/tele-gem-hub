@@ -45,7 +45,7 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
             alt={grupo.name}
             width={400}
             height={144}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
             loading="lazy"
           />
         ) : (
@@ -59,8 +59,8 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
         {!hideBadges && (
           <div className="absolute left-2 top-2 flex gap-1.5">
             {grupo.is_premium && (
-              <span className="flex items-center gap-1 rounded-md bg-amber-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                <Star className="h-3 w-3" /> Premium
+              <span className="flex items-center gap-0.5 rounded bg-amber-500/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
+                <Star className="h-2.5 w-2.5" /> Premium
               </span>
             )}
             {grupo.is_verified && (
