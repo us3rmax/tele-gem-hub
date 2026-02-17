@@ -22,8 +22,8 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         loop
         muted
         playsInline
-        className="absolute inset-0 h-full w-full object-cover pointer-events-none"
-      />
+        className="absolute inset-0 h-full w-full object-cover pointer-events-none" />
+
 
       {/* Dark overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,50%,10%)/0.85] via-[hsl(220,50%,10%)/0.7] to-[hsl(220,50%,10%)/0.5]" />
@@ -38,27 +38,27 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
 
 
         {/* CTA Button */}
-        {link_url ? (
-          <a
-            href={link_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={handleClick}
-            className="block w-full rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg"
-          >
+        {link_url ?
+        <a
+          href={link_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleClick}
+          className="block w-full rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg">
+
             Começar grátis
-          </a>
-        ) : (
-          <div
-            className="block w-full rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg sm:text-lg"
-          >
-            Começar grátis
+          </a> :
+
+        <div
+          className="block w-full rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg sm:text-lg">
+
+            Entrar agora
           </div>
-        )}
+        }
       </div>
 
-    </div>
-  );
+    </div>);
+
 };
 
 export default HeroBanner;
