@@ -185,6 +185,7 @@ const AdminDashboard = () => {
     category: string;
     thumbnail_url: string | null;
     is_premium: boolean;
+    is_pinned: boolean;
     member_count: number;
     created_at: string;
   }
@@ -350,10 +351,7 @@ const AdminDashboard = () => {
       errors.telegram_link = "Link é obrigatório";
     } else if (!groupForm.telegram_link.startsWith("https://t.me/")) {
       errors.telegram_link = "Link deve começar com https://t.me/";
-    } else if (groupForm.telegram_link.toLowerCase().endsWith("_bot")) {
-      errors.telegram_link = "Links de bots não são permitidos";
     }
-    if (groupForm.description.length < 50) errors.description = "Descrição deve ter no mínimo 50 caracteres";
     if (!groupPhotoFile) errors.photo = "Foto é obrigatória";
     setGroupErrors(errors);
     return Object.keys(errors).length === 0;
@@ -516,9 +514,9 @@ const AdminDashboard = () => {
     setPremiumLoading(true);
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, category, thumbnail_url, is_premium, member_count, created_at")
+      .select("id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at")
       .eq("is_premium", true)
-      .order("created_at", { ascending: false });
+      .order("is_pinned", { ascending: false });
     if (error) {
       console.error("Error fetching premium groups:", error);
       setPremiumGroups([]);
@@ -968,6 +966,9 @@ const AdminDashboard = () => {
                           <h3 className="font-bold text-foreground">{group.name}</h3>
                           <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">⭐ Premium</Badge>
                           <Badge variant="outline">{group.category}</Badge>
+                          {group.is_pinned && (
+                            <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/30">📌 Fixado</Badge>
+                          )}
                           {index < 10 ? (
                             <Badge className="bg-green-600/20 text-green-400 border-green-600/30">✓ No Carrossel</Badge>
                           ) : (
@@ -987,6 +988,21 @@ const AdminDashboard = () => {
                           onCheckedChange={(val) => handleTogglePremium(group.id, val)}
                         />
                         <span className="text-xs text-muted-foreground">Premium</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={group.is_pinned}
+                          onCheckedChange={async (val) => {
+                            const { error } = await supabase.from("groups").update({ is_pinned: !!val } as any).eq("id", group.id);
+                            if (error) {
+                              toast({ title: "Erro ao fixar", description: error.message, variant: "destructive" });
+                            } else {
+                              setPremiumGroups((prev) => prev.map((g) => g.id === group.id ? { ...g, is_pinned: !!val } : g));
+                              toast({ title: val ? "Grupo fixado!" : "Grupo desfixado" });
+                            }
+                          }}
+                        />
+                        <span className="text-xs text-muted-foreground">📌 Fixar no carrossel</span>
                       </div>
                       <Button
                         size="sm"
@@ -1450,15 +1466,9 @@ const AdminDashboard = () => {
               <Textarea
                 value={groupForm.description}
                 onChange={(e) => setGroupForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="Descreva o conteúdo do canal (mínimo 50 caracteres)"
+                placeholder="Descreva o conteúdo do canal"
                 rows={3}
               />
-              <div className="flex items-center justify-between">
-                {groupErrors.description && <p className="text-xs text-destructive">{groupErrors.description}</p>}
-                <span className={`ml-auto text-xs ${groupForm.description.length >= 50 ? 'text-green-500' : 'text-muted-foreground'}`}>
-                  {groupForm.description.length}/50
-                </span>
-              </div>
             </div>
 
             <div className="space-y-2">

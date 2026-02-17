@@ -40,7 +40,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         <div className="mt-8 sm:mt-12" />
 
         {/* CTA Button */}
-        {link_url && (
+        {link_url ? (
           <a
             href={link_url}
             target="_blank"
@@ -50,13 +50,15 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
           >
             Começar grátis
           </a>
+        ) : (
+          <div
+            className="block w-full rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg sm:text-lg"
+          >
+            Começar grátis
+          </div>
         )}
       </div>
 
-      {/* Anúncio label */}
-      <span className="absolute right-2 top-1 z-20 rounded bg-black/50 px-1.5 py-0.5 text-[10px] text-white/70">
-        Anúncio
-      </span>
     </div>
   );
 };

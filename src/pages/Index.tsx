@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase";
 import type { Grupo } from "@/data/mock";
 
-const PER_PAGE = 12;
+const PER_PAGE = 20;
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,10 +35,16 @@ const Index = () => {
         .from("groups")
         .select("*")
         .eq("is_premium", true)
-        .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(50);
 
-      setPremiumGrupos((premiumData as Grupo[]) || []);
+      if (premiumData) {
+        // Pinned first, then randomize the rest
+        const pinned = (premiumData as any[]).filter((g) => g.is_pinned);
+        const unpinned = (premiumData as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
+        setPremiumGrupos([...pinned, ...unpinned].slice(0, 10) as Grupo[]);
+      } else {
+        setPremiumGrupos([]);
+      }
 
       // Fetch regular groups
       let query = supabase.from("groups").select("*").eq("is_premium", false);
