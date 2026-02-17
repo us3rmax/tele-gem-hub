@@ -26,21 +26,20 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
 
   useEffect(() => {
     const fetchBanners = async () => {
-      if (position === "top") {
-        // First check for hero banner
-        const { data: heroData } = await supabase
-          .from("banners")
-          .select("*")
-          .eq("position", "hero")
-          .eq("is_active", true);
+      // Check for hero/video banner matching this position
+      const heroPosition = position === "top" ? "hero" : `hero_${position}`;
+      const { data: heroData } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("position", heroPosition)
+        .eq("is_active", true);
 
-        if (heroData && heroData.length > 0) {
-          const selected = heroData[Math.floor(Math.random() * heroData.length)] as Banner;
-          if (selected.video_url) {
-            setHeroBanner(selected);
-            setLoading(false);
-            return;
-          }
+      if (heroData && heroData.length > 0) {
+        const selected = heroData[Math.floor(Math.random() * heroData.length)] as Banner;
+        if (selected.video_url) {
+          setHeroBanner(selected);
+          setLoading(false);
+          return;
         }
       }
 

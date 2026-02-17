@@ -1331,9 +1331,11 @@ const AdminDashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="top">Top</SelectItem>
-                  <SelectItem value="middle">Middle</SelectItem>
-                  <SelectItem value="bottom">Bottom</SelectItem>
-                  <SelectItem value="hero">Hero (Vídeo)</SelectItem>
+                   <SelectItem value="middle">Middle</SelectItem>
+                   <SelectItem value="bottom">Bottom</SelectItem>
+                   <SelectItem value="hero">Hero Topo (Vídeo)</SelectItem>
+                   <SelectItem value="hero_middle">Hero Meio (Vídeo)</SelectItem>
+                   <SelectItem value="hero_bottom">Hero Baixo (Vídeo)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
