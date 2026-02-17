@@ -144,11 +144,23 @@ const Index = () => {
             ))}
           </section>
         ) : (
-          <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {paged.map((grupo) => (
-              <GroupCard key={grupo.id} grupo={grupo} hideBadges />
-            ))}
-          </section>
+          <>
+            <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {paged.slice(0, 10).map((grupo) => (
+                <GroupCard key={grupo.id} grupo={grupo} hideBadges />
+              ))}
+            </section>
+
+            {paged.length > 10 && <BannerAd position="middle" />}
+
+            {paged.length > 10 && (
+              <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                {paged.slice(10).map((grupo) => (
+                  <GroupCard key={grupo.id} grupo={grupo} hideBadges />
+                ))}
+              </section>
+            )}
+          </>
         )}
 
         {!loading && !error && paged.length === 0 && (
