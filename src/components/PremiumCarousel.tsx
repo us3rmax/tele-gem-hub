@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Star, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, Star, Users } from "lucide-react";
 import type { Grupo } from "@/data/mock";
 
 function formatMembers(n: number) {
@@ -181,8 +181,8 @@ const PremiumCarousel = ({ grupos }: { grupos: Grupo[] }) => {
                   <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                     <Users className="h-3 w-3" /> {formatMembers(grupo.member_count)}
                   </span>
-                  <span className="rounded-md bg-primary px-2 py-1 text-[10px] font-bold uppercase text-primary-foreground">
-                    Entrar
+                  <span className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-bold uppercase text-primary-foreground">
+                    Entrar <Send className="h-2.5 w-2.5" />
                   </span>
                 </div>
               </div>
