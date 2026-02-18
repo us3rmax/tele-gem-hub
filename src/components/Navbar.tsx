@@ -37,7 +37,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         </button>
 
         <Link to="/" className="text-lg font-bold tracking-tight">
-          <img src={logo} alt="Canais18" className="h-8 w-auto" />
+          <img src={logo} alt="Canais18" className="h-24 w-auto" />
         </Link>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-2">
