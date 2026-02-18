@@ -83,10 +83,10 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     }
     if (position === "bottom") {
       return (
-        <div className="flex gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3">
-          <Skeleton className="aspect-square min-w-[80vw] rounded-xl sm:min-w-0" />
-          <Skeleton className="aspect-square min-w-[80vw] rounded-xl sm:min-w-0" />
-          <Skeleton className="hidden aspect-square rounded-xl lg:block" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="aspect-square w-full rounded-xl" />
+          <Skeleton className="aspect-square w-full rounded-xl" />
+          <Skeleton className="hidden aspect-square w-full rounded-xl lg:block" />
         </div>
       );
     }
@@ -124,11 +124,9 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
       </div>
     );
 
-    const sizeClass = position === "bottom"
-      ? "min-w-[80vw] sm:min-w-0"
-      : banners.length > 1
-        ? "flex-1 min-w-0"
-        : "w-full";
+    const sizeClass = banners.length > 1 && position !== "bottom"
+      ? "flex-1 min-w-0"
+      : "w-full";
 
     if (banner.link_url) {
       return (
@@ -153,8 +151,9 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
   };
 
   if (position === "bottom") {
+    const cols = banners.length >= 4 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3";
     return (
-      <div className="flex gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+      <div className={`grid grid-cols-1 gap-4 ${cols}`}>
         {banners.map((b) => renderBanner(b, true))}
       </div>
     );
