@@ -9,6 +9,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Footer from "@/components/Footer";
+import AgeVerificationModal from "@/components/AgeVerificationModal";
 
 const GroupDetail = lazy(() => import("./pages/GroupDetail"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -37,6 +38,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <AgeVerificationModal />
             <div className="flex min-h-screen flex-col">
               <Suspense fallback={<div className="flex flex-1 items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
                 <div className="flex-1">
