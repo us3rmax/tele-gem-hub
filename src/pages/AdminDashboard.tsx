@@ -63,6 +63,20 @@ const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados
 
 // --- Types ---
 
+interface AllGroup {
+  id: string;
+  name: string;
+  category: string;
+  thumbnail_url: string | null;
+  is_premium: boolean;
+  is_pinned: boolean;
+  is_verified: boolean;
+  member_count: number;
+  created_at: string;
+  source: string;
+  submitted_by: string | null;
+}
+
 interface Submission {
   id: string;
   name: string;
@@ -180,6 +194,11 @@ const AdminDashboard = () => {
   const [editRejectTarget, setEditRejectTarget] = useState<EditRequest | null>(null);
   const [editRejectReason, setEditRejectReason] = useState("");
 
+  // Groups tab state
+  const [groupsSourceFilter, setGroupsSourceFilter] = useState<"all" | "imported" | "user">("all");
+  const [allGroups, setAllGroups] = useState<AllGroup[]>([]);
+  const [allGroupsLoading, setAllGroupsLoading] = useState(false);
+
   // Premium groups state
   interface PremiumGroup {
     id: string;
@@ -190,6 +209,7 @@ const AdminDashboard = () => {
     is_pinned: boolean;
     member_count: number;
     created_at: string;
+    source: string;
   }
   const [premiumGroups, setPremiumGroups] = useState<PremiumGroup[]>([]);
   const [premiumLoading, setPremiumLoading] = useState(false);
@@ -233,6 +253,8 @@ const AdminDashboard = () => {
       fetchEditRequests();
     } else if (activeTab === "premium") {
       fetchPremiumGroups();
+    } else if (activeTab === "grupos") {
+      fetchAllGroups();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -250,7 +272,8 @@ const AdminDashboard = () => {
       is_verified: false,
       member_count: 0,
       views: 0,
-    });
+      source: 'user',
+    } as any);
 
     if (insertError) {
       toast({ title: "Erro ao aprovar", description: insertError.message, variant: "destructive" });
@@ -388,7 +411,8 @@ const AdminDashboard = () => {
       is_verified: groupForm.is_verified,
       member_count: groupForm.member_count ? parseInt(groupForm.member_count, 10) || 0 : 0,
       views: 0,
-    });
+      source: 'imported',
+    } as any);
 
     if (error) {
       toast({ title: "Erro ao criar grupo", description: error.message, variant: "destructive" });
@@ -508,6 +532,23 @@ const AdminDashboard = () => {
     setEditRejectModalOpen(false);
     setEditRejectTarget(null);
     setActionLoading(null);
+  };
+
+  // --- All Groups logic ---
+
+  const fetchAllGroups = async () => {
+    setAllGroupsLoading(true);
+    const { data, error } = await supabase
+      .from("groups")
+      .select("id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Error fetching all groups:", error);
+      setAllGroups([]);
+    } else {
+      setAllGroups((data as any as AllGroup[]) || []);
+    }
+    setAllGroupsLoading(false);
   };
 
   // --- Premium Groups logic ---
@@ -845,6 +886,10 @@ const AdminDashboard = () => {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="grupos" className="flex-1 gap-2">
+              <Search className="h-4 w-4" />
+              Grupos
+            </TabsTrigger>
             <TabsTrigger value="banners" className="flex-1 gap-2">
               <LayoutDashboard className="h-4 w-4" />
               Banners
@@ -1130,6 +1175,77 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               ))
+            )}
+          </TabsContent>
+
+          {/* Grupos tab */}
+          <TabsContent value="grupos" className="mt-4 space-y-4">
+            {/* Filter buttons */}
+            <div className="flex flex-wrap gap-2">
+              {(["all", "imported", "user"] as const).map((f) => {
+                const count = f === "all"
+                  ? allGroups.length
+                  : allGroups.filter((g) => g.source === f).length;
+                const labels = { all: "Todos", imported: "📥 Importados", user: "👤 Usuários" };
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setGroupsSourceFilter(f)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                      groupsSourceFilter === f
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {labels[f]}
+                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${
+                      groupsSourceFilter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                    }`}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {allGroupsLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allGroups
+                  .filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter)
+                  .map((group) => (
+                    <div key={group.id} className="flex gap-4 overflow-hidden rounded-xl border border-border bg-card p-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                        {group.thumbnail_url ? (
+                          <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-foreground">{group.name}</h3>
+                          {group.source === "imported" ? (
+                            <Badge className="bg-secondary text-secondary-foreground border-border text-[10px]">📥 Importado</Badge>
+                          ) : (
+                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">👤 Usuário</Badge>
+                          )}
+                          {group.is_premium && (
+                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">⭐ Premium</Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px]">{group.category}</Badge>
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {group.member_count} membros · {formatDate(group.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                {allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).length === 0 && (
+                  <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>
+                )}
+              </div>
             )}
           </TabsContent>
 
