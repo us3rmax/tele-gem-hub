@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface HeroBannerProps {
@@ -33,23 +33,22 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         {/* Spacer */}
         <div />
 
-        {/* CTA Button + Icon */}
-        <div className="mt-4 flex items-center gap-3">
+        {/* CTA Button */}
+        <div className="mt-4">
           {link_url ?
           <a
             href={link_url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className="flex-1 rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg">
-              Começar grátis
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(207,68%,65%)] py-3.5 px-6 text-center text-base font-extrabold uppercase tracking-wide text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg">
+              ENTRAR AGORA <span className="text-xl sm:text-2xl">🔥</span>
             </a> :
           <div
-            className="flex-1 rounded-xl bg-gradient-to-r from-[hsl(200,100%,50%)] to-[hsl(190,100%,45%)] py-3.5 text-center text-base font-bold text-white shadow-lg sm:text-lg">
-              Entrar agora
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(207,68%,65%)] py-3.5 px-6 text-center text-base font-extrabold uppercase tracking-wide text-white shadow-lg sm:text-lg">
+              ENTRAR AGORA <span className="text-xl sm:text-2xl">🔥</span>
             </div>
           }
-          <Send className="h-7 w-7 shrink-0 text-[hsl(200,100%,60%)] rotate-[-30deg]" />
         </div>
       </div>
 
