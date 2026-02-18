@@ -1,4 +1,5 @@
 import { Menu, Search, User, LogOut, Shield, Send, FolderOpen } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -35,9 +36,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link to="/" className="text-lg font-bold tracking-tight">
-          
-          <span className="text-foreground">Index</span>
+        <Link to="/" className="flex items-center">
+          <img src={logo} alt="Canais18" className="h-10 w-auto" />
         </Link>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-2">
