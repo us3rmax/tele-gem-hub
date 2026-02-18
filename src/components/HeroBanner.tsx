@@ -14,7 +14,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
   };
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl">
+    <div className="relative w-full overflow-hidden rounded-2xl aspect-video">
       {/* Video background */}
       <video
         src={video_url}
@@ -29,7 +29,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
       <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,50%,10%)/0.85] via-[hsl(220,50%,10%)/0.7] to-[hsl(220,50%,10%)/0.5]" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-[220px] flex-col justify-between p-5 sm:p-7">
+      <div className="absolute inset-0 z-10 flex flex-col justify-between p-5 sm:p-7">
         {/* Spacer */}
         <div />
 
