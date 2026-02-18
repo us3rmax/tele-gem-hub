@@ -29,7 +29,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
       <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,50%,10%)/0.85] via-[hsl(220,50%,10%)/0.7] to-[hsl(220,50%,10%)/0.5]" />
 
       {/* Content */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-end p-5 pb-3 sm:p-7 sm:pb-4">
+      <div className="absolute inset-0 z-10 flex flex-col justify-end p-5 pb-1 sm:p-7 sm:pb-2">
         {/* CTA Button */}
         <div className="mt-4">
           {link_url ?
