@@ -51,22 +51,11 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
         .eq("is_active", true);
 
       if (data && data.length > 0) {
-        if (position === "top" && data.length >= 3) {
-          const shuffled = [...data].sort(() => Math.random() - 0.5);
-          setBanners(shuffled.slice(0, 3) as Banner[]);
-        } else if (position === "top" && data.length === 2) {
-          setBanners([...data].sort(() => Math.random() - 0.5) as Banner[]);
-        } else if (position === "bottom") {
-          // Bottom banners: show up to 3 in square format like top
-          if (data.length >= 3) {
-            const shuffled = [...data].sort(() => Math.random() - 0.5);
-            setBanners(shuffled.slice(0, 3) as Banner[]);
-          } else {
-            setBanners([...data].sort(() => Math.random() - 0.5) as Banner[]);
-          }
+        const shuffled = [...data].sort(() => Math.random() - 0.5);
+        if (position === "top") {
+          setBanners(shuffled.slice(0, 2) as Banner[]);
         } else {
-          const selected = data[Math.floor(Math.random() * data.length)] as Banner;
-          setBanners([selected]);
+          setBanners(shuffled.slice(0, 1) as Banner[]);
         }
       }
       setLoading(false);
@@ -82,9 +71,8 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
   if (loading) {
     return position === "top" ? (
       <div className="flex flex-row gap-2">
-        <Skeleton className="aspect-square w-1/3 rounded-xl" />
-        <Skeleton className="aspect-square w-1/3 rounded-xl" />
-        <Skeleton className="aspect-square w-1/3 rounded-xl" />
+        <Skeleton className="aspect-square w-1/2 rounded-xl" />
+        <Skeleton className="aspect-square w-1/2 rounded-xl" />
       </div>
     ) : (
       <Skeleton className="h-[50px] w-full rounded-xl sm:h-[90px]" />
@@ -144,7 +132,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     );
   };
 
-  const isSquareLayout = position === "top" || position === "bottom";
+  const isSquareLayout = position === "top";
 
   if (banners.length > 1) {
     return (
