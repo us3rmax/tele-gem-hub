@@ -45,7 +45,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
               <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-16 sm:max-h-20" />
             </a> :
           <div className="w-full">
-            <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full max-h-16 sm:max-h-20 object-cover" />
+            <img alt="Entrar Agora" className="w-full max-h-16 sm:max-h-20 object-cover" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
           </div>
           }
         </div>
