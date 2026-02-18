@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X } from "lucide-react";
 import EmailConfirmationGuard from "@/components/EmailConfirmationGuard";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import ImageCropModal from "@/components/ImageCropModal";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAACeD94GpcENqZjWY";
 
@@ -54,6 +55,7 @@ const SubmitGroup = () => {
   const [description, setDescription] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPromo, setSelectedPromo] = useState<"premium" | null>(null);
@@ -98,12 +100,26 @@ const SubmitGroup = () => {
       return;
     }
 
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-    setErrors((prev) => {
-      const { photo, ...rest } = prev;
-      return rest;
-    });
+    // Open cropper instead of setting directly
+    const objectUrl = URL.createObjectURL(file);
+    setCropSrc(objectUrl);
+    setErrors((prev) => { const { photo, ...rest } = prev; return rest; });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCropComplete = (blob: Blob) => {
+    const croppedFile = new File([blob], "photo.jpg", { type: "image/jpeg" });
+    setPhotoFile(croppedFile);
+    const preview = URL.createObjectURL(blob);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(preview);
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  };
+
+  const handleCropCancel = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   };
 
   const removePhoto = () => {
@@ -439,6 +455,14 @@ const SubmitGroup = () => {
         </section>
         </EmailConfirmationGuard>
       </main>
+
+      {cropSrc && (
+        <ImageCropModal
+          imageSrc={cropSrc}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 };
