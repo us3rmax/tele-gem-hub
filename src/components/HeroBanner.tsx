@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import btnEntrarAgora from "@/assets/btn-entrar-agora.png";
 
 interface HeroBannerProps {
   id: string;
@@ -41,15 +41,12 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            style={{ background: "#69AEE8", border: "3px solid #3A7FC1", textShadow: "0 2px 8px rgba(0,0,0,0.35)" }}
-            className="flex w-full items-center justify-center gap-3 rounded-full py-4 px-6 text-center text-2xl font-black uppercase tracking-wider text-white shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-3xl sm:py-5">
-              ENTRAR AGORA <span className="text-3xl sm:text-4xl leading-none">🔥</span>
+            className="block w-full transition-transform hover:scale-[1.02] active:scale-[0.98]">
+              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain" />
             </a> :
-          <div
-            style={{ background: "#69AEE8", border: "3px solid #3A7FC1", textShadow: "0 2px 8px rgba(0,0,0,0.35)" }}
-            className="flex w-full items-center justify-center gap-3 rounded-full py-4 px-6 text-center text-2xl font-black uppercase tracking-wider text-white shadow-xl sm:text-3xl sm:py-5">
-              ENTRAR AGORA <span className="text-3xl sm:text-4xl leading-none">🔥</span>
-            </div>
+          <div className="w-full">
+            <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain" />
+          </div>
           }
         </div>
       </div>
