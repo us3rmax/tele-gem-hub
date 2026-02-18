@@ -19,6 +19,12 @@ const SubmitGroup = lazy(() => import("./pages/SubmitGroup"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const MyGroups = lazy(() => import("./pages/MyGroups"));
 const Advertise = lazy(() => import("./pages/Advertise"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Dmca = lazy(() => import("./pages/Dmca"));
+const Usc2257 = lazy(() => import("./pages/Usc2257"));
+const Removal = lazy(() => import("./pages/Removal"));
+const Blog = lazy(() => import("./pages/Blog"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -45,6 +51,12 @@ const App = () => (
                     <Route path="/categorias/:name" element={<Categories />} />
                     <Route path="/contato" element={<Contact />} />
                     <Route path="/advertise" element={<Advertise />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/dmca" element={<Dmca />} />
+                    <Route path="/2257" element={<Usc2257 />} />
+                    <Route path="/removal" element={<Removal />} />
+                    <Route path="/blog" element={<Blog />} />
                     <Route path="/" element={<Index />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
