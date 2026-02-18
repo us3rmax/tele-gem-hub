@@ -37,7 +37,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         </button>
 
         <Link to="/" className="flex items-center">
-          <img src={logo} alt="Canais18" className="h-10 w-auto" />
+          <img src={logo} alt="Canais18" className="h-9 w-auto" />
         </Link>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-2">
