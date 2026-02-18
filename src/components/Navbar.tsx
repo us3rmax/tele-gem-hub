@@ -36,7 +36,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         </button>
 
         <Link to="/" className="text-lg font-bold tracking-tight">
-          <span className="text-primary">TG</span>
+          
           <span className="text-foreground">Index</span>
         </Link>
 
@@ -103,7 +103,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               </Link>
               <Link
               to="/auth/register"
-              className="rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 px-[5px]">
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
 
                 Criar Conta
               </Link>
