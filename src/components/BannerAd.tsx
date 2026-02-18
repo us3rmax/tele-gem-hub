@@ -51,11 +51,15 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
         .eq("is_active", true);
 
       if (data && data.length > 0) {
-        const shuffled = [...data].sort(() => Math.random() - 0.5);
-        if (position === "top") {
-          setBanners(shuffled.slice(0, 2) as Banner[]);
+        if (position === "bottom") {
+          setBanners(data as Banner[]);
         } else {
-          setBanners(shuffled.slice(0, 1) as Banner[]);
+          const shuffled = [...data].sort(() => Math.random() - 0.5);
+          if (position === "top") {
+            setBanners(shuffled.slice(0, 2) as Banner[]);
+          } else {
+            setBanners(shuffled.slice(0, 1) as Banner[]);
+          }
         }
       }
       setLoading(false);
@@ -69,14 +73,24 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
   };
 
   if (loading) {
-    return position === "top" ? (
-      <div className="flex flex-row gap-2">
-        <Skeleton className="aspect-square w-1/2 rounded-xl" />
-        <Skeleton className="aspect-square w-1/2 rounded-xl" />
-      </div>
-    ) : (
-      <Skeleton className="h-[50px] w-full rounded-xl sm:h-[90px]" />
-    );
+    if (position === "top") {
+      return (
+        <div className="flex flex-row gap-2">
+          <Skeleton className="aspect-square w-1/2 rounded-xl" />
+          <Skeleton className="aspect-square w-1/2 rounded-xl" />
+        </div>
+      );
+    }
+    if (position === "bottom") {
+      return (
+        <div className="flex gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="aspect-square min-w-[80vw] rounded-xl sm:min-w-0" />
+          <Skeleton className="aspect-square min-w-[80vw] rounded-xl sm:min-w-0" />
+          <Skeleton className="hidden aspect-square rounded-xl lg:block" />
+        </div>
+      );
+    }
+    return <Skeleton className="aspect-square w-full rounded-xl" />;
   }
 
   // Hero video banner takes priority
@@ -105,10 +119,16 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
         <img
           src={banner.image_url}
           alt={banner.title}
-          className={isSquare ? "aspect-square w-full object-cover" : "h-[50px] w-full object-cover sm:h-[90px]"}
+          className="aspect-square w-full object-cover"
         />
       </div>
     );
+
+    const sizeClass = position === "bottom"
+      ? "min-w-[80vw] sm:min-w-0"
+      : banners.length > 1
+        ? "flex-1 min-w-0"
+        : "w-full";
 
     if (banner.link_url) {
       return (
@@ -118,7 +138,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => handleClick(banner.id)}
-          className={`block ${banners.length > 1 ? "flex-1 min-w-0" : "w-full"}`}
+          className={`block ${sizeClass}`}
         >
           {image}
         </a>
@@ -126,23 +146,29 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     }
 
     return (
-      <div key={banner.id} className={banners.length > 1 ? "flex-1 min-w-0" : "w-full"}>
+      <div key={banner.id} className={sizeClass}>
         {image}
       </div>
     );
   };
 
-  const isSquareLayout = position === "top";
-
-  if (banners.length > 1) {
+  if (position === "bottom") {
     return (
-      <div className="flex flex-row gap-2">
-        {banners.map((b) => renderBanner(b, isSquareLayout))}
+      <div className="flex gap-4 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+        {banners.map((b) => renderBanner(b, true))}
       </div>
     );
   }
 
-  return renderBanner(banners[0], isSquareLayout);
+  if (banners.length > 1) {
+    return (
+      <div className="flex flex-row gap-2">
+        {banners.map((b) => renderBanner(b, true))}
+      </div>
+    );
+  }
+
+  return renderBanner(banners[0], true);
 };
 
 export default BannerAd;
