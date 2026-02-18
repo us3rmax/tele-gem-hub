@@ -3,7 +3,7 @@ import LegalPage from "./LegalPage";
 const Usc2257 = () => (
   <LegalPage title="18 U.S.C. 2257 - Declaração de Conformidade">
     <h1>18 U.S.C. 2257 - Declaração de Conformidade</h1>
-    <p><strong>Última atualização: 17 de fevereiro de 2026</strong></p>
+    <p><strong>Última atualização: 14 de abril de 2024</strong></p>
 
     <h2>Declaração de Conformidade com 18 U.S.C. 2257</h2>
     <p>O Canais18 está em conformidade com os requisitos de manutenção de registros do 18 U.S.C. 2257 e 28 C.F.R. 75.</p>

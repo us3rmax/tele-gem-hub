@@ -3,7 +3,7 @@ import LegalPage from "./LegalPage";
 const Dmca = () => (
   <LegalPage title="DMCA - Direitos Autorais">
     <h1>DMCA - Política de Direitos Autorais</h1>
-    <p><strong>Última atualização: 17 de fevereiro de 2026</strong></p>
+    <p><strong>Última atualização: 14 de abril de 2024</strong></p>
 
     <h2>Respeito à Propriedade Intelectual</h2>
     <p>O Canais18 respeita os direitos de propriedade intelectual de terceiros e espera que nossos usuários façam o mesmo.</p>
