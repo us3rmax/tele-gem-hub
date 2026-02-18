@@ -1,5 +1,4 @@
 import { Menu, Search, User, LogOut, Shield, Send, FolderOpen } from "lucide-react";
-import logo from "@/assets/logo.png";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -36,8 +35,9 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           <Menu className="h-5 w-5" />
         </button>
 
-        <Link to="/" className="flex items-center">
-          <img src={logo} alt="Canais18" className="h-13 w-auto" />
+        <Link to="/" className="text-lg font-bold tracking-tight">
+          <span className="text-primary">TG</span>
+          <span className="text-foreground">Index</span>
         </Link>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-2">
@@ -103,12 +103,12 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               </Link>
               <Link
               to="/auth/register"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+              className="rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 mx-0 py-px px-[12px]">
 
-                Criar Conta
-              </Link>
-            </div>
-          }
+                Criar conta
+              
+            </Link>
+            </div>}
         </div>
       </div>
     </nav>);
