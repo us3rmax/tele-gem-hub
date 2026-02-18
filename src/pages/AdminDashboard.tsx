@@ -609,8 +609,8 @@ const AdminDashboard = () => {
       setBannerPhotoError("Apenas arquivos GIF e WebP são permitidos");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setBannerPhotoError("Imagem muito grande (máx 5MB)");
+    if (file.size > 8 * 1024 * 1024) {
+      setBannerPhotoError("Imagem muito grande (máx 8MB)");
       return;
     }
     setBannerPhotoFile(file);
@@ -1311,7 +1311,7 @@ const AdminDashboard = () => {
                 className="hidden"
                 onChange={handleBannerPhotoChange}
               />
-              <p className="text-xs text-muted-foreground">Recomendado: 728x90px (desktop) ou 320x50px (mobile). Máx 5MB.</p>
+              <p className="text-xs text-muted-foreground">Recomendado: 728x90px (desktop) ou 320x50px (mobile). Máx 8MB.</p>
               {bannerPhotoError && <p className="text-xs text-destructive">{bannerPhotoError}</p>}
             </div>
             <div className="space-y-2">
