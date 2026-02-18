@@ -73,27 +73,17 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
   };
 
   if (loading) {
-    if (position === "top") {
-      return (
-        <div className="flex flex-row gap-2">
-          <Skeleton className="aspect-square w-1/2 rounded-xl" />
-          <Skeleton className="aspect-square w-1/2 rounded-xl" />
-        </div>
-      );
-    }
-    if (position === "bottom") {
-      return (
-        <div className="grid grid-cols-3 gap-2">
-          <Skeleton className="aspect-square w-full rounded-xl" />
-          <Skeleton className="aspect-square w-full rounded-xl" />
-          <Skeleton className="aspect-square w-full rounded-xl" />
-        </div>
-      );
-    }
-    return <Skeleton className="aspect-square w-full rounded-xl" />;
+    const count = position === "bottom" ? 3 : position === "top" ? 2 : 1;
+    return (
+      <div className={`grid gap-2 ${count === 1 ? "grid-cols-1" : count === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+        {Array.from({ length: count }).map((_, i) => (
+          <Skeleton key={i} className="aspect-square w-full rounded-xl" />
+        ))}
+      </div>
+    );
   }
 
-  // Hero video banner takes priority
+  // Hero video banner takes priority — full width, no grid
   if (heroBanner) {
     return (
       <HeroBanner
@@ -113,7 +103,9 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     );
   }
 
-  const renderBanner = (banner: Banner, isSquare: boolean) => {
+  const cols = banners.length === 1 ? "grid-cols-1" : banners.length === 2 ? "grid-cols-2" : "grid-cols-3";
+
+  const renderBanner = (banner: Banner) => {
     const image = (
       <div className="relative w-full overflow-hidden rounded-xl">
         <img
@@ -124,10 +116,6 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
       </div>
     );
 
-    const sizeClass = banners.length > 1 && position !== "bottom"
-      ? "flex-1 min-w-0"
-      : "w-full";
-
     if (banner.link_url) {
       return (
         <a
@@ -136,7 +124,7 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => handleClick(banner.id)}
-          className={`block ${sizeClass}`}
+          className="block w-full"
         >
           {image}
         </a>
@@ -144,29 +132,17 @@ const BannerAd = ({ position = "top" }: BannerAdProps) => {
     }
 
     return (
-      <div key={banner.id} className={sizeClass}>
+      <div key={banner.id} className="w-full">
         {image}
       </div>
     );
   };
 
-  if (position === "bottom") {
-    return (
-      <div className="grid grid-cols-3 gap-2">
-        {banners.map((b) => renderBanner(b, true))}
-      </div>
-    );
-  }
-
-  if (banners.length > 1) {
-    return (
-      <div className="flex flex-row gap-2">
-        {banners.map((b) => renderBanner(b, true))}
-      </div>
-    );
-  }
-
-  return renderBanner(banners[0], true);
+  return (
+    <div className={`grid gap-2 ${cols}`}>
+      {banners.map((b) => renderBanner(b))}
+    </div>
+  );
 };
 
 export default BannerAd;
