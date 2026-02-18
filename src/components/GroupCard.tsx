@@ -17,14 +17,14 @@ const categoryColors: Record<string, string> = {
   Vazados: "from-red-500 to-pink-600",
   Lésbicas: "from-violet-500 to-purple-600",
   Pack: "from-emerald-500 to-teal-600",
-  Putaria: "from-rose-500 to-red-600",
+  Putaria: "from-rose-500 to-red-600"
 };
 
 function getPlaceholderBg(category: string) {
   return categoryColors[category] || "from-gray-500 to-gray-700";
 }
 
-const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: boolean }) => {
+const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boolean;}) => {
   const navigate = useNavigate();
   const hasThumbnail = !!grupo.thumbnail_url;
 
@@ -35,41 +35,41 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
   return (
     <div
       onClick={handleCardClick}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
-    >
+      className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+
       {/* Image / Placeholder */}
       <div className="relative h-32 overflow-hidden sm:h-36">
-        {hasThumbnail ? (
-          <img
-            src={grupo.thumbnail_url!}
-            alt={grupo.name}
-            width={400}
-            height={144}
-            className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
-        ) : (
-          <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${getPlaceholderBg(grupo.category)} transition-transform duration-500 group-hover:scale-110`}>
+        {hasThumbnail ?
+        <img
+          src={grupo.thumbnail_url!}
+          alt={grupo.name}
+          width={400}
+          height={144}
+          className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+          loading="lazy" /> :
+
+
+        <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${getPlaceholderBg(grupo.category)} transition-transform duration-500 group-hover:scale-110`}>
             <span className="text-3xl font-bold text-white/80">{grupo.name.charAt(0)}</span>
           </div>
-        )}
+        }
         
 
         {/* Badges */}
-        {!hideBadges && (
-          <div className="absolute left-2 top-2 flex gap-1.5">
-            {grupo.is_premium && (
-              <span className="flex items-center gap-0.5 rounded bg-amber-500/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
+        {!hideBadges &&
+        <div className="absolute left-2 top-2 flex gap-1.5">
+            {grupo.is_premium &&
+          <span className="flex items-center gap-0.5 rounded bg-amber-500/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
                 <Star className="h-2.5 w-2.5" /> Premium
               </span>
-            )}
-            {grupo.is_verified && (
-              <span className="flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+          }
+            {grupo.is_verified &&
+          <span className="flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
                 <CheckCircle className="h-3 w-3" /> Verificado
               </span>
-            )}
+          }
           </div>
-        )}
+        }
 
         
       </div>
@@ -88,14 +88,14 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
           </span>
 
           <span
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Entrar <Send className="h-3 w-3" />
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90">
+
+            Entrar <Send className="h-3 w-3 bg-primary" />
           </span>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default GroupCard;
