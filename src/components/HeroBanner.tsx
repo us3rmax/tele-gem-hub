@@ -34,7 +34,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         <div />
 
         {/* CTA Button */}
-        <div className="mt-4">
+        <div className="mt-2">
           {link_url ?
           <a
             href={link_url}
@@ -42,10 +42,10 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
             rel="noopener noreferrer"
             onClick={handleClick}
             className="block w-full transition-transform hover:scale-[1.02] active:scale-[0.98]">
-              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain" />
+              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-16 sm:max-h-20" />
             </a> :
           <div className="w-full">
-            <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain" />
+            <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-16 sm:max-h-20" />
           </div>
           }
         </div>
