@@ -3,7 +3,7 @@ import LegalPage from "./LegalPage";
 const Terms = () => (
   <LegalPage title="Termos de Uso">
     <h1>Termos de Uso</h1>
-    <p><strong>Última atualização: 17 de fevereiro de 2026</strong></p>
+    <p><strong>Última atualização: 14 de abril de 2024</strong></p>
 
     <h2>1. Aceitação dos Termos</h2>
     <p>Ao acessar e usar o Canais18, você concorda com estes Termos de Uso. Se não concordar, não use o site.</p>

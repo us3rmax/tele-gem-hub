@@ -3,7 +3,7 @@ import LegalPage from "./LegalPage";
 const Privacy = () => (
   <LegalPage title="Política de Privacidade">
     <h1>Política de Privacidade</h1>
-    <p><strong>Última atualização: 17 de fevereiro de 2026</strong></p>
+    <p><strong>Última atualização: 14 de abril de 2024</strong></p>
 
     <h2>1. Informações que Coletamos</h2>
 

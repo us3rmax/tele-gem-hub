@@ -3,7 +3,7 @@ import LegalPage from "./LegalPage";
 const Removal = () => (
   <LegalPage title="Remoção de Links">
     <h1>Remoção de Links</h1>
-    <p><strong>Última atualização: 17 de fevereiro de 2026</strong></p>
+    <p><strong>Última atualização: 14 de abril de 2024</strong></p>
 
     <h2>Solicitação de Remoção</h2>
     <p>Se você é administrador de um grupo/canal listado no Canais18 e deseja removê-lo, estamos aqui para ajudar.</p>
