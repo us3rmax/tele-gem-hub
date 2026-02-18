@@ -1,13 +1,12 @@
 import { Menu, Search, User, LogOut, Shield, Send, FolderOpen } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.png";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuTrigger } from
+"@/components/ui/dropdown-menu";
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -31,13 +30,14 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         <button
           onClick={onMenuClick}
           className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          aria-label="Menu"
-        >
+          aria-label="Menu">
+
           <Menu className="h-5 w-5" />
         </button>
 
         <Link to="/" className="text-lg font-bold tracking-tight">
-          <img src={logo} alt="Canais18" className="h-48 w-auto" />
+          <span className="text-primary">TG</span>
+          <span className="text-foreground">Index</span>
         </Link>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-2">
@@ -46,20 +46,20 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             <input
               type="text"
               placeholder="Buscar grupos..."
-              className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+              className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+
           </div>
 
           <button
             onClick={() => handleAuthLink("/submit")}
-            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:flex"
-          >
+            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:flex">
+
             <Send className="h-4 w-4" />
             Enviar Grupo
           </button>
 
-          {user ? (
-            <DropdownMenu>
+          {user ?
+          <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80">
                   <User className="h-4 w-4" />
@@ -79,40 +79,40 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     Enviar Canal
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
+                {isAdmin &&
+              <DropdownMenuItem asChild>
                     <Link to="/admin" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
                       Dashboard Admin
                     </Link>
                   </DropdownMenuItem>
-                )}
+              }
                 <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 text-destructive">
                   <LogOut className="h-4 w-4" />
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex items-center gap-2">
+            </DropdownMenu> :
+
+          <div className="flex items-center gap-2">
               <Link
-                to="/auth/login"
-                className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
+              to="/auth/login"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+
                 Entrar
               </Link>
               <Link
-                to="/auth/register"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              >
+              to="/auth/register"
+              className="rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 px-[5px]">
+
                 Criar Conta
               </Link>
             </div>
-          )}
+          }
         </div>
       </div>
-    </nav>
-  );
+    </nav>);
+
 };
 
 export default Navbar;
