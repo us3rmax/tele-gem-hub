@@ -1,4 +1,4 @@
-import { CheckCircle, Star, Send } from "lucide-react";
+import { Star, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
 import { groupPath } from "@/lib/slug";
@@ -61,11 +61,6 @@ const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boo
             {grupo.is_premium &&
           <span className="flex items-center gap-0.5 rounded bg-amber-500/90 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">
                 <Star className="h-2.5 w-2.5" /> Premium
-              </span>
-          }
-            {grupo.is_verified &&
-          <span className="flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                <CheckCircle className="h-3 w-3" /> Verificado
               </span>
           }
           </div>

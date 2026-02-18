@@ -269,9 +269,6 @@ const MyGroups = () => {
                         {group.is_premium && (
                           <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-bold">⭐ Premium</Badge>
                         )}
-                        {group.is_verified && (
-                          <Badge className="bg-green-500/20 text-green-500 border-green-500/30">✓ Verificado</Badge>
-                        )}
                         {pendingEdits[group.id] && (
                           <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30">✏️ Edição Pendente</Badge>
                         )}

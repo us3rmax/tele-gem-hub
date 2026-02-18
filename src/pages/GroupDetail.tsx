@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Send, Users, Star, CheckCircle, ChevronRight } from "lucide-react";
+import { Send, Users, Star, ChevronRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import { groupPath } from "@/lib/slug";
@@ -202,18 +202,11 @@ const GroupDetail = () => {
               </span>
             </div>
 
-            {(grupo.is_premium || grupo.is_verified) && (
+            {grupo.is_premium && (
               <div className="flex items-center gap-2">
-                {grupo.is_premium && (
-                  <span className="flex items-center gap-1 rounded-md bg-yellow-500/20 px-2.5 py-1 text-xs font-bold uppercase text-yellow-500">
-                    <Star className="h-3.5 w-3.5" /> Premium
-                  </span>
-                )}
-                {grupo.is_verified && (
-                  <span className="flex items-center gap-1 rounded-md bg-blue-500/20 px-2.5 py-1 text-xs font-bold uppercase text-blue-500">
-                    <CheckCircle className="h-3.5 w-3.5" /> Verificado
-                  </span>
-                )}
+                <span className="flex items-center gap-1 rounded-md bg-yellow-500/20 px-2.5 py-1 text-xs font-bold uppercase text-yellow-500">
+                  <Star className="h-3.5 w-3.5" /> Premium
+                </span>
               </div>
             )}
 
