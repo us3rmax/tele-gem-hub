@@ -41,12 +41,14 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(207,68%,65%)] py-3.5 px-6 text-center text-base font-extrabold uppercase tracking-wide text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-lg">
-              ENTRAR AGORA <span className="text-xl sm:text-2xl">🔥</span>
+            style={{ background: "#69AEE8", border: "3px solid #3A7FC1", textShadow: "0 2px 8px rgba(0,0,0,0.35)" }}
+            className="flex w-full items-center justify-center gap-3 rounded-full py-4 px-6 text-center text-2xl font-black uppercase tracking-wider text-white shadow-xl transition-transform hover:scale-[1.02] active:scale-[0.98] sm:text-3xl sm:py-5">
+              ENTRAR AGORA <span className="text-3xl sm:text-4xl leading-none">🔥</span>
             </a> :
           <div
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(207,68%,65%)] py-3.5 px-6 text-center text-base font-extrabold uppercase tracking-wide text-white shadow-lg sm:text-lg">
-              ENTRAR AGORA <span className="text-xl sm:text-2xl">🔥</span>
+            style={{ background: "#69AEE8", border: "3px solid #3A7FC1", textShadow: "0 2px 8px rgba(0,0,0,0.35)" }}
+            className="flex w-full items-center justify-center gap-3 rounded-full py-4 px-6 text-center text-2xl font-black uppercase tracking-wider text-white shadow-xl sm:text-3xl sm:py-5">
+              ENTRAR AGORA <span className="text-3xl sm:text-4xl leading-none">🔥</span>
             </div>
           }
         </div>
