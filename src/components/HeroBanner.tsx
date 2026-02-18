@@ -39,7 +39,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
             rel="noopener noreferrer"
             onClick={handleClick}
             className="block w-4/5 mx-auto transition-transform hover:scale-[1.02] active:scale-[0.98]">
-              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-12 sm:max-h-16 animate-[pulse_1.8s_ease-in-out_infinite]" />
+              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-12 sm:max-h-16 animate-btn-pulse" />
             </a> :
           <div className="w-4/5 mx-auto">
             <img alt="Entrar Agora" className="w-full max-h-12 sm:max-h-16 object-cover" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
