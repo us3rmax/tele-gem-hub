@@ -1,4 +1,4 @@
-import { Users, CheckCircle, Star } from "lucide-react";
+import { CheckCircle, Star, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
 import { groupPath } from "@/lib/slug";
@@ -88,9 +88,9 @@ const GroupCard = ({ grupo, hideBadges = false }: { grupo: Grupo; hideBadges?: b
           </span>
 
           <span
-            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90"
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Entrar
+            Entrar <Send className="h-3 w-3" />
           </span>
         </div>
       </div>
