@@ -22,26 +22,35 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         loop
         muted
         playsInline
-        className="absolute inset-0 h-full w-full object-cover pointer-events-none" />
+        className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+      />
 
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      {/* Dark overlay — stronger at bottom so button stands out */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-      {/* CTA Button — pinned to bottom */}
-      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-3 sm:px-8 sm:pb-4 lg:px-12 lg:pb-5">
+      {/* CTA Button — pinned to bottom, large */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center px-6 pb-4 sm:px-10 sm:pb-5 lg:px-16 lg:pb-6">
         {link_url ? (
           <a
             href={link_url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className="block w-full transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="block w-full max-w-2xl transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain animate-btn-pulse" />
+            <img
+              src={btnEntrarAgora}
+              alt="Entrar Agora"
+              className="w-full object-contain animate-btn-pulse drop-shadow-2xl"
+            />
           </a>
         ) : (
-          <div className="w-full">
-            <img alt="Entrar Agora" className="w-full object-contain animate-btn-pulse" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
+          <div className="w-full max-w-2xl">
+            <img
+              alt="Entrar Agora"
+              src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png"
+              className="w-full object-contain animate-btn-pulse drop-shadow-2xl"
+            />
           </div>
         )}
       </div>
