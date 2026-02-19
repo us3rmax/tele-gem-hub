@@ -28,6 +28,7 @@ const Usc2257 = lazy(() => import("./pages/Usc2257"));
 const Removal = lazy(() => import("./pages/Removal"));
 const Blog = lazy(() => import("./pages/Blog"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const GruposTelegram = lazy(() => import("./pages/GruposTelegram"));
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
                     <Route path="/removal" element={<Removal />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/" element={<Index />} />
+                    <Route path="/grupos-telegram" element={<GruposTelegram />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
