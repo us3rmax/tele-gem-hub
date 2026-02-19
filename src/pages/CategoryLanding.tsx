@@ -183,3 +183,5 @@ const CategoryLanding = () => {
     </div>
   );
 };
+
+export default CategoryLanding;
