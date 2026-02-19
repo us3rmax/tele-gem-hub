@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import CategoryLanding from "@/pages/CategoryLanding";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
@@ -44,14 +45,27 @@ const App = () => (
             <ScrollToTop />
             <AgeVerificationModal />
             <div className="flex min-h-screen flex-col">
-              <Suspense fallback={<div className="flex flex-1 items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>}>
+              <Suspense
+                fallback={
+                  <div className="flex flex-1 items-center justify-center bg-background">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  </div>
+                }
+              >
                 <div className="flex-1">
                   <Routes>
                     <Route path="/auth/login" element={<Login />} />
                     <Route path="/auth/register" element={<Register />} />
                     <Route path="/submit" element={<SubmitGroup />} />
                     <Route path="/my-groups" element={<MyGroups />} />
-                    <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute requireAdmin>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
                     <Route path="/group/:slug" element={<GroupDetail />} />
                     <Route path="/categorias" element={<Categories />} />
                     <Route path="/categorias/:name" element={<Categories />} />
@@ -65,6 +79,7 @@ const App = () => (
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/" element={<Index />} />
                     <Route path="/grupos-telegram" element={<GruposTelegram />} />
+                    <Route path="/telegram-porno" element={<CategoryLanding />} />
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
