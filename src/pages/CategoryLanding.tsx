@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
@@ -7,7 +7,50 @@ import GroupCard from "@/components/GroupCard";
 import { supabase } from "@/lib/supabase";
 import type { Grupo } from "@/data/mock";
 
+// Configurações por página
+const pageConfigs: Record<string, any> = {
+  "/telegram-porno": {
+    title: "Telegram Porno - Melhores Canais +18",
+    seoTitle: "Telegram Porno - Canais e Grupos +18 | Canais18",
+    description:
+      "Encontre os melhores canais telegram porno. +100 canais verificados de conteúdo adulto brasileiro. Grátis, atualizado diariamente.",
+    keywords: "telegram porno, canais telegram porno, grupos telegram porno",
+    filter: "category.ilike.%porno%,category.ilike.%xxx%,category.ilike.%amadoras%",
+    categoryLink: "Porno",
+  },
+  "/putaria-telegram": {
+    title: "Putaria Telegram - Grupos e Canais Brasil",
+    seoTitle: "Putaria Telegram - Grupos +18 Verificados | Canais18",
+    description:
+      "Os melhores grupos putaria telegram do Brasil. Conteúdo exclusivo, canais ativos e verificados. Entre grátis nos grupos mais quentes.",
+    keywords: "putaria telegram, grupos putaria telegram, telegram putaria brasil",
+    filter: "category.ilike.%putaria%,category.ilike.%novinhas%,category.ilike.%amadoras%",
+    categoryLink: "Putaria",
+  },
+  "/telegram-xxx": {
+    title: "Telegram XXX - Canais Adultos Verificados",
+    seoTitle: "Telegram XXX - Melhores Canais +18 | Canais18",
+    description:
+      "Canais telegram xxx com conteúdo adulto de qualidade. Milhares de vídeos, fotos e lives. Acesso grátis e imediato.",
+    keywords: "telegram xxx, canais telegram xxx, xxx telegram",
+    filter: "category.ilike.%xxx%,category.ilike.%porno%",
+    categoryLink: "XXX",
+  },
+  "/grupos-putaria-telegram": {
+    title: "Grupos Putaria Telegram - Lista Atualizada",
+    seoTitle: "Grupos Putaria Telegram - +100 Grupos Ativos | Canais18",
+    description:
+      "Lista completa de grupos putaria telegram. Grupos ativos com milhares de membros. Entre grátis e aproveite o melhor conteúdo.",
+    keywords: "grupos putaria telegram, lista grupos putaria, grupos telegram putaria",
+    filter: "category.ilike.%putaria%,category.ilike.%grupos%",
+    categoryLink: "Putaria",
+  },
+};
+
 const CategoryLanding = () => {
+  const location = useLocation();
+  const config = pageConfigs[location.pathname] || pageConfigs["/telegram-porno"];
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +62,7 @@ const CategoryLanding = () => {
       const { data, error } = await supabase
         .from("groups")
         .select("*")
-        .or("category.ilike.%porno%,category.ilike.%xxx%,category.ilike.%amadoras%")
+        .or(config.filter)
         .eq("is_premium", false)
         .order("member_count", { ascending: false })
         .limit(12);
@@ -32,15 +75,15 @@ const CategoryLanding = () => {
     };
 
     fetchGroups();
-  }, []);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Telegram Porno - Canais e Grupos +18 | Canais18"
-        description="Encontre os melhores canais telegram porno. +100 canais verificados de conteúdo adulto brasileiro. Grátis, atualizado diariamente. Entre agora!"
-        keywords="telegram porno, canais telegram porno, grupos telegram porno, telegram porno brasil, porno telegram gratis"
-        canonicalUrl="https://canais18.com/telegram-porno"
+        title={config.seoTitle}
+        description={config.description}
+        keywords={config.keywords}
+        canonicalUrl={`https://canais18.com${location.pathname}`}
       />
 
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
@@ -48,7 +91,7 @@ const CategoryLanding = () => {
 
       <main className="mx-auto max-w-7xl space-y-8 px-4 py-6">
         <section className="space-y-4">
-          <h1 className="text-3xl font-bold text-foreground sm:text-4xl">Telegram Porno - Melhores Canais +18</h1>
+          <h1 className="text-3xl font-bold text-foreground sm:text-4xl">{config.title}</h1>
 
           <div className="prose prose-invert max-w-none">
             <p className="text-base text-muted-foreground leading-relaxed">
@@ -58,27 +101,14 @@ const CategoryLanding = () => {
             </p>
 
             <p className="text-base text-muted-foreground leading-relaxed">
-              Aqui você encontra os <strong>melhores canais telegram porno</strong>, cuidadosamente selecionados e
-              verificados pela nossa equipe. Nossa seleção inclui canais de diversas categorias: conteúdo amador
+              Nossa seleção inclui os melhores canais, cuidadosamente verificados pela nossa equipe. Conteúdo amador
               brasileiro, produções profissionais em HD, lives exclusivas e muito mais.
-            </p>
-
-            <p className="text-base text-muted-foreground leading-relaxed">
-              Todos os links são testados diariamente para garantir que estejam funcionais. Os canais são atualizados
-              constantemente com novo conteúdo, proporcionando sempre novidades para os assinantes. A maioria é{" "}
-              <strong>100% gratuita</strong>, sem necessidade de pagamento ou assinatura.
-            </p>
-
-            <p className="text-base text-muted-foreground leading-relaxed">
-              <strong>Segurança e Privacidade:</strong> O Telegram oferece criptografia de ponta a ponta, garantindo que
-              suas atividades permaneçam privadas. Você pode navegar pelos canais com tranquilidade, sabendo que sua
-              identidade está protegida.
             </p>
           </div>
         </section>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">🔥 Canais Telegram Porno em Destaque</h2>
+          <h2 className="text-2xl font-bold text-foreground">🔥 Canais em Destaque</h2>
 
           {loading ? (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -96,7 +126,7 @@ const CategoryLanding = () => {
 
               <div className="flex justify-center pt-4">
                 <Link
-                  to="/?category=Porno"
+                  to={`/?category=${config.categoryLink}`}
                   className="rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   Ver Todos os Canais
@@ -111,72 +141,29 @@ const CategoryLanding = () => {
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
             <Link
-              to="/telegram-xxx"
+              to="/telegram-porno"
               className="rounded-lg border border-border bg-card p-4 text-center transition-colors hover:bg-card/80"
             >
-              <span className="font-semibold text-foreground">Telegram XXX</span>
+              <span className="font-semibold text-foreground">Telegram Porno</span>
             </Link>
-
             <Link
               to="/putaria-telegram"
               className="rounded-lg border border-border bg-card p-4 text-center transition-colors hover:bg-card/80"
             >
               <span className="font-semibold text-foreground">Putaria Telegram</span>
             </Link>
-
+            <Link
+              to="/telegram-xxx"
+              className="rounded-lg border border-border bg-card p-4 text-center transition-colors hover:bg-card/80"
+            >
+              <span className="font-semibold text-foreground">Telegram XXX</span>
+            </Link>
             <Link
               to="/grupos-putaria-telegram"
               className="rounded-lg border border-border bg-card p-4 text-center transition-colors hover:bg-card/80"
             >
               <span className="font-semibold text-foreground">Grupos Putaria</span>
             </Link>
-
-            <Link
-              to="/?category=Novinhas"
-              className="rounded-lg border border-border bg-card p-4 text-center transition-colors hover:bg-card/80"
-            >
-              <span className="font-semibold text-foreground">Novinhas</span>
-            </Link>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">❓ Perguntas Frequentes</h2>
-
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="mb-2 text-lg font-semibold text-foreground">Como entrar em canais telegram porno?</h3>
-              <p className="text-muted-foreground">
-                Basta clicar no canal desejado acima e você será redirecionado para o Telegram. Clique em "Entrar no
-                Canal" e pronto! O conteúdo estará disponível imediatamente.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="mb-2 text-lg font-semibold text-foreground">
-                É seguro usar telegram para conteúdo adulto?
-              </h3>
-              <p className="text-muted-foreground">
-                Sim! O Telegram oferece criptografia de ponta a ponta e não compartilha seus dados com terceiros. Sua
-                privacidade está garantida ao acessar os canais.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="mb-2 text-lg font-semibold text-foreground">Canais telegram porno são grátis?</h3>
-              <p className="text-muted-foreground">
-                A maioria dos canais listados é 100% gratuita. Alguns canais premium podem cobrar uma taxa de
-                assinatura, mas isso é claramente indicado.
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-card p-6">
-              <h3 className="mb-2 text-lg font-semibold text-foreground">Como achar novos canais telegram porno?</h3>
-              <p className="text-muted-foreground">
-                Nosso site é atualizado diariamente com novos canais. Você também pode se cadastrar e enviar sugestões
-                de canais para serem adicionados ao diretório.
-              </p>
-            </div>
           </div>
         </section>
       </main>
