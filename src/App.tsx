@@ -80,6 +80,10 @@ const App = () => (
                     <Route path="/" element={<Index />} />
                     <Route path="/grupos-telegram" element={<GruposTelegram />} />
                     <Route path="/telegram-porno" element={<CategoryLanding />} />
+                    <Route path="/telegram-porno" element={<CategoryLanding />} />
+                    <Route path="/putaria-telegram" element={<CategoryLanding />} />
+                    <Route path="/telegram-xxx" element={<CategoryLanding />} />
+                    <Route path="/grupos-putaria-telegram" element={<CategoryLanding />} />
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
