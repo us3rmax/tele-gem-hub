@@ -27,7 +27,7 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
 
 
       {/* CTA Button — pinned to bottom, large */}
-      <div className="absolute top-1/2 left-0 right-0 z-10 flex justify-center -translate-y-1/2">
+      <div className="absolute top-[80%] left-0 right-0 z-10 flex justify-center -translate-y-1/2">
         {link_url ? (
           <a
             href={link_url}
