@@ -25,30 +25,28 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         className="absolute inset-0 h-full w-full object-cover pointer-events-none" />
 
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/50" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-      {/* Content */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-end p-5 pb-2 sm:p-7 sm:pb-3 lg:p-10 lg:pb-5">
-        {/* CTA Button */}
-        <div className="mt-4">
-          {link_url ?
+      {/* CTA Button — pinned to bottom */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-3 sm:px-8 sm:pb-4 lg:px-12 lg:pb-5">
+        {link_url ? (
           <a
             href={link_url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className="block w-full mx-auto transition-transform hover:scale-[1.02] active:scale-[0.98]">
-              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain animate-btn-pulse" />
-            </a> :
-          <div className="w-full mx-auto">
-            <img alt="Entrar Agora" className="w-full object-contain animate-btn-pulse" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
+            className="block w-full transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-16 sm:max-h-20 lg:max-h-24 animate-btn-pulse" />
+          </a>
+        ) : (
+          <div className="w-full">
+            <img alt="Entrar Agora" className="w-full object-contain max-h-16 sm:max-h-20 lg:max-h-24 animate-btn-pulse" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
           </div>
-          }
-        </div>
+        )}
       </div>
-
-    </div>);
-
+    </div>
+  );
 };
 
 export default HeroBanner;
