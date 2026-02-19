@@ -25,8 +25,6 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         className="absolute inset-0 h-full w-full object-cover pointer-events-none"
       />
 
-      {/* Dark overlay — stronger at bottom so button stands out */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
       {/* CTA Button — pinned to bottom, large */}
       <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center px-6 pb-4 sm:px-10 sm:pb-5 lg:px-16 lg:pb-6">
