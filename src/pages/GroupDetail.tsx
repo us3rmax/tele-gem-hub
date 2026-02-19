@@ -231,6 +231,8 @@ const GroupDetail = () => {
           )}
         </section>
 
+        <BannerAd position="middle" />
+
         {related.length > 0 && (
           <section className="space-y-4">
             <div>
