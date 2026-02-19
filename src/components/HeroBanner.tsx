@@ -24,12 +24,11 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
         playsInline
         className="absolute inset-0 h-full w-full object-cover pointer-events-none" />
 
-
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,50%,10%)/0.85] via-[hsl(220,50%,10%)/0.7] to-[hsl(220,50%,10%)/0.5]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/50" />
 
       {/* Content */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-end p-5 pb-1 sm:p-7 sm:pb-2">
+      <div className="absolute inset-0 z-10 flex flex-col justify-end p-5 pb-2 sm:p-7 sm:pb-3 lg:p-10 lg:pb-5">
         {/* CTA Button */}
         <div className="mt-4">
           {link_url ?
@@ -38,11 +37,11 @@ const HeroBanner = ({ id, title, video_url, link_url }: HeroBannerProps) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className="block w-4/5 mx-auto transition-transform hover:scale-[1.02] active:scale-[0.98]">
-              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-12 sm:max-h-16 animate-btn-pulse" />
+            className="block w-3/5 sm:w-2/5 lg:w-1/4 mx-auto transition-transform hover:scale-[1.02] active:scale-[0.98]">
+              <img src={btnEntrarAgora} alt="Entrar Agora" className="w-full object-contain max-h-12 sm:max-h-16 lg:max-h-20 animate-btn-pulse" />
             </a> :
-          <div className="w-4/5 mx-auto">
-            <img alt="Entrar Agora" className="w-full max-h-12 sm:max-h-16 object-cover animate-btn-pulse" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
+          <div className="w-3/5 sm:w-2/5 lg:w-1/4 mx-auto">
+            <img alt="Entrar Agora" className="w-full max-h-12 sm:max-h-16 lg:max-h-20 object-contain animate-btn-pulse" src="/lovable-uploads/747af2eb-7bf8-4a93-81d4-7e643bbaad03.png" />
           </div>
           }
         </div>
