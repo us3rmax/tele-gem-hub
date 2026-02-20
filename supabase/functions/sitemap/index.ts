@@ -8,6 +8,13 @@ const corsHeaders = {
 
 const SITE_URL = "https://canais18.com";
 
+const STATIC_PAGES = [
+  { path: "/submit", priority: "0.6", changefreq: "monthly" },
+  { path: "/privacy", priority: "0.6", changefreq: "monthly" },
+  { path: "/terms", priority: "0.6", changefreq: "monthly" },
+  { path: "/contato", priority: "0.6", changefreq: "monthly" },
+];
+
 function generateSlug(name: string): string {
   let slug = name.toLowerCase();
   slug = slug.replace(/[^\x20-\x7E]/g, "");
@@ -67,6 +74,7 @@ Deno.serve(async (req) => {
     <priority>1.0</priority>
   </url>`;
 
+    // Group pages (priority 0.8)
     for (const group of groups || []) {
       const path = groupPath(group.id, group.name);
       const lastmod = formatDate(group.created_at);
@@ -76,6 +84,17 @@ Deno.serve(async (req) => {
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>`;
+    }
+
+    // Static pages (priority 0.6)
+    for (const page of STATIC_PAGES) {
+      xml += `
+  <url>
+    <loc>${SITE_URL}${page.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
   </url>`;
     }
 
