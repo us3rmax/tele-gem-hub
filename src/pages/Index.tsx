@@ -104,10 +104,7 @@ const Index = () => {
           "inLanguage": "pt-BR",
           "potentialAction": {
             "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": "https://canais18.com/?search={search_term_string}"
-            },
+            "target": "https://canais18.com/?search={search_term_string}",
             "query-input": "required name=search_term_string"
           }
         }}
