@@ -7,7 +7,8 @@ const AgeVerificationModal = () => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!sessionStorage.getItem(AGE_KEY)) {
+    const excluded = ["/sitemap.xml", "/robots.txt"];
+    if (!sessionStorage.getItem(AGE_KEY) && !excluded.includes(window.location.pathname)) {
       setShow(true);
     }
   }, []);
