@@ -30,6 +30,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const GruposTelegram = lazy(() => import("./pages/GruposTelegram"));
 const CategoryLanding = lazy(() => import("./pages/CategoryLanding"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
                     <Route path="/telegram-xxx" element={<CategoryLanding />} />
                     <Route path="/grupos-putaria-telegram" element={<CategoryLanding />} />
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
+                    <Route path="/categoria/:slug" element={<CategoryPage />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
