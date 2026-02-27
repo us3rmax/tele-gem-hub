@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Send, Users, Star, ChevronRight } from "lucide-react";
+import { Send, Users, Star, ChevronRight, Eye } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import { groupPath } from "@/lib/slug";
@@ -200,6 +200,11 @@ const GroupDetail = () => {
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" /> {formatMembers(grupo.member_count)} membros
               </span>
+              {!!grupo.views && (
+                <span className="flex items-center gap-1">
+                  <Eye className="h-4 w-4" /> {formatMembers(grupo.views)} visualizações
+                </span>
+              )}
             </div>
 
             {grupo.is_premium && (

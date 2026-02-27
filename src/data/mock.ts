@@ -8,6 +8,11 @@ export interface Grupo {
   member_count: number;
   is_premium: boolean;
   is_verified: boolean;
+  is_pinned?: boolean;
+  views?: number;
+  clicks_count?: number;
+  source?: string;
+  submitted_by?: string | null;
   created_at: string;
 }
 
