@@ -8,13 +8,13 @@ const AgeVerificationModal = () => {
 
   useEffect(() => {
     const excluded = ["/sitemap.xml", "/robots.txt", "/submit", "/privacy", "/terms", "/dmca", "/2257", "/removal", "/contato"];
-    if (!sessionStorage.getItem(AGE_KEY) && !excluded.includes(window.location.pathname)) {
+    if (!localStorage.getItem(AGE_KEY) && !excluded.includes(window.location.pathname)) {
       setShow(true);
     }
   }, []);
 
   const handleConfirm = () => {
-    sessionStorage.setItem(AGE_KEY, "true");
+    localStorage.setItem(AGE_KEY, "true");
     setShow(false);
   };
 
