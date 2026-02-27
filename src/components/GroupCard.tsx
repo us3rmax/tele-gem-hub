@@ -42,7 +42,7 @@ const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boo
         {hasThumbnail ?
         <img
           src={grupo.thumbnail_url!}
-          alt={grupo.name}
+          alt={`${grupo.name} - Canal Telegram ${grupo.category} 18+ | Canais18`}
           width={400}
           height={144}
           className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
