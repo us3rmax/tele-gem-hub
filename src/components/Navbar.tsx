@@ -1,6 +1,7 @@
-import { Menu, Search, User, LogOut, Shield, Send, FolderOpen } from "lucide-react";
+import { useState } from "react";
+import { Menu, Search, User, LogOut, Shield, Send, FolderOpen, X } from "lucide-react";
 import logo from "@/assets/logo.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -16,6 +17,23 @@ interface NavbarProps {
 const Navbar = ({ onMenuClick }: NavbarProps) => {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = searchTerm.trim();
+    if (trimmed) {
+      navigate(`/?search=${encodeURIComponent(trimmed)}`);
+    } else {
+      navigate("/");
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    navigate("/");
+  };
 
   const handleAuthLink = (path: string) => {
     if (user) {
@@ -41,14 +59,20 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         </Link>
 
         <div className="ml-auto flex flex-1 items-center justify-end gap-2">
-          <div className="relative hidden w-full max-w-xs sm:block">
+          <form onSubmit={handleSearchSubmit} className="relative hidden w-full max-w-xs sm:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar grupos..."
-              className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
-
-          </div>
+              className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" />
+            {searchTerm && (
+              <button type="button" onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </form>
 
           <button
             onClick={() => handleAuthLink("/submit")}
