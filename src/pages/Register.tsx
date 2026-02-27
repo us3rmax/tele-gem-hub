@@ -64,15 +64,11 @@ const Register = () => {
       return;
     }
 
-    const { error: loginError } = await signIn(email, password);
-    if (!loginError) {
-      toast({ title: "Conta criada com sucesso!" });
-      navigate("/");
-      return;
-    }
-
-    toast({ title: "Conta criada!", description: "Verifique seu email ou faça login." });
-    navigate(`/auth/login?email=${encodeURIComponent(email)}`);
+    // Email confirmation is enabled — don't try auto-login
+    toast({
+      title: "Conta criada!",
+      description: "Verifique seu email para confirmar o cadastro antes de fazer login.",
+    });
     setLoading(false);
   };
 
