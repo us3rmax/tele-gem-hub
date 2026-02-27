@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import MobileSidebar from "@/components/MobileSidebar";
 import GroupCard from "@/components/GroupCard";
 import SEO from "@/components/SEO";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
