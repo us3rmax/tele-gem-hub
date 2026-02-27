@@ -60,13 +60,13 @@ const Index = () => {
 
       switch (sort) {
         case "vistos":
-          query = query.order("member_count", { ascending: false });
+          query = query.order("views", { ascending: false });
           break;
         case "votados":
           query = query.order("member_count", { ascending: false });
           break;
         case "hot":
-          query = query.order("member_count", { ascending: false });
+          query = query.order("created_at", { ascending: false });
           break;
         default:
           query = query.order("created_at", { ascending: false });
