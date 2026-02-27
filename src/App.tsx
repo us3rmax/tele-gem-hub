@@ -31,6 +31,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const GruposTelegram = lazy(() => import("./pages/GruposTelegram"));
 const CategoryLanding = lazy(() => import("./pages/CategoryLanding"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                   <Routes>
                     <Route path="/auth/login" element={<Login />} />
                     <Route path="/auth/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/submit" element={<SubmitGroup />} />
                     <Route path="/my-groups" element={<MyGroups />} />
                     <Route
