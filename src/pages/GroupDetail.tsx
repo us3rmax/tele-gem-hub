@@ -173,7 +173,7 @@ const GroupDetail = () => {
               {grupo.thumbnail_url ? (
                 <img
                   src={grupo.thumbnail_url}
-                  alt={grupo.name}
+                  alt={`${grupo.name} - Canal Telegram ${grupo.category} 18+ | Canais18`}
                   width={400}
                   height={400}
                   className="h-full w-full object-cover"
