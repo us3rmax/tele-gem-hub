@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { supabase } from "@/integrations/supabase/client";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAACeD94GpcENqZjWY";
+const TURNSTILE_TIMEOUT_MS = 10000;
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -17,33 +18,43 @@ const Register = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReady, setTurnstileReady] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
-  const { signUp, signIn } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Timeout: allow registration without Turnstile after 10s
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTurnstileReady(true);
+    }, TURNSTILE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleTurnstileSuccess = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setTurnstileReady(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!turnstileToken) {
-      setError("Falha na verificação de segurança. Recarregue a página.");
-      return;
-    }
-
     setLoading(true);
 
-    // Verify turnstile token server-side
-    const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
-      body: { token: turnstileToken },
-    });
+    // If token exists, verify server-side; if not, skip verification
+    if (turnstileToken) {
+      const { data: verification } = await supabase.functions.invoke("verify-turnstile", {
+        body: { token: turnstileToken },
+      });
 
-    if (!verification?.success) {
-      setError("Falha na verificação de segurança. Tente novamente.");
-      turnstileRef.current?.reset();
-      setTurnstileToken(null);
-      setLoading(false);
-      return;
+      if (!verification?.success) {
+        setError("Falha na verificação de segurança. Tente novamente.");
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
+        setLoading(false);
+        return;
+      }
     }
 
     const { error, session } = await signUp(email, password);
@@ -116,9 +127,9 @@ const Register = () => {
           <Turnstile
             ref={turnstileRef}
             siteKey={TURNSTILE_SITE_KEY}
-            onSuccess={setTurnstileToken}
-            onError={() => setTurnstileToken(null)}
-            onExpire={() => setTurnstileToken(null)}
+            onSuccess={handleTurnstileSuccess}
+            onError={() => setTurnstileReady(true)}
+            onExpire={() => { setTurnstileToken(null); setTurnstileReady(true); }}
             options={{ size: "invisible" }}
           />
 
