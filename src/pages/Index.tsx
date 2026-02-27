@@ -24,6 +24,7 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
 
   const page = Number(searchParams.get("page") || "1");
+  const searchTerm = searchParams.get("search") || "";
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -47,7 +48,15 @@ const Index = () => {
       }
 
       // Fetch regular groups
-      let query = supabase.from("groups").select("*").eq("is_premium", false);
+      let query = supabase.from("groups").select("*");
+
+      if (!searchTerm) {
+        query = query.eq("is_premium", false);
+      }
+
+      if (searchTerm) {
+        query = query.ilike("name", `%${searchTerm}%`);
+      }
 
       switch (sort) {
         case "vistos":
@@ -76,7 +85,7 @@ const Index = () => {
     };
 
     fetchGroups();
-  }, [sort]);
+  }, [sort, searchTerm]);
 
   const totalPages = Math.ceil(grupos.length / PER_PAGE);
   const currentPage = Math.min(page, totalPages) || 1;
@@ -120,10 +129,18 @@ const Index = () => {
         {/* Premium Carousel */}
         {!loading && <PremiumCarousel grupos={premiumGrupos} />}
 
-        <section className="space-y-3">
-          <h2 className="text-lg font-bold text-foreground">Canais e Grupos</h2>
-          <SortTabs active={sort} onChange={setSort} />
-        </section>
+        {searchTerm ? (
+          <section className="space-y-3">
+            <h2 className="text-lg font-bold text-foreground">
+              Resultados para: <span className="text-primary">{searchTerm}</span>
+            </h2>
+          </section>
+        ) : (
+          <section className="space-y-3">
+            <h2 className="text-lg font-bold text-foreground">Canais e Grupos</h2>
+            <SortTabs active={sort} onChange={setSort} />
+          </section>
+        )}
 
         {error && <p className="py-12 text-center text-destructive">{error}</p>}
 
