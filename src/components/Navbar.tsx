@@ -19,6 +19,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +74,39 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               </button>
             )}
           </form>
+
+          {/* Mobile search icon */}
+          <button
+            onClick={() => setMobileSearchOpen(true)}
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:hidden"
+            aria-label="Buscar"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+
+          {/* Mobile search overlay */}
+          {mobileSearchOpen && (
+            <div className="fixed inset-0 z-50 flex items-start bg-background/95 backdrop-blur-sm sm:hidden">
+              <form onSubmit={(e) => { handleSearchSubmit(e); setMobileSearchOpen(false); }} className="flex w-full items-center gap-2 border-b border-border bg-background px-4 py-3">
+                <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar grupos..."
+                  autoFocus
+                  className="h-9 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen(false)}
+                  className="shrink-0 rounded-lg p-2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </form>
+            </div>
+          )}
 
           <button
             onClick={() => handleAuthLink("/submit")}

@@ -1,4 +1,5 @@
-import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home, FolderOpen } from "lucide-react";
+import { useState } from "react";
+import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home, FolderOpen, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,6 +29,31 @@ const extraItems = [
   { icon: Mail, label: "Contato", action: "contato" },
   { icon: FileText, label: "Termos de Uso", action: "termos" },
 ];
+
+const SidebarSearch = ({ onClose }: { onClose: () => void }) => {
+  const [term, setTerm] = useState("");
+  const nav = useNavigate();
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = term.trim();
+    nav(trimmed ? `/?search=${encodeURIComponent(trimmed)}` : "/");
+    onClose();
+  };
+
+  return (
+    <form onSubmit={submit} className="relative mb-2">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="text"
+        value={term}
+        onChange={(e) => setTerm(e.target.value)}
+        placeholder="Buscar grupos..."
+        className="h-9 w-full rounded-lg border border-border bg-secondary pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+      />
+    </form>
+  );
+};
 
 const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps) => {
   const navigate = useNavigate();
@@ -83,6 +109,8 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          <SidebarSearch onClose={onClose} />
+
           {menuItems.map((item) => (
             <button key={item.action} onClick={() => handleMenuClick(item.action, item.requiresAuth)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
               <item.icon className="h-4 w-4" />
