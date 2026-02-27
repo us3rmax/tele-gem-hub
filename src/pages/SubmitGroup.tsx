@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X } from "lucide-react";
+import { Send, Clock, CheckCircle, XCircle, Loader2, Upload, X, AlertTriangle } from "lucide-react";
 import EmailConfirmationGuard from "@/components/EmailConfirmationGuard";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import ImageCropModal from "@/components/ImageCropModal";
@@ -274,6 +274,15 @@ const SubmitGroup = () => {
           </p>
         </div>
 
+        {!user.email_confirmed_at && (
+          <div className="flex items-center gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-yellow-500" />
+            <p className="text-sm text-yellow-200">
+              Confirme seu email antes de enviar um grupo. Verifique sua caixa de entrada.
+            </p>
+          </div>
+        )}
+
         <EmailConfirmationGuard user={user}>
 
         <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-border bg-card p-6">
@@ -417,7 +426,7 @@ const SubmitGroup = () => {
             options={{ size: "invisible" }}
           />
 
-          <Button type="submit" className="w-full" disabled={submitting || botError}>
+          <Button type="submit" className="w-full" disabled={submitting || botError || !user.email_confirmed_at}>
             {submitting ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
             ) : (
