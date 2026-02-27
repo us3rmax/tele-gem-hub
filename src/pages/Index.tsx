@@ -9,7 +9,7 @@ import SortTabs from "@/components/SortTabs";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
 const PER_PAGE = 20;

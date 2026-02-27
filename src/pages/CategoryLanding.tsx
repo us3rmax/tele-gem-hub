@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
 import GroupCard from "@/components/GroupCard";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
 // Configurações por página

@@ -8,7 +8,7 @@ import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromSlug } from "@/lib/slug";
 import type { Grupo } from "@/data/mock";
 
@@ -59,7 +59,7 @@ const GroupDetail = () => {
 
       setGrupo(data as Grupo);
 
-      void supabase.rpc("increment_views", { group_id: data.id });
+      void supabase.from("groups").update({ views: (data.views || 0) + 1 }).eq("id", data.id);
 
       const { data: relatedData } = await supabase
         .from("groups")

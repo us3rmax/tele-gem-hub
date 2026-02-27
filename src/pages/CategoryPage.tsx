@@ -6,7 +6,7 @@ import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
 const ALL_CATEGORIES = [
