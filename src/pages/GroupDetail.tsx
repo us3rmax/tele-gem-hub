@@ -10,8 +10,7 @@ import GroupCard from "@/components/GroupCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromSlug } from "@/lib/slug";
-import type { Grupo } from "@/data/mock";
-
+import { useGroupDetail, useRelatedGroups } from "@/hooks/use-groups";
 
 function formatMembers(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
@@ -31,52 +30,21 @@ const categoryColors: Record<string, string> = {
 
 const GroupDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [grupo, setGrupo] = useState<Grupo | null>(null);
-  const [related, setRelated] = useState<Grupo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sort, setSort] = useState("recentes");
 
+  const groupId = slug ? extractIdFromSlug(slug) : undefined;
+  const { data: grupo, isLoading: loading, isError } = useGroupDetail(groupId);
+  const { data: related = [] } = useRelatedGroups(grupo?.category, grupo?.id);
+
+  // Increment views (fire-and-forget)
   useEffect(() => {
-    if (!slug) return;
-    const groupId = extractIdFromSlug(slug);
-    const fetchGroup = async () => {
-      setLoading(true);
-      setNotFound(false);
+    if (grupo?.id) {
+      supabase.from("groups").update({ views: (grupo.views || 0) + 1 }).eq("id", grupo.id).then(() => {});
+    }
+  }, [grupo?.id]);
 
-      const { data, error } = await supabase
-        .from("groups")
-        .select("*")
-        .eq("id", groupId)
-        .single();
-
-      if (error || !data) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      setGrupo(data as Grupo);
-
-      void supabase.from("groups").update({ views: (data.views || 0) + 1 }).eq("id", data.id);
-
-      const { data: relatedData } = await supabase
-        .from("groups")
-        .select("*")
-        .eq("category", data.category)
-        .neq("id", data.id)
-        .limit(8);
-
-      if (relatedData) {
-        const shuffled = relatedData.sort(() => Math.random() - 0.5);
-        setRelated(shuffled as Grupo[]);
-      }
-
-      setLoading(false);
-    };
-
-    fetchGroup();
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [slug]);
 
@@ -98,13 +66,12 @@ const GroupDetail = () => {
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-14 w-full max-w-md" />
           </div>
-          <Skeleton className="h-40 w-full rounded-xl" />
         </main>
       </div>
     );
   }
 
-  if (notFound || !grupo) {
+  if (isError || !grupo) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
@@ -119,8 +86,8 @@ const GroupDetail = () => {
     );
   }
 
-  const seoDescription = grupo.description 
-    ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? '...' : '')
+  const seoDescription = grupo.description
+    ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? "..." : "")
     : `Entre no canal ${grupo.name} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${grupo.category}. Conteúdo exclusivo 18+ atualizado.`;
 
   return (
@@ -135,17 +102,17 @@ const GroupDetail = () => {
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "Article",
-          "headline": grupo.name,
-          "description": seoDescription,
-          "image": grupo.thumbnail_url || undefined,
-          "datePublished": grupo.created_at,
-          "dateModified": grupo.created_at,
-          "author": { "@type": "Organization", "name": "Canais18" },
-          "publisher": {
+          headline: grupo.name,
+          description: seoDescription,
+          image: grupo.thumbnail_url || undefined,
+          datePublished: grupo.created_at,
+          dateModified: grupo.created_at,
+          author: { "@type": "Organization", name: "Canais18" },
+          publisher: {
             "@type": "Organization",
-            "name": "Canais18",
-            "logo": { "@type": "ImageObject", "url": "https://canais18.com/logo.png" }
-          }
+            name: "Canais18",
+            logo: { "@type": "ImageObject", url: "https://canais18.com/logo.png" },
+          },
         }}
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
@@ -155,10 +122,7 @@ const GroupDetail = () => {
         <nav className="flex items-center gap-1 text-sm text-muted-foreground">
           <Link to="/" className="transition-colors hover:text-foreground">Canais18</Link>
           <ChevronRight className="h-3.5 w-3.5" />
-          <Link
-            to={`/?category=${encodeURIComponent(grupo.category)}`}
-            className="transition-colors hover:text-foreground"
-          >
+          <Link to={`/?category=${encodeURIComponent(grupo.category)}`} className="transition-colors hover:text-foreground">
             {grupo.category}
           </Link>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -181,9 +145,7 @@ const GroupDetail = () => {
                 />
               ) : (
                 <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${placeholderBg}`}>
-                  <span className="text-7xl font-bold text-white/60 sm:text-8xl">
-                    {grupo.name.charAt(0)}
-                  </span>
+                  <span className="text-7xl font-bold text-white/60 sm:text-8xl">{grupo.name.charAt(0)}</span>
                 </div>
               )}
             </div>
@@ -191,11 +153,9 @@ const GroupDetail = () => {
 
           <div className="space-y-3">
             <h1 className="text-xl font-bold text-foreground sm:text-2xl">{grupo.name}</h1>
-
             <span className="inline-block rounded-md bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
               {grupo.category}
             </span>
-
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Users className="h-4 w-4" /> {formatMembers(grupo.member_count)} membros
@@ -206,7 +166,6 @@ const GroupDetail = () => {
                 </span>
               )}
             </div>
-
             {grupo.is_premium && (
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 rounded-md bg-yellow-500/20 px-2.5 py-1 text-xs font-bold uppercase text-yellow-500">
@@ -214,7 +173,6 @@ const GroupDetail = () => {
                 </span>
               </div>
             )}
-
             <a
               href={grupo.telegram_link}
               target="_blank"
