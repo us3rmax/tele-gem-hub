@@ -22,6 +22,7 @@ const Index = () => {
   const [premiumGrupos, setPremiumGrupos] = useState<Grupo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
 
   const page = Number(searchParams.get("page") || "1");
   const searchTerm = searchParams.get("search") || "";
@@ -32,14 +33,9 @@ const Index = () => {
       setError(null);
 
       // Fetch premium groups
-      const { data: premiumData } = await supabase
-        .from("groups")
-        .select("*")
-        .eq("is_premium", true)
-        .limit(50);
+      const { data: premiumData } = await supabase.from("groups").select("*").eq("is_premium", true).limit(50);
 
       if (premiumData) {
-        // Pinned first, then randomize the rest
         const pinned = (premiumData as any[]).filter((g) => g.is_pinned);
         const unpinned = (premiumData as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
         setPremiumGrupos([...pinned, ...unpinned].slice(0, 10) as Grupo[]);
@@ -47,16 +43,20 @@ const Index = () => {
         setPremiumGrupos([]);
       }
 
-      // Fetch regular groups
+      // Count total for pagination
+      let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
+      if (!searchTerm) countQuery = countQuery.eq("is_premium", false);
+      if (searchTerm) countQuery = countQuery.ilike("name", `%${searchTerm}%`);
+      const { count } = await countQuery;
+      setTotalCount(count || 0);
+
+      // Fetch only current page
+      const from = (page - 1) * PER_PAGE;
+      const to = from + PER_PAGE - 1;
+
       let query = supabase.from("groups").select("*");
-
-      if (!searchTerm) {
-        query = query.eq("is_premium", false);
-      }
-
-      if (searchTerm) {
-        query = query.ilike("name", `%${searchTerm}%`);
-      }
+      if (!searchTerm) query = query.eq("is_premium", false);
+      if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
 
       switch (sort) {
         case "vistos":
@@ -66,11 +66,11 @@ const Index = () => {
           query = query.order("member_count", { ascending: false });
           break;
         case "hot":
-          query = query.order("created_at", { ascending: false });
-          break;
         default:
           query = query.order("created_at", { ascending: false });
       }
+
+      query = query.range(from, to);
 
       const { data, error: fetchError } = await query;
 
@@ -85,11 +85,9 @@ const Index = () => {
     };
 
     fetchGroups();
-  }, [sort, searchTerm]);
+  }, [sort, searchTerm, page]);
 
-  const totalPages = Math.ceil(grupos.length / PER_PAGE);
-  const currentPage = Math.min(page, totalPages) || 1;
-  const paged = grupos.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const totalPages = Math.ceil(totalCount / PER_PAGE);
 
   const handlePageChange = (p: number) => {
     setSearchParams({ page: String(p) });
@@ -106,16 +104,16 @@ const Index = () => {
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebSite",
-          "name": "Canais18",
-          "alternateName": "Canais Telegram 18+",
-          "url": "https://canais18.com",
-          "description": "Diretório de canais telegram 18+ verificados",
-          "inLanguage": "pt-BR",
-          "potentialAction": {
+          name: "Canais18",
+          alternateName: "Canais Telegram 18+",
+          url: "https://canais18.com",
+          description: "Diretório de canais telegram 18+ verificados",
+          inLanguage: "pt-BR",
+          potentialAction: {
             "@type": "SearchAction",
-            "target": "https://canais18.com/?search={search_term_string}",
-            "query-input": "required name=search_term_string"
-          }
+            target: "https://canais18.com/?search={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
         }}
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
@@ -126,7 +124,6 @@ const Index = () => {
 
         <BannerAd position="top" />
 
-        {/* Premium Carousel */}
         {!loading && <PremiumCarousel grupos={premiumGrupos} />}
 
         {searchTerm ? (
@@ -160,16 +157,16 @@ const Index = () => {
         ) : (
           <>
             <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {paged.slice(0, 10).map((grupo) => (
+              {grupos.slice(0, 10).map((grupo) => (
                 <GroupCard key={grupo.id} grupo={grupo} hideBadges />
               ))}
             </section>
 
-            {paged.length > 10 && <BannerAd position="middle" />}
+            {grupos.length > 10 && <BannerAd position="middle" />}
 
-            {paged.length > 10 && (
+            {grupos.length > 10 && (
               <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {paged.slice(10).map((grupo) => (
+                {grupos.slice(10).map((grupo) => (
                   <GroupCard key={grupo.id} grupo={grupo} hideBadges />
                 ))}
               </section>
@@ -177,11 +174,11 @@ const Index = () => {
           </>
         )}
 
-        {!loading && !error && paged.length === 0 && (
+        {!loading && !error && grupos.length === 0 && (
           <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>
         )}
 
-        <Pagination current={currentPage} total={totalPages} onChange={handlePageChange} />
+        <Pagination current={page} total={totalPages} onChange={handlePageChange} />
 
         <BannerAd position="bottom" />
       </main>
