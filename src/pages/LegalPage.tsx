@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import MobileSidebar from "@/components/MobileSidebar";
-import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
 
 interface LegalPageProps {
@@ -30,7 +29,6 @@ const LegalPage = ({ title, description, children }: LegalPageProps) => {
             {children}
           </div>
         </main>
-        <Footer />
       </div>
     </>
   );
