@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
@@ -9,84 +9,21 @@ import SortTabs from "@/components/SortTabs";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/integrations/supabase/client";
-import type { Grupo } from "@/data/mock";
-
-const PER_PAGE = 20;
+import { useGroups, usePremiumGroups, PER_PAGE } from "@/hooks/use-groups";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sort, setSort] = useState("hot");
-  const [grupos, setGrupos] = useState<Grupo[]>([]);
-  const [premiumGrupos, setPremiumGrupos] = useState<Grupo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalCount, setTotalCount] = useState(0);
 
   const page = Number(searchParams.get("page") || "1");
   const searchTerm = searchParams.get("search") || "";
 
-  useEffect(() => {
-    const fetchGroups = async () => {
-      setLoading(true);
-      setError(null);
+  const { data: premiumGrupos = [], isSuccess: premiumLoaded } = usePremiumGroups();
+  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page });
 
-      // Fetch premium groups
-      const { data: premiumData } = await supabase.from("groups").select("*").eq("is_premium", true).limit(50);
-
-      if (premiumData) {
-        const pinned = (premiumData as any[]).filter((g) => g.is_pinned);
-        const unpinned = (premiumData as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
-        setPremiumGrupos([...pinned, ...unpinned].slice(0, 10) as Grupo[]);
-      } else {
-        setPremiumGrupos([]);
-      }
-
-      // Count total for pagination
-      let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
-      if (!searchTerm) countQuery = countQuery.eq("is_premium", false);
-      if (searchTerm) countQuery = countQuery.ilike("name", `%${searchTerm}%`);
-      const { count } = await countQuery;
-      setTotalCount(count || 0);
-
-      // Fetch only current page
-      const from = (page - 1) * PER_PAGE;
-      const to = from + PER_PAGE - 1;
-
-      let query = supabase.from("groups").select("*");
-      if (!searchTerm) query = query.eq("is_premium", false);
-      if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
-
-      switch (sort) {
-        case "vistos":
-          query = query.order("views", { ascending: false });
-          break;
-        case "votados":
-          query = query.order("member_count", { ascending: false });
-          break;
-        case "hot":
-        default:
-          query = query.order("created_at", { ascending: false });
-      }
-
-      query = query.range(from, to);
-
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        console.error("Error fetching groups:", fetchError);
-        setError("Erro ao carregar grupos. Tente novamente.");
-        setGrupos([]);
-      } else {
-        setGrupos(data as Grupo[]);
-      }
-      setLoading(false);
-    };
-
-    fetchGroups();
-  }, [sort, searchTerm, page]);
-
+  const grupos = data?.groups || [];
+  const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / PER_PAGE);
 
   const handlePageChange = (p: number) => {
@@ -124,7 +61,7 @@ const Index = () => {
 
         <BannerAd position="top" />
 
-        {!loading && <PremiumCarousel grupos={premiumGrupos} />}
+        {premiumLoaded && <PremiumCarousel grupos={premiumGrupos} />}
 
         {searchTerm ? (
           <section className="space-y-3">
@@ -139,9 +76,9 @@ const Index = () => {
           </section>
         )}
 
-        {error && <p className="py-12 text-center text-destructive">{error}</p>}
+        {isError && <p className="py-12 text-center text-destructive">Erro ao carregar grupos. Tente novamente.</p>}
 
-        {loading ? (
+        {isLoading ? (
           <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -174,7 +111,7 @@ const Index = () => {
           </>
         )}
 
-        {!loading && !error && grupos.length === 0 && (
+        {!isLoading && !isError && grupos.length === 0 && (
           <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>
         )}
 
