@@ -32,6 +32,8 @@ const Index = () => {
     const fetchGroups = async () => {
       setLoading(true);
       console.log('fetchGroups iniciado', { sort, searchTerm, page });
+      console.log('supabase client:', supabase);
+      console.log('supabase url:', (supabase as any).supabaseUrl);
       setError(null);
 
       try {
