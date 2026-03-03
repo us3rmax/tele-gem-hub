@@ -74,7 +74,7 @@ const Index = () => {
             break;
           case "hot":
           default:
-            query = query.order("member_count", { ascending: false });
+            query = query.order("created_at", { ascending: true });
         }
 
         query = query.range(from, to);
