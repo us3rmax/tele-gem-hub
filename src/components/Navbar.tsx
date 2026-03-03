@@ -90,7 +90,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">Minha Conta</span>
+                  <span>Minha Conta</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
