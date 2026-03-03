@@ -31,56 +31,62 @@ const Index = () => {
   useEffect(() => {
     const fetchGroups = async () => {
       setLoading(true);
+      console.log('fetchGroups iniciado', { sort, searchTerm, page });
       setError(null);
 
-      // Fetch premium groups
-      const { data: premiumData } = await supabase.from("groups").select("*").eq("is_premium", true).limit(50);
+      try {
+        // Fetch premium groups
+        const { data: premiumData } = await supabase.from("groups").select("*").eq("is_premium", true).limit(50);
 
-      if (premiumData) {
-        const pinned = (premiumData as any[]).filter((g) => g.is_pinned);
-        const unpinned = (premiumData as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
-        setPremiumGrupos([...pinned, ...unpinned].slice(0, 10) as Grupo[]);
-      } else {
-        setPremiumGrupos([]);
-      }
+        if (premiumData) {
+          const pinned = (premiumData as any[]).filter((g) => g.is_pinned);
+          const unpinned = (premiumData as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
+          setPremiumGrupos([...pinned, ...unpinned].slice(0, 10) as Grupo[]);
+        } else {
+          setPremiumGrupos([]);
+        }
 
-      // Count total for pagination
-      let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
-      if (!searchTerm) countQuery = countQuery.eq("is_premium", false);
-      if (searchTerm) countQuery = countQuery.ilike("name", `%${searchTerm}%`);
-      const { count } = await countQuery;
-      setTotalCount(count || 0);
+        // Count total for pagination
+        let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
+        if (!searchTerm) countQuery = countQuery.eq("is_premium", false);
+        if (searchTerm) countQuery = countQuery.ilike("name", `%${searchTerm}%`);
+        const { count } = await countQuery;
+        setTotalCount(count || 0);
 
-      // Fetch only current page
-      const from = (page - 1) * PER_PAGE;
-      const to = from + PER_PAGE - 1;
+        // Fetch only current page
+        const from = (page - 1) * PER_PAGE;
+        const to = from + PER_PAGE - 1;
 
-      let query = supabase.from("groups").select("*");
-      if (!searchTerm) query = query.eq("is_premium", false);
-      if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
+        let query = supabase.from("groups").select("*");
+        if (!searchTerm) query = query.eq("is_premium", false);
+        if (searchTerm) query = query.ilike("name", `%${searchTerm}%`);
 
-      switch (sort) {
-        case "vistos":
-          query = query.order("views", { ascending: false });
-          break;
-        case "votados":
-          query = query.order("member_count", { ascending: false });
-          break;
-        case "hot":
-        default:
-          query = query.order("created_at", { ascending: false });
-      }
+        switch (sort) {
+          case "vistos":
+            query = query.order("views", { ascending: false });
+            break;
+          case "votados":
+            query = query.order("member_count", { ascending: false });
+            break;
+          case "hot":
+          default:
+            query = query.order("created_at", { ascending: false });
+        }
 
-      query = query.range(from, to);
+        query = query.range(from, to);
 
-      const { data, error: fetchError } = await query;
+        const { data, error: fetchError } = await query;
 
-      if (fetchError) {
-        console.error("Error fetching groups:", fetchError);
+        if (fetchError) {
+          console.error("Error fetching groups:", fetchError);
+          setError("Erro ao carregar grupos. Tente novamente.");
+          setGrupos([]);
+        } else {
+          setGrupos(data as Grupo[]);
+        }
+      } catch (e) {
+        console.error('ERRO fetchGroups:', e);
         setError("Erro ao carregar grupos. Tente novamente.");
-        setGrupos([]);
-      } else {
-        setGrupos(data as Grupo[]);
       }
       setLoading(false);
     };
