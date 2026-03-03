@@ -132,7 +132,7 @@ const GroupDetail = () => {
         <BannerAd position="top" />
 
         <section className="space-y-4">
-          <div className="mx-auto w-full max-w-[400px]">
+        <div className="mx-auto w-full max-w-[200px] sm:max-w-[400px]">
             <div className="relative aspect-square overflow-hidden rounded-xl border border-border">
               {grupo.thumbnail_url ? (
                 <img
