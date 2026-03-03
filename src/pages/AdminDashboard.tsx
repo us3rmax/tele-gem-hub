@@ -168,8 +168,6 @@ const AdminDashboard = () => {
   const [bannerVideoError, setBannerVideoError] = useState<string | null>(null);
   const bannerVideoRef = useRef<HTMLInputElement>(null);
 
-
-
   // Manual group creation state
   const [groupModalOpen, setGroupModalOpen] = useState(false);
   const [groupSaving, setGroupSaving] = useState(false);
@@ -210,11 +208,16 @@ const AdminDashboard = () => {
     member_count: number;
     created_at: string;
     source: string;
+    description: string | null;
+    telegram_link: string;
   }
   const [premiumGroups, setPremiumGroups] = useState<PremiumGroup[]>([]);
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [premiumSearch, setPremiumSearch] = useState("");
 
+  // Edit/Delete group state
+  const [editingGroupData, setEditingGroupData] = useState<{ id: string; name: string; category: string; telegram_link: string; description: string | null; thumbnail_url: string | null; member_count: number; is_premium: boolean; is_verified: boolean } | null>(null);
+  const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -365,7 +368,43 @@ const AdminDashboard = () => {
     setGroupPhotoFile(null);
     setGroupPhotoPreview(null);
     setGroupErrors({});
+    setEditingGroupData(null);
     setGroupModalOpen(false);
+  };
+
+  const openEditGroupModal = async (groupId: string) => {
+    const { data, error } = await supabase.from("groups").select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified").eq("id", groupId).maybeSingle();
+    if (error || !data) {
+      toast({ title: "Erro ao carregar grupo", variant: "destructive" });
+      return;
+    }
+    setEditingGroupData(data as any);
+    setGroupForm({
+      name: data.name,
+      category: data.category,
+      telegram_link: data.telegram_link,
+      description: data.description || "",
+      member_count: String(data.member_count || ""),
+      is_premium: data.is_premium,
+      is_verified: data.is_verified,
+    });
+    setGroupPhotoPreview(data.thumbnail_url || null);
+    setGroupPhotoFile(null);
+    setGroupErrors({});
+    setGroupModalOpen(true);
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!deleteGroupId) return;
+    const { error } = await supabase.from("groups").delete().eq("id", deleteGroupId);
+    if (error) {
+      toast({ title: "Erro ao excluir grupo", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Grupo excluído!" });
+      setPremiumGroups((prev) => prev.filter((g) => g.id !== deleteGroupId));
+      setAllGroups((prev) => prev.filter((g) => g.id !== deleteGroupId));
+    }
+    setDeleteGroupId(null);
   };
 
   const validateGroupForm = () => {
@@ -377,7 +416,7 @@ const AdminDashboard = () => {
     } else if (!groupForm.telegram_link.startsWith("https://t.me/")) {
       errors.telegram_link = "Link deve começar com https://t.me/";
     }
-    if (!groupPhotoFile) errors.photo = "Foto é obrigatória";
+    if (!editingGroupData && !groupPhotoFile) errors.photo = "Foto é obrigatória";
     setGroupErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -386,22 +425,25 @@ const AdminDashboard = () => {
     if (!validateGroupForm() || !user) return;
     setGroupSaving(true);
 
-    // Upload photo
-    const ext = groupPhotoFile!.name.split(".").pop();
-    const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from("group-photos")
-      .upload(filePath, groupPhotoFile!, { contentType: groupPhotoFile!.type });
+    let publicUrl = editingGroupData?.thumbnail_url || null;
 
-    if (uploadError) {
-      toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
-      setGroupSaving(false);
-      return;
+    // Upload photo if new file selected
+    if (groupPhotoFile) {
+      const ext = groupPhotoFile.name.split(".").pop();
+      const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("group-photos")
+        .upload(filePath, groupPhotoFile, { contentType: groupPhotoFile.type });
+
+      if (uploadError) {
+        toast({ title: "Erro ao enviar foto", description: uploadError.message, variant: "destructive" });
+        setGroupSaving(false);
+        return;
+      }
+      publicUrl = supabase.storage.from("group-photos").getPublicUrl(filePath).data.publicUrl;
     }
 
-    const publicUrl = supabase.storage.from("group-photos").getPublicUrl(filePath).data.publicUrl;
-
-    const { error } = await supabase.from("groups").insert({
+    const payload: any = {
       name: groupForm.name.trim(),
       category: groupForm.category,
       telegram_link: groupForm.telegram_link.trim(),
@@ -410,15 +452,31 @@ const AdminDashboard = () => {
       is_premium: groupForm.is_premium,
       is_verified: groupForm.is_verified,
       member_count: groupForm.member_count ? parseInt(groupForm.member_count, 10) || 0 : 0,
-      views: 0,
-      source: 'imported',
-    } as any);
+    };
 
-    if (error) {
-      toast({ title: "Erro ao criar grupo", description: error.message, variant: "destructive" });
+    if (editingGroupData) {
+      const { error } = await supabase.from("groups").update(payload).eq("id", editingGroupData.id);
+      if (error) {
+        toast({ title: "Erro ao atualizar grupo", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Grupo atualizado com sucesso!" });
+        resetGroupModal();
+        // Refresh relevant lists
+        if (activeTab === "premium") fetchPremiumGroups();
+        if (activeTab === "grupos") fetchAllGroups();
+      }
     } else {
-      toast({ title: "Grupo adicionado com sucesso!" });
-      resetGroupModal();
+      const { error } = await supabase.from("groups").insert({
+        ...payload,
+        views: 0,
+        source: 'imported',
+      });
+      if (error) {
+        toast({ title: "Erro ao criar grupo", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Grupo adicionado com sucesso!" });
+        resetGroupModal();
+      }
     }
     setGroupSaving(false);
   };
@@ -557,7 +615,7 @@ const AdminDashboard = () => {
     setPremiumLoading(true);
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at")
+      .select("id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at, source, description, telegram_link")
       .eq("is_premium", true)
       .order("is_pinned", { ascending: false });
     if (error) {
@@ -969,6 +1027,22 @@ const AdminDashboard = () => {
                           <Star className="mr-1 h-4 w-4" />
                           Tornar Premium
                         </Button>
+                        <Button size="sm" variant="outline" onClick={async () => {
+                          const { data } = await supabase.from("groups").select("id").eq("telegram_link", sub.telegram_link).maybeSingle();
+                          if (data) openEditGroupModal(data.id);
+                          else toast({ title: "Grupo não encontrado", variant: "destructive" });
+                        }}>
+                          <Pencil className="mr-1 h-4 w-4" />
+                          Editar
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={async () => {
+                          const { data } = await supabase.from("groups").select("id").eq("telegram_link", sub.telegram_link).maybeSingle();
+                          if (data) setDeleteGroupId(data.id);
+                          else toast({ title: "Grupo não encontrado", variant: "destructive" });
+                        }}>
+                          <Trash2 className="mr-1 h-4 w-4" />
+                          Apagar
+                        </Button>
                       </div>
                     )}
                     {tab === "rejected" && (
@@ -1069,6 +1143,14 @@ const AdminDashboard = () => {
                         />
                         <span className="text-xs text-muted-foreground">📌 Fixar no carrossel</span>
                       </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditGroupModal(group.id)}
+                      >
+                        <Pencil className="mr-1 h-4 w-4" />
+                        Editar
+                      </Button>
                       <Button
                         size="sm"
                         variant="destructive"
@@ -1534,6 +1616,24 @@ const AdminDashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Delete Group Confirmation */}
+      <AlertDialog open={!!deleteGroupId} onOpenChange={(open) => !open && setDeleteGroupId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Grupo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O grupo será excluído permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Reject Edit Modal */}
       <Dialog open={editRejectModalOpen} onOpenChange={setEditRejectModalOpen}>
         <DialogContent>
@@ -1565,7 +1665,7 @@ const AdminDashboard = () => {
       <Dialog open={groupModalOpen} onOpenChange={(open) => { if (!open) resetGroupModal(); }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Adicionar Grupo Manualmente</DialogTitle>
+            <DialogTitle>{editingGroupData ? "Editar Grupo" : "Adicionar Grupo Manualmente"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -1676,7 +1776,7 @@ const AdminDashboard = () => {
             <Button variant="outline" onClick={resetGroupModal}>Cancelar</Button>
             <Button onClick={handleGroupSave} disabled={groupSaving} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {groupSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-              Adicionar Grupo
+              {editingGroupData ? "Salvar Alterações" : "Adicionar Grupo"}
             </Button>
           </DialogFooter>
         </DialogContent>
