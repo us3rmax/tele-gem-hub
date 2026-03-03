@@ -75,38 +75,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             )}
           </form>
 
-          {/* Mobile search icon */}
-          <button
-            onClick={() => setMobileSearchOpen(true)}
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:hidden"
-            aria-label="Buscar"
-          >
-            <Search className="h-5 w-5" />
-          </button>
 
-          {/* Mobile search overlay */}
-          {mobileSearchOpen && (
-            <div className="fixed inset-0 z-50 flex items-start bg-background/95 backdrop-blur-sm sm:hidden">
-              <form onSubmit={(e) => { handleSearchSubmit(e); setMobileSearchOpen(false); }} className="flex w-full items-center gap-2 border-b border-border bg-background px-4 py-3">
-                <Search className="h-5 w-5 shrink-0 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar grupos..."
-                  autoFocus
-                  className="h-9 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setMobileSearchOpen(false)}
-                  className="shrink-0 rounded-lg p-2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </form>
-            </div>
-          )}
 
           <button
             onClick={() => handleAuthLink("/submit")}
@@ -150,22 +119,13 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                   Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu> :
+          </DropdownMenu> :
 
-          <div className="flex items-center gap-2">
-              <Link
-              to="/auth/login"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-
-                Entrar
-              </Link>
-              <Link
-              to="/auth/register"
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 whitespace-nowrap">
-
-                Criar Conta
-              </Link>
-            </div>
+          <Link
+            to="/auth/login"
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 whitespace-nowrap">
+            Entrar
+          </Link>
           }
         </div>
       </div>
