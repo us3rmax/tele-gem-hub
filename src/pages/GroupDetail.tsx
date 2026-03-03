@@ -118,7 +118,7 @@ const GroupDetail = () => {
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-4">
+      <main className="mx-auto max-w-3xl space-y-3 px-4 py-2 sm:space-y-6 sm:py-4">
         <nav className="flex items-center gap-1 text-sm text-muted-foreground">
           <Link to="/" className="transition-colors hover:text-foreground">Canais18</Link>
           <ChevronRight className="h-3.5 w-3.5" />
