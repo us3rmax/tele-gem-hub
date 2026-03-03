@@ -34,6 +34,8 @@ const Index = () => {
       console.log('fetchGroups iniciado', { sort, searchTerm, page });
       console.log('supabase client:', supabase);
       console.log('supabase url:', (supabase as any).supabaseUrl);
+      const testQuery = await supabase.from('groups').select('id').limit(1);
+      console.log('test query result:', testQuery);
       setError(null);
 
       try {
