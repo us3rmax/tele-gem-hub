@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
 const PER_PAGE = 20;
+console.log('INDEX CARREGADO');
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
