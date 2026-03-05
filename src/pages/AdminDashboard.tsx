@@ -13,20 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +47,55 @@ import {
   Search,
 } from "lucide-react";
 
-const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
+const GROUP_CATEGORIES = [
+  "geral",
+  "putaria",
+  "onlyfans",
+  "privacy",
+  "amadoras",
+  "gay",
+  "vazados",
+  "fetiche",
+  "casadas",
+  "trans",
+  "hentai",
+  "celebridades",
+  "latina",
+  "asiaticas",
+  "novinhas",
+  "interracial",
+  "bdsm",
+  "bbw",
+  "coroas",
+  "negras",
+  "lesbicas",
+];
+const CATEGORY_LABELS: Record<string, string> = {
+  geral: "Geral",
+  putaria: "Putaria",
+  onlyfans: "OnlyFans",
+  privacy: "Privacy",
+  amadoras: "Amadoras",
+  gay: "Gay",
+  vazados: "Vazados",
+  fetiche: "Fetiche",
+  casadas: "Casadas",
+  trans: "Trans",
+  hentai: "Hentai",
+  celebridades: "Celebridades",
+  latina: "Latina",
+  asiaticas: "Asiáticas",
+  novinhas: "Novinhas",
+  interracial: "Interracial",
+  bdsm: "BDSM",
+  bbw: "BBW",
+  coroas: "Coroas",
+  negras: "Negras",
+  lesbicas: "Lésbicas",
+};
+const SUPABASE_URL_CONST = "https://lymjjozpdsdoloahsyey.supabase.co";
+const SUPABASE_ANON_KEY_CONST =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5bWpqb3pwZHNkb2xvYWhzeWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5ODgxMDQsImV4cCI6MjA4NjU2NDEwNH0.dC2d16T0DHt67rDr4RFuTU4hg79vxj0YUGf91xdxdBs";
 
 // --- Types ---
 
@@ -216,8 +252,31 @@ const AdminDashboard = () => {
   const [premiumSearch, setPremiumSearch] = useState("");
 
   // Edit/Delete group state
-  const [editingGroupData, setEditingGroupData] = useState<{ id: string; name: string; category: string; telegram_link: string; description: string | null; thumbnail_url: string | null; member_count: number; is_premium: boolean; is_verified: boolean } | null>(null);
+  const [editingGroupData, setEditingGroupData] = useState<{
+    id: string;
+    name: string;
+    category: string;
+    telegram_link: string;
+    description: string | null;
+    thumbnail_url: string | null;
+    member_count: number;
+    is_premium: boolean;
+    is_verified: boolean;
+  } | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
+  // Categories tab state
+  interface CategoryCover {
+    slug: string;
+    label: string;
+    coverUrl: string | null;
+    topGroupThumb: string | null;
+    count: number;
+  }
+  const [categoriesData, setCategoriesData] = useState<CategoryCover[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoryUploadingSlug, setCategoryUploadingSlug] = useState<string | null>(null);
+  const categoryFileRef = useRef<HTMLInputElement>(null);
+  const [categoryUploadTarget, setCategoryUploadTarget] = useState<string | null>(null);
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -258,6 +317,8 @@ const AdminDashboard = () => {
       fetchPremiumGroups();
     } else if (activeTab === "grupos") {
       fetchAllGroups();
+    } else if (activeTab === "categorias") {
+      fetchCategories();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -275,7 +336,7 @@ const AdminDashboard = () => {
       is_verified: false,
       member_count: 0,
       views: 0,
-      source: 'user',
+      source: "user",
     } as any);
 
     if (insertError) {
@@ -360,11 +421,22 @@ const AdminDashboard = () => {
     }
     setGroupPhotoFile(file);
     setGroupPhotoPreview(URL.createObjectURL(file));
-    setGroupErrors((prev) => { const { photo, ...rest } = prev; return rest; });
+    setGroupErrors((prev) => {
+      const { photo, ...rest } = prev;
+      return rest;
+    });
   };
 
   const resetGroupModal = () => {
-    setGroupForm({ name: "", category: "", telegram_link: "", description: "", member_count: "", is_premium: false, is_verified: false });
+    setGroupForm({
+      name: "",
+      category: "",
+      telegram_link: "",
+      description: "",
+      member_count: "",
+      is_premium: false,
+      is_verified: false,
+    });
     setGroupPhotoFile(null);
     setGroupPhotoPreview(null);
     setGroupErrors({});
@@ -373,7 +445,11 @@ const AdminDashboard = () => {
   };
 
   const openEditGroupModal = async (groupId: string) => {
-    const { data, error } = await supabase.from("groups").select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified").eq("id", groupId).maybeSingle();
+    const { data, error } = await supabase
+      .from("groups")
+      .select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified")
+      .eq("id", groupId)
+      .maybeSingle();
     if (error || !data) {
       toast({ title: "Erro ao carregar grupo", variant: "destructive" });
       return;
@@ -469,7 +545,7 @@ const AdminDashboard = () => {
       const { error } = await supabase.from("groups").insert({
         ...payload,
         views: 0,
-        source: 'imported',
+        source: "imported",
       });
       if (error) {
         toast({ title: "Erro ao criar grupo", description: error.message, variant: "destructive" });
@@ -506,7 +582,10 @@ const AdminDashboard = () => {
 
     const [{ data: groupsData }, { data: profilesData }] = await Promise.all([
       groupIds.length > 0
-        ? supabase.from("groups").select("id, name, description, category, telegram_link, thumbnail_url").in("id", groupIds)
+        ? supabase
+            .from("groups")
+            .select("id, name, description, category, telegram_link, thumbnail_url")
+            .in("id", groupIds)
         : Promise.resolve({ data: [] }),
       userIds.length > 0
         ? supabase.from("profiles").select("id, email").in("id", userIds)
@@ -536,10 +615,7 @@ const AdminDashboard = () => {
       updatePayload[key] = value;
     });
 
-    const { error: updateGroupError } = await supabase
-      .from("groups")
-      .update(updatePayload)
-      .eq("id", req.group_id);
+    const { error: updateGroupError } = await supabase.from("groups").update(updatePayload).eq("id", req.group_id);
 
     if (updateGroupError) {
       toast({ title: "Erro ao aplicar alterações", description: updateGroupError.message, variant: "destructive" });
@@ -598,7 +674,9 @@ const AdminDashboard = () => {
     setAllGroupsLoading(true);
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by")
+      .select(
+        "id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by",
+      )
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Error fetching all groups:", error);
@@ -609,13 +687,93 @@ const AdminDashboard = () => {
     setAllGroupsLoading(false);
   };
 
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    const results = await Promise.all(
+      GROUP_CATEGORIES.map(async (slug) => {
+        // Verifica se existe cover personalizado no bucket
+        const coverPath = `category_${slug}.jpg`;
+        const { data: coverData } = supabase.storage.from("thumbnails").getPublicUrl(coverPath);
+
+        // Testa se o arquivo realmente existe
+        let coverUrl: string | null = null;
+        try {
+          const res = await fetch(coverData.publicUrl, { method: "HEAD" });
+          if (res.ok) coverUrl = coverData.publicUrl;
+        } catch {}
+
+        // Busca thumb do grupo com mais membros
+        const [topGroup, countResult] = await Promise.all([
+          supabase
+            .from("groups")
+            .select("thumbnail_url")
+            .eq("category", slug)
+            .not("thumbnail_url", "is", null)
+            .order("member_count", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          supabase.from("groups").select("*", { count: "exact", head: true }).eq("category", slug),
+        ]);
+
+        return {
+          slug,
+          label: CATEGORY_LABELS[slug] ?? slug,
+          coverUrl,
+          topGroupThumb: topGroup.data?.thumbnail_url ?? null,
+          count: countResult.count ?? 0,
+        };
+      }),
+    );
+    setCategoriesData(results);
+    setCategoriesLoading(false);
+  };
+
+  const handleCategoryPhotoUpload = async (slug: string, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Arquivo deve ser uma imagem", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagem deve ter no máximo 5MB", variant: "destructive" });
+      return;
+    }
+    setCategoryUploadingSlug(slug);
+    const filePath = `category_${slug}.jpg`;
+    const { error } = await supabase.storage
+      .from("thumbnails")
+      .upload(filePath, file, { contentType: "image/jpeg", upsert: true });
+
+    if (error) {
+      toast({ title: "Erro ao fazer upload", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Cover de ${CATEGORY_LABELS[slug]} atualizado!` });
+      await fetchCategories();
+    }
+    setCategoryUploadingSlug(null);
+  };
+
+  const handleCategoryPhotoRemove = async (slug: string) => {
+    setCategoryUploadingSlug(slug);
+    const { error } = await supabase.storage.from("thumbnails").remove([`category_${slug}.jpg`]);
+
+    if (error) {
+      toast({ title: "Erro ao remover foto", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `Cover removido — voltando ao automático` });
+      await fetchCategories();
+    }
+    setCategoryUploadingSlug(null);
+  };
+
   // --- Premium Groups logic ---
 
   const fetchPremiumGroups = async () => {
     setPremiumLoading(true);
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at, source, description, telegram_link")
+      .select(
+        "id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at, source, description, telegram_link",
+      )
       .eq("is_premium", true)
       .order("is_pinned", { ascending: false });
     if (error) {
@@ -641,11 +799,7 @@ const AdminDashboard = () => {
 
   const handleMakePremium = async (subName: string, telegramLink: string) => {
     // Find the group by telegram_link to get its ID
-    const { data, error } = await supabase
-      .from("groups")
-      .select("id")
-      .eq("telegram_link", telegramLink)
-      .maybeSingle();
+    const { data, error } = await supabase.from("groups").select("id").eq("telegram_link", telegramLink).maybeSingle();
     if (error || !data) {
       toast({ title: "Grupo não encontrado na base", variant: "destructive" });
       return;
@@ -829,15 +983,16 @@ const AdminDashboard = () => {
     if (error) {
       toast({ title: "Erro ao alterar status", description: error.message, variant: "destructive" });
     } else {
-      setBanners((prev) =>
-        prev.map((b) => (b.id === banner.id ? { ...b, is_active: !b.is_active } : b))
-      );
+      setBanners((prev) => prev.map((b) => (b.id === banner.id ? { ...b, is_active: !b.is_active } : b)));
     }
   };
 
   const handleBannerDelete = async () => {
     if (!deleteBannerId) return;
-    const { error } = await supabase.from("banners" as any).delete().eq("id", deleteBannerId);
+    const { error } = await supabase
+      .from("banners" as any)
+      .delete()
+      .eq("id", deleteBannerId);
     if (error) {
       toast({ title: "Erro ao excluir banner", description: error.message, variant: "destructive" });
     } else {
@@ -865,8 +1020,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const isExpired = (banner: Banner) =>
-    banner.expires_at ? new Date(banner.expires_at) < new Date() : false;
+  const isExpired = (banner: Banner) => (banner.expires_at ? new Date(banner.expires_at) < new Date() : false);
 
   // --- Helpers ---
 
@@ -948,6 +1102,10 @@ const AdminDashboard = () => {
               <Search className="h-4 w-4" />
               Grupos
             </TabsTrigger>
+            <TabsTrigger value="categorias" className="flex-1 gap-2">
+              <ImageIcon className="h-4 w-4" />
+              Categorias
+            </TabsTrigger>
             <TabsTrigger value="banners" className="flex-1 gap-2">
               <LayoutDashboard className="h-4 w-4" />
               Banners
@@ -963,11 +1121,18 @@ const AdminDashboard = () => {
                 </div>
               ) : submissions.length === 0 ? (
                 <p className="py-12 text-center text-muted-foreground">
-                  {tab === "pending" ? "Nenhum grupo pendente" : tab === "approved" ? "Nenhum grupo aprovado" : "Nenhum grupo rejeitado"}
+                  {tab === "pending"
+                    ? "Nenhum grupo pendente"
+                    : tab === "approved"
+                      ? "Nenhum grupo aprovado"
+                      : "Nenhum grupo rejeitado"}
                 </p>
               ) : (
                 submissions.map((sub) => (
-                  <div key={sub.id} className={`overflow-hidden rounded-xl border bg-card ${sub.is_paid ? 'border-yellow-500/50' : 'border-border'}`}>
+                  <div
+                    key={sub.id}
+                    className={`overflow-hidden rounded-xl border bg-card ${sub.is_paid ? "border-yellow-500/50" : "border-border"}`}
+                  >
                     <div className="flex gap-4 p-4">
                       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                         {sub.thumbnail_url ? (
@@ -990,14 +1155,23 @@ const AdminDashboard = () => {
                         </div>
                         {sub.is_paid && sub.payment_type && (
                           <p className="text-xs font-medium text-yellow-500">
-                            {sub.payment_type === 'premium' ? 'Premium (Destaque)' : sub.payment_type === 'banner' ? 'Banner Publicitário' : sub.payment_type}
+                            {sub.payment_type === "premium"
+                              ? "Premium (Destaque)"
+                              : sub.payment_type === "banner"
+                                ? "Banner Publicitário"
+                                : sub.payment_type}
                           </p>
                         )}
                         {sub.description && (
                           <p className="text-sm text-muted-foreground line-clamp-2">{sub.description}</p>
                         )}
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          <a href={sub.telegram_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                          <a
+                            href={sub.telegram_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
                             <ExternalLink className="h-3 w-3" />
                             {sub.telegram_link}
                           </a>
@@ -1011,11 +1185,25 @@ const AdminDashboard = () => {
                     </div>
                     {tab === "pending" && (
                       <div className="flex gap-2 border-t border-border px-4 py-3">
-                        <Button size="sm" onClick={() => handleApprove(sub)} disabled={actionLoading === sub.id} className="bg-green-600 text-white hover:bg-green-700">
-                          {actionLoading === sub.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1 h-4 w-4" />}
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(sub)}
+                          disabled={actionLoading === sub.id}
+                          className="bg-green-600 text-white hover:bg-green-700"
+                        >
+                          {actionLoading === sub.id ? (
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="mr-1 h-4 w-4" />
+                          )}
                           Aprovar
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => openRejectModal(sub)} disabled={actionLoading === sub.id}>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => openRejectModal(sub)}
+                          disabled={actionLoading === sub.id}
+                        >
                           <XCircle className="mr-1 h-4 w-4" />
                           Rejeitar
                         </Button>
@@ -1023,23 +1211,44 @@ const AdminDashboard = () => {
                     )}
                     {tab === "approved" && (
                       <div className="flex gap-2 border-t border-border px-4 py-3">
-                        <Button size="sm" variant="outline" onClick={() => handleMakePremium(sub.name, sub.telegram_link)} className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMakePremium(sub.name, sub.telegram_link)}
+                          className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+                        >
                           <Star className="mr-1 h-4 w-4" />
                           Tornar Premium
                         </Button>
-                        <Button size="sm" variant="outline" onClick={async () => {
-                          const { data } = await supabase.from("groups").select("id").eq("telegram_link", sub.telegram_link).maybeSingle();
-                          if (data) openEditGroupModal(data.id);
-                          else toast({ title: "Grupo não encontrado", variant: "destructive" });
-                        }}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            const { data } = await supabase
+                              .from("groups")
+                              .select("id")
+                              .eq("telegram_link", sub.telegram_link)
+                              .maybeSingle();
+                            if (data) openEditGroupModal(data.id);
+                            else toast({ title: "Grupo não encontrado", variant: "destructive" });
+                          }}
+                        >
                           <Pencil className="mr-1 h-4 w-4" />
                           Editar
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={async () => {
-                          const { data } = await supabase.from("groups").select("id").eq("telegram_link", sub.telegram_link).maybeSingle();
-                          if (data) setDeleteGroupId(data.id);
-                          else toast({ title: "Grupo não encontrado", variant: "destructive" });
-                        }}>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={async () => {
+                            const { data } = await supabase
+                              .from("groups")
+                              .select("id")
+                              .eq("telegram_link", sub.telegram_link)
+                              .maybeSingle();
+                            if (data) setDeleteGroupId(data.id);
+                            else toast({ title: "Grupo não encontrado", variant: "destructive" });
+                          }}
+                        >
                           <Trash2 className="mr-1 h-4 w-4" />
                           Apagar
                         </Button>
@@ -1047,8 +1256,17 @@ const AdminDashboard = () => {
                     )}
                     {tab === "rejected" && (
                       <div className="flex gap-2 border-t border-border px-4 py-3">
-                        <Button size="sm" variant="outline" onClick={() => handleRevert(sub)} disabled={actionLoading === sub.id}>
-                          {actionLoading === sub.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Undo2 className="mr-1 h-4 w-4" />}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRevert(sub)}
+                          disabled={actionLoading === sub.id}
+                        >
+                          {actionLoading === sub.id ? (
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Undo2 className="mr-1 h-4 w-4" />
+                          )}
                           Reverter para Pendente
                         </Button>
                       </div>
@@ -1073,7 +1291,9 @@ const AdminDashboard = () => {
 
             {premiumGroups.length > 10 && (
               <div className="rounded-lg border-l-4 border-yellow-500 bg-yellow-500/10 p-3 text-sm text-foreground">
-                ⚠️ Existem <strong>{premiumGroups.length}</strong> grupos premium. Apenas os <strong>10 mais recentes</strong> aparecem no carrossel da homepage. Considere remover premium dos mais antigos.
+                ⚠️ Existem <strong>{premiumGroups.length}</strong> grupos premium. Apenas os{" "}
+                <strong>10 mais recentes</strong> aparecem no carrossel da homepage. Considere remover premium dos mais
+                antigos.
               </div>
             )}
 
@@ -1132,22 +1352,23 @@ const AdminDashboard = () => {
                         <Checkbox
                           checked={group.is_pinned}
                           onCheckedChange={async (val) => {
-                            const { error } = await supabase.from("groups").update({ is_pinned: !!val } as any).eq("id", group.id);
+                            const { error } = await supabase
+                              .from("groups")
+                              .update({ is_pinned: !!val } as any)
+                              .eq("id", group.id);
                             if (error) {
                               toast({ title: "Erro ao fixar", description: error.message, variant: "destructive" });
                             } else {
-                              setPremiumGroups((prev) => prev.map((g) => g.id === group.id ? { ...g, is_pinned: !!val } : g));
+                              setPremiumGroups((prev) =>
+                                prev.map((g) => (g.id === group.id ? { ...g, is_pinned: !!val } : g)),
+                              );
                               toast({ title: val ? "Grupo fixado!" : "Grupo desfixado" });
                             }
                           }}
                         />
                         <span className="text-xs text-muted-foreground">📌 Fixar no carrossel</span>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEditGroupModal(group.id)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => openEditGroupModal(group.id)}>
                         <Pencil className="mr-1 h-4 w-4" />
                         Editar
                       </Button>
@@ -1191,7 +1412,9 @@ const AdminDashboard = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-foreground">{req.group?.name || "—"}</p>
-                          <Badge variant="outline" className="text-xs">{req.group?.category || "—"}</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {req.group?.category || "—"}
+                          </Badge>
                         </div>
                       </div>
                       {req.group?.description && (
@@ -1219,20 +1442,28 @@ const AdminDashboard = () => {
                       )}
                       <div className="space-y-1.5">
                         {req.changes.name ? (
-                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-sm font-semibold text-foreground">{req.changes.name}</p>
+                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-sm font-semibold text-foreground">
+                            {req.changes.name}
+                          </p>
                         ) : (
                           <p className="text-sm text-muted-foreground italic">Sem alteração no nome</p>
                         )}
                         {req.changes.category ? (
-                          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">{req.changes.category}</Badge>
+                          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">
+                            {req.changes.category}
+                          </Badge>
                         ) : null}
                         {req.changes.description ? (
-                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-xs text-foreground line-clamp-2">{req.changes.description}</p>
+                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-xs text-foreground line-clamp-2">
+                            {req.changes.description}
+                          </p>
                         ) : (
                           <p className="text-xs text-muted-foreground italic">Sem alteração na descrição</p>
                         )}
                         {req.changes.telegram_link ? (
-                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-xs text-foreground truncate">{req.changes.telegram_link}</p>
+                          <p className="rounded bg-yellow-500/10 px-2 py-0.5 text-xs text-foreground truncate">
+                            {req.changes.telegram_link}
+                          </p>
                         ) : null}
                       </div>
                     </div>
@@ -1241,15 +1472,31 @@ const AdminDashboard = () => {
                   {/* Meta + Actions */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3">
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                      <span>Solicitado por: <strong className="text-foreground">{req.requester_email}</strong></span>
+                      <span>
+                        Solicitado por: <strong className="text-foreground">{req.requester_email}</strong>
+                      </span>
                       <span>{formatDate(req.created_at)}</span>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={() => handleApproveEdit(req)} disabled={actionLoading === req.id} className="bg-green-600 text-white hover:bg-green-700">
-                        {actionLoading === req.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-1 h-4 w-4" />}
+                      <Button
+                        size="sm"
+                        onClick={() => handleApproveEdit(req)}
+                        disabled={actionLoading === req.id}
+                        className="bg-green-600 text-white hover:bg-green-700"
+                      >
+                        {actionLoading === req.id ? (
+                          <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle className="mr-1 h-4 w-4" />
+                        )}
                         Aprovar
                       </Button>
-                      <Button size="sm" variant="destructive" onClick={() => openEditRejectModal(req)} disabled={actionLoading === req.id}>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => openEditRejectModal(req)}
+                        disabled={actionLoading === req.id}
+                      >
                         <XCircle className="mr-1 h-4 w-4" />
                         Rejeitar
                       </Button>
@@ -1262,12 +1509,19 @@ const AdminDashboard = () => {
 
           {/* Grupos tab */}
           <TabsContent value="grupos" className="mt-4 space-y-4">
-            {/* Filter buttons */}
+            {/* Filters */}
             <div className="flex flex-wrap gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome..."
+                  value={premiumSearch}
+                  onChange={(e) => setPremiumSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               {(["all", "imported", "user"] as const).map((f) => {
-                const count = f === "all"
-                  ? allGroups.length
-                  : allGroups.filter((g) => g.source === f).length;
+                const count = f === "all" ? allGroups.length : allGroups.filter((g) => g.source === f).length;
                 const labels = { all: "Todos", imported: "📥 Importados", user: "👤 Usuários" };
                 return (
                   <button
@@ -1280,9 +1534,15 @@ const AdminDashboard = () => {
                     }`}
                   >
                     {labels[f]}
-                    <span className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${
-                      groupsSourceFilter === f ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                    }`}>{count}</span>
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-xs font-bold ${
+                        groupsSourceFilter === f
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground"
+                      }`}
+                    >
+                      {count}
+                    </span>
                   </button>
                 );
               })}
@@ -1293,44 +1553,162 @@ const AdminDashboard = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="space-y-3">
-                {allGroups
-                  .filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter)
-                  .map((group) => (
-                    <div key={group.id} className="flex gap-4 overflow-hidden rounded-xl border border-border bg-card p-4">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
-                        {group.thumbnail_url ? (
-                          <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{group.name}</h3>
-                          {group.source === "imported" ? (
-                            <Badge className="bg-secondary text-secondary-foreground border-border text-[10px]">📥 Importado</Badge>
+              <>
+                <div className="space-y-2">
+                  {allGroups
+                    .filter((g) => {
+                      const matchSource = groupsSourceFilter === "all" || g.source === groupsSourceFilter;
+                      const matchSearch =
+                        !premiumSearch.trim() || g.name.toLowerCase().includes(premiumSearch.toLowerCase());
+                      return matchSource && matchSearch;
+                    })
+                    .slice(0, 50)
+                    .map((group) => (
+                      <div
+                        key={group.id}
+                        className="flex items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-3"
+                      >
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                          {group.thumbnail_url ? (
+                            <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
                           ) : (
-                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">👤 Usuário</Badge>
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
                           )}
-                          {group.is_premium && (
-                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">⭐ Premium</Badge>
-                          )}
-                          <Badge variant="outline" className="text-[10px]">{group.category}</Badge>
                         </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {group.member_count} membros · {formatDate(group.created_at)}
-                        </p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <h3 className="text-sm font-semibold text-foreground truncate">{group.name}</h3>
+                            {group.is_premium && (
+                              <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">
+                                ⭐
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className="text-[10px]">
+                              {group.category}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{group.member_count} membros</p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2"
+                            onClick={() => openEditGroupModal(group.id)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 px-2"
+                            onClick={() => setDeleteGroupId(group.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                {allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).length === 0 && (
-                  <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>
-                )}
-              </div>
+                    ))}
+                </div>
+                {allGroups.filter((g) => {
+                  const matchSource = groupsSourceFilter === "all" || g.source === groupsSourceFilter;
+                  const matchSearch =
+                    !premiumSearch.trim() || g.name.toLowerCase().includes(premiumSearch.toLowerCase());
+                  return matchSource && matchSearch;
+                }).length === 0 && <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>}
+                <p className="text-xs text-center text-muted-foreground">
+                  Mostrando primeiros 50 resultados. Use a busca para filtrar.
+                </p>
+              </>
             )}
           </TabsContent>
 
+          {/* Categorias tab */}
+          <TabsContent value="categorias" className="mt-4 space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Fotos dos Cards de Categorias</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Se nenhuma foto for definida, o sistema usa automaticamente a thumbnail do grupo com mais membros da
+                categoria.
+              </p>
+            </div>
+
+            {categoriesLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {categoriesData.map((cat) => {
+                  const displayThumb = cat.coverUrl || cat.topGroupThumb;
+                  const isCustom = !!cat.coverUrl;
+                  return (
+                    <div key={cat.slug} className="overflow-hidden rounded-xl border border-border bg-card">
+                      {/* Preview */}
+                      <div className="relative h-32 w-full overflow-hidden bg-secondary">
+                        {displayThumb ? (
+                          <img src={displayThumb} alt={cat.label} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <div className="absolute bottom-2 left-3 flex items-center gap-2">
+                          <span className="text-sm font-bold text-white">{cat.label}</span>
+                          {isCustom ? (
+                            <Badge className="bg-green-600/80 text-white border-0 text-[10px]">✓ Personalizada</Badge>
+                          ) : (
+                            <Badge className="bg-black/60 text-white/80 border-0 text-[10px]">Automática</Badge>
+                          )}
+                        </div>
+                        <span className="absolute bottom-2 right-3 text-xs text-white/70">{cat.count} grupos</span>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 p-3">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id={`cat-upload-${cat.slug}`}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleCategoryPhotoUpload(cat.slug, file);
+                            e.target.value = "";
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          disabled={categoryUploadingSlug === cat.slug}
+                          onClick={() => document.getElementById(`cat-upload-${cat.slug}`)?.click()}
+                        >
+                          {categoryUploadingSlug === cat.slug ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Upload className="mr-1 h-3 w-3" />
+                          )}
+                          {isCustom ? "Trocar foto" : "Definir foto"}
+                        </Button>
+                        {isCustom && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={categoryUploadingSlug === cat.slug}
+                            onClick={() => handleCategoryPhotoRemove(cat.slug)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
           {/* Banners tab */}
           <TabsContent value="banners" className="mt-4 space-y-4">
             <div className="flex items-center justify-between">
@@ -1370,7 +1748,9 @@ const AdminDashboard = () => {
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="text-base font-bold text-foreground">{banner.title}</h3>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="capitalize">{banner.position}</Badge>
+                            <Badge variant="outline" className="capitalize">
+                              {banner.position}
+                            </Badge>
                             {expired ? (
                               <Badge className="bg-red-600/20 text-red-400 border-red-600/30">Expirado</Badge>
                             ) : banner.is_active ? (
@@ -1383,14 +1763,17 @@ const AdminDashboard = () => {
 
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           {banner.link_url && (
-                            <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                            <a
+                              href={banner.link_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-primary hover:underline"
+                            >
                               <ExternalLink className="h-3 w-3" />
                               Link
                             </a>
                           )}
-                          <span>
-                            Expira: {banner.expires_at ? formatDate(banner.expires_at) : "Sem expiração"}
-                          </span>
+                          <span>Expira: {banner.expires_at ? formatDate(banner.expires_at) : "Sem expiração"}</span>
                         </div>
                       </div>
                     </div>
@@ -1448,7 +1831,9 @@ const AdminDashboard = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectModalOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setRejectModalOpen(false)}>
+              Cancelar
+            </Button>
             <Button variant="destructive" onClick={handleReject} disabled={actionLoading !== null}>
               {actionLoading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               Confirmar Rejeição
@@ -1481,7 +1866,11 @@ const AdminDashboard = () => {
               >
                 {bannerPhotoPreview ? (
                   <div className="relative w-full">
-                    <img src={bannerPhotoPreview} alt="Preview" className="max-h-[120px] w-full rounded-lg object-contain" />
+                    <img
+                      src={bannerPhotoPreview}
+                      alt="Preview"
+                      className="max-h-[120px] w-full rounded-lg object-contain"
+                    />
                     <button
                       type="button"
                       className="absolute right-1 top-1 rounded-full bg-background/80 p-1 hover:bg-background"
@@ -1509,7 +1898,9 @@ const AdminDashboard = () => {
                 className="hidden"
                 onChange={handleBannerPhotoChange}
               />
-              <p className="text-xs text-muted-foreground">Recomendado: 728x90px (desktop) ou 320x50px (mobile). Máx 8MB.</p>
+              <p className="text-xs text-muted-foreground">
+                Recomendado: 728x90px (desktop) ou 320x50px (mobile). Máx 8MB.
+              </p>
               {bannerPhotoError && <p className="text-xs text-destructive">{bannerPhotoError}</p>}
             </div>
             <div className="space-y-2">
@@ -1529,11 +1920,11 @@ const AdminDashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="top">Top</SelectItem>
-                   <SelectItem value="middle">Middle</SelectItem>
-                   <SelectItem value="bottom">Bottom</SelectItem>
-                   <SelectItem value="hero">Hero Topo (Vídeo)</SelectItem>
-                   <SelectItem value="hero_middle">Hero Meio (Vídeo)</SelectItem>
-                   <SelectItem value="hero_bottom">Hero Baixo (Vídeo)</SelectItem>
+                  <SelectItem value="middle">Middle</SelectItem>
+                  <SelectItem value="bottom">Bottom</SelectItem>
+                  <SelectItem value="hero">Hero Topo (Vídeo)</SelectItem>
+                  <SelectItem value="hero_middle">Hero Meio (Vídeo)</SelectItem>
+                  <SelectItem value="hero_bottom">Hero Baixo (Vídeo)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1546,7 +1937,14 @@ const AdminDashboard = () => {
                 >
                   {bannerVideoPreview ? (
                     <div className="relative w-full">
-                      <video src={bannerVideoPreview} autoPlay loop muted playsInline className="max-h-[120px] w-full rounded-lg object-contain" />
+                      <video
+                        src={bannerVideoPreview}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="max-h-[120px] w-full rounded-lg object-contain"
+                      />
                       <button
                         type="button"
                         className="absolute right-1 top-1 rounded-full bg-background/80 p-1 hover:bg-background"
@@ -1589,7 +1987,9 @@ const AdminDashboard = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setBannerModalOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setBannerModalOpen(false)}>
+              Cancelar
+            </Button>
             <Button onClick={handleBannerSave} disabled={bannerSaving}>
               {bannerSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               {editingBanner ? "Salvar" : "Criar Banner"}
@@ -1609,7 +2009,10 @@ const AdminDashboard = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBannerDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleBannerDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1627,7 +2030,10 @@ const AdminDashboard = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDeleteGroup}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1652,7 +2058,9 @@ const AdminDashboard = () => {
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditRejectModalOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setEditRejectModalOpen(false)}>
+              Cancelar
+            </Button>
             <Button variant="destructive" onClick={handleRejectEdit} disabled={actionLoading !== null}>
               {actionLoading ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               Confirmar Rejeição
@@ -1662,7 +2070,12 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Manual Group Creation Modal */}
-      <Dialog open={groupModalOpen} onOpenChange={(open) => { if (!open) resetGroupModal(); }}>
+      <Dialog
+        open={groupModalOpen}
+        onOpenChange={(open) => {
+          if (!open) resetGroupModal();
+        }}
+      >
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingGroupData ? "Editar Grupo" : "Adicionar Grupo Manualmente"}</DialogTitle>
@@ -1686,7 +2099,9 @@ const AdminDashboard = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {GROUP_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1735,10 +2150,17 @@ const AdminDashboard = () => {
               />
               {groupPhotoPreview ? (
                 <div className="relative inline-block">
-                  <img src={groupPhotoPreview} alt="Preview" className="h-24 w-24 rounded-lg border border-border object-cover" />
+                  <img
+                    src={groupPhotoPreview}
+                    alt="Preview"
+                    className="h-24 w-24 rounded-lg border border-border object-cover"
+                  />
                   <button
                     type="button"
-                    onClick={() => { setGroupPhotoFile(null); setGroupPhotoPreview(null); }}
+                    onClick={() => {
+                      setGroupPhotoFile(null);
+                      setGroupPhotoPreview(null);
+                    }}
                     className="absolute -right-2 -top-2 rounded-full bg-destructive p-0.5 text-destructive-foreground"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -1760,7 +2182,9 @@ const AdminDashboard = () => {
                   checked={groupForm.is_premium}
                   onCheckedChange={(v) => setGroupForm((f) => ({ ...f, is_premium: !!v }))}
                 />
-                <Label htmlFor="group-premium" className="cursor-pointer text-sm">⭐ Colocar em destaque (Premium)</Label>
+                <Label htmlFor="group-premium" className="cursor-pointer text-sm">
+                  ⭐ Colocar em destaque (Premium)
+                </Label>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -1768,13 +2192,21 @@ const AdminDashboard = () => {
                   checked={groupForm.is_verified}
                   onCheckedChange={(v) => setGroupForm((f) => ({ ...f, is_verified: !!v }))}
                 />
-                <Label htmlFor="group-verified" className="cursor-pointer text-sm">✓ Verificado</Label>
+                <Label htmlFor="group-verified" className="cursor-pointer text-sm">
+                  ✓ Verificado
+                </Label>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={resetGroupModal}>Cancelar</Button>
-            <Button onClick={handleGroupSave} disabled={groupSaving} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button variant="outline" onClick={resetGroupModal}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleGroupSave}
+              disabled={groupSaving}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
               {groupSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               {editingGroupData ? "Salvar Alterações" : "Adicionar Grupo"}
             </Button>
