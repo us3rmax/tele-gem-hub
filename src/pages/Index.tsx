@@ -9,7 +9,8 @@ import SortTabs from "@/components/SortTabs";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGroups, usePremiumGroups, PER_PAGE } from "@/hooks/use-groups";
+import { useGroups, usePremiumGroups } from "@/hooks/use-groups";
+const PER_PAGE = 20;
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,7 +20,7 @@ const Index = () => {
   const page = Number(searchParams.get("page") || "1");
   const searchTerm = searchParams.get("search") || "";
 
-  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page });
+  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 20 });
   const { data: premiumGrupos = [] } = usePremiumGroups();
 
   const grupos = data?.groups ?? [];
