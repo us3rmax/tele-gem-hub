@@ -689,20 +689,21 @@ const AdminDashboard = () => {
 
   const fetchCategories = async () => {
     setCategoriesLoading(true);
+
+    // Lista todos os arquivos category_*.jpg no bucket de uma vez
+    const { data: storageFiles } = await supabase.storage.from("thumbnails").list("", { limit: 200 });
+    const coverSlugs = new Set(
+      (storageFiles || []).map((f) => f.name.match(/^category_(.+)\.jpg$/)?.[1]).filter(Boolean) as string[],
+    );
+
     const results = await Promise.all(
       GROUP_CATEGORIES.map(async (slug) => {
-        // Verifica se existe cover personalizado no bucket
-        const coverPath = `category_${slug}.jpg`;
-        const { data: coverData } = supabase.storage.from("thumbnails").getPublicUrl(coverPath);
+        // Se existe no bucket, monta a URL pública
+        const coverUrl = coverSlugs.has(slug)
+          ? supabase.storage.from("thumbnails").getPublicUrl(`category_${slug}.jpg`).data.publicUrl
+          : null;
 
-        // Testa se o arquivo realmente existe
-        let coverUrl: string | null = null;
-        try {
-          const res = await fetch(coverData.publicUrl, { method: "HEAD" });
-          if (res.ok) coverUrl = coverData.publicUrl;
-        } catch {}
-
-        // Busca thumb do grupo com mais membros
+        // Busca thumb do grupo com mais membros + contagem
         const [topGroup, countResult] = await Promise.all([
           supabase
             .from("groups")
@@ -739,9 +740,11 @@ const AdminDashboard = () => {
     }
     setCategoryUploadingSlug(slug);
     const filePath = `category_${slug}.jpg`;
+    // Remove primeiro para evitar conflito de RLS no update
+    await supabase.storage.from("thumbnails").remove([filePath]);
     const { error } = await supabase.storage
       .from("thumbnails")
-      .upload(filePath, file, { contentType: "image/jpeg", upsert: true });
+      .upload(filePath, file, { contentType: file.type, upsert: true });
 
     if (error) {
       toast({ title: "Erro ao fazer upload", description: error.message, variant: "destructive" });
