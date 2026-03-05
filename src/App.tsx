@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -33,7 +33,17 @@ const CategoryLanding = lazy(() => import("./pages/CategoryLanding"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 
-const queryClient = new QueryClient();
+// QueryClient fora do componente mas com useState para não recriar
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000, // 2 min — não refaz query se dados frescos
+      gcTime: 10 * 60 * 1000, // 10 min — mantém cache mesmo fora de uso
+      retry: 1,
+      refetchOnWindowFocus: false, // não refaz query ao trocar de aba
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>
@@ -87,7 +97,6 @@ const App = () => (
                     <Route path="/grupos-putaria-telegram" element={<CategoryLanding />} />
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
                     <Route path="/categoria/:slug" element={<CategoryPage />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
