@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
 const PER_PAGE_MOBILE = 20;
-const PER_PAGE_DESKTOP = 24;
+const PER_PAGE_DESKTOP = 20;
 
 interface UseGroupsParams {
   sort: string;
