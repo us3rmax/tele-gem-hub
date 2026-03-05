@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
@@ -10,24 +9,22 @@ import SortTabs from "@/components/SortTabs";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGroups, usePremiumGroups, PER_PAGE_MOBILE, PER_PAGE_DESKTOP } from "@/hooks/use-groups";
+import { useGroups, usePremiumGroups, PER_PAGE } from "@/hooks/use-groups";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sort, setSort] = useState("hot");
-  const isMobile = useIsMobile();
 
-  const perPage = isMobile ? PER_PAGE_MOBILE : PER_PAGE_DESKTOP;
   const page = Number(searchParams.get("page") || "1");
   const searchTerm = searchParams.get("search") || "";
 
-  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage });
+  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page });
   const { data: premiumGrupos = [] } = usePremiumGroups();
 
   const grupos = data?.groups ?? [];
   const totalCount = data?.totalCount ?? 0;
-  const totalPages = Math.ceil(totalCount / perPage);
+  const totalPages = Math.ceil(totalCount / PER_PAGE);
 
   const handlePageChange = (p: number) => {
     setSearchParams({ page: String(p) });
