@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
-const PER_PAGE = 20;
+const PER_PAGE_MOBILE = 20;
+const PER_PAGE_DESKTOP = 24;
 
 interface UseGroupsParams {
   sort: string;
   search: string;
   page: number;
+  perPage: number;
 }
 
 async function fetchPremiumGroups(): Promise<Grupo[]> {
@@ -23,7 +25,7 @@ async function fetchPremiumGroups(): Promise<Grupo[]> {
   return [...pinned, ...unpinned].slice(0, 10) as Grupo[];
 }
 
-async function fetchGroups({ sort, search, page }: UseGroupsParams) {
+async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
   // Count
   let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
   if (!search) countQuery = countQuery.eq("is_premium", false);
@@ -31,8 +33,8 @@ async function fetchGroups({ sort, search, page }: UseGroupsParams) {
   const { count } = await countQuery;
 
   // Data
-  const from = (page - 1) * PER_PAGE;
-  const to = from + PER_PAGE - 1;
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
 
   let query = supabase.from("groups").select("*");
   if (!search) query = query.eq("is_premium", false);
@@ -68,7 +70,7 @@ export function usePremiumGroups() {
 
 export function useGroups(params: UseGroupsParams) {
   return useQuery({
-    queryKey: ["groups", params.sort, params.search, params.page],
+    queryKey: ["groups", params.sort, params.search, params.page, params.perPage],
     queryFn: () => fetchGroups(params),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
@@ -111,4 +113,4 @@ export function useRelatedGroups(category: string | undefined, excludeId: string
   });
 }
 
-export { PER_PAGE };
+export { PER_PAGE_MOBILE, PER_PAGE_DESKTOP };
