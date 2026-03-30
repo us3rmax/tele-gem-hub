@@ -33,14 +33,13 @@ const CategoryLanding = lazy(() => import("./pages/CategoryLanding"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 
-// QueryClient fora do componente mas com useState para não recriar
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 min — não refaz query se dados frescos
-      gcTime: 10 * 60 * 1000, // 10 min — mantém cache mesmo fora de uso
+      staleTime: 2 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: 1,
-      refetchOnWindowFocus: false, // não refaz query ao trocar de aba
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -91,10 +90,19 @@ const App = () => (
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/" element={<Index />} />
                     <Route path="/grupos-telegram" element={<GruposTelegram />} />
+
+                    {/* Landing pages SEO — keywords de alto volume */}
                     <Route path="/telegram-porno" element={<CategoryLanding />} />
-                    <Route path="/putaria-telegram" element={<CategoryLanding />} />
                     <Route path="/telegram-xxx" element={<CategoryLanding />} />
+                    <Route path="/putaria-telegram" element={<CategoryLanding />} />
+                    <Route path="/telegram-putaria" element={<CategoryLanding />} />
                     <Route path="/grupos-putaria-telegram" element={<CategoryLanding />} />
+                    <Route path="/grupos-telegram-18" element={<CategoryLanding />} />
+                    <Route path="/novinhas-telegram" element={<CategoryLanding />} />
+                    <Route path="/vazados-telegram" element={<CategoryLanding />} />
+                    <Route path="/onlyfans-telegram" element={<CategoryLanding />} />
+                    <Route path="/canal-de-putaria" element={<CategoryLanding />} />
+
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
                     <Route path="/categoria/:slug" element={<CategoryPage />} />
                     <Route path="*" element={<NotFound />} />
