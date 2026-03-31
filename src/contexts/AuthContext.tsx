@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const initialized = useRef(false);
 
   const checkAdmin = async (userId: string) => {
     const { data } = await supabase
@@ -31,22 +32,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    let initialLoad = true;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await checkAdmin(session.user.id);
-        } else {
-          setIsAdmin(false);
-        }
-        if (!initialLoad) {
-          setLoading(false);
-        }
-      }
-    );
+    if (initialized.current) return;
+    initialized.current = true;
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
@@ -54,9 +41,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user) {
         await checkAdmin(session.user.id);
       }
-      initialLoad = false;
       setLoading(false);
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          setTimeout(() => checkAdmin(session.user.id), 0);
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    );
 
     return () => subscription.unsubscribe();
   }, []);
@@ -72,7 +70,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: { emailRedirectTo: window.location.origin },
     });
-    console.log("[Auth] signUp result:", { session: data?.session, user: data?.user?.id, error });
     return { error: error as Error | null, session: data?.session };
   };
 
