@@ -45,7 +45,9 @@ import {
   Star,
   Copy,
   Search,
+  BarChart2,
 } from "lucide-react";
+import SEODashboard from "@/components/admin/SEODashboard";
 
 const GROUP_CATEGORIES = [
   "geral",
@@ -1113,6 +1115,10 @@ const AdminDashboard = () => {
               <LayoutDashboard className="h-4 w-4" />
               Banners
             </TabsTrigger>
+            <TabsTrigger value="seo" className="flex-1 gap-2">
+              <BarChart2 className="h-4 w-4" />
+              SEO
+            </TabsTrigger>
           </TabsList>
 
           {/* Submission tabs */}
@@ -1812,6 +1818,10 @@ const AdminDashboard = () => {
                 );
               })
             )}
+          </TabsContent>
+
+          <TabsContent value="seo" className="mt-4">
+            <SEODashboard />
           </TabsContent>
         </Tabs>
       </main>
