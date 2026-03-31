@@ -101,13 +101,28 @@ const GroupDetail = () => {
         canonicalUrl={`https://canais18.com${groupPath(grupo)}`}
         jsonLd={{
           "@context": "https://schema.org",
-          "@type": "Article",
-          headline: grupo.name,
+          "@type": "ItemPage",
+          name: `${grupo.name} - Canal Telegram 18+`,
           description: seoDescription,
+          url: `https://canais18.com${groupPath(grupo)}`,
           image: grupo.thumbnail_url || undefined,
           datePublished: grupo.created_at,
           dateModified: grupo.created_at,
-          author: { "@type": "Organization", name: "Canais18" },
+          mainEntity: {
+            "@type": "Thing",
+            name: grupo.name,
+            description: seoDescription,
+            url: grupo.telegram_link,
+            ...(grupo.thumbnail_url ? { image: grupo.thumbnail_url } : {}),
+          },
+          breadcrumb: {
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Canais18", item: "https://canais18.com" },
+              { "@type": "ListItem", position: 2, name: grupo.category, item: `https://canais18.com/?category=${encodeURIComponent(grupo.category)}` },
+              { "@type": "ListItem", position: 3, name: grupo.name, item: `https://canais18.com${groupPath(grupo)}` },
+            ],
+          },
           publisher: {
             "@type": "Organization",
             name: "Canais18",
