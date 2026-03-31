@@ -1,7 +1,4 @@
-// AUTO-GERADO por generate_react_patches.py — não editar manualmente
-// Regenerar rodando: python generate_react_patches.py
-import { LandingPageProps } from "./LandingPage";
-
+// empty
 export const LANDING_PAGES: (LandingPageProps & { rota: string })[] = [
   {
     "rota": "/telegram-putaria",
