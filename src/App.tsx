@@ -1,4 +1,13 @@
 import { lazy, Suspense, useState } from "react";
+import { TelegramPutariaPage } from "./pages/landing/LandingPages";
+import { GruposPutariaTelegramPage } from "./pages/landing/LandingPages";
+import { TelegramPornoPage } from "./pages/landing/LandingPages";
+import { TelegramXxxPage } from "./pages/landing/LandingPages";
+import { GruposTelegram18Page } from "./pages/landing/LandingPages";
+import { NovinhasTelegramPage } from "./pages/landing/LandingPages";
+import { VazadosTelegramPage } from "./pages/landing/LandingPages";
+import { OnlyfansTelegramPage } from "./pages/landing/LandingPages";
+import { CanalDePutariaPage } from "./pages/landing/LandingPages";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -85,6 +94,15 @@ const App = () => (
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/dmca" element={<Dmca />} />
+                    <Route path="/telegram-putaria" element={<TelegramPutariaPage />} />
+                    <Route path="/grupos-putaria-telegram" element={<GruposPutariaTelegramPage />} />
+                    <Route path="/telegram-porno" element={<TelegramPornoPage />} />
+                    <Route path="/telegram-xxx" element={<TelegramXxxPage />} />
+                    <Route path="/grupos-telegram-18" element={<GruposTelegram18Page />} />
+                    <Route path="/novinhas-telegram" element={<NovinhasTelegramPage />} />
+                    <Route path="/vazados-telegram" element={<VazadosTelegramPage />} />
+                    <Route path="/onlyfans-telegram" element={<OnlyfansTelegramPage />} />
+                    <Route path="/canal-de-putaria" element={<CanalDePutariaPage />} />
                     <Route path="/2257" element={<Usc2257 />} />
                     <Route path="/removal" element={<Removal />} />
                     <Route path="/blog" element={<Blog />} />
