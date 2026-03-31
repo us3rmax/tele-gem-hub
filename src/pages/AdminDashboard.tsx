@@ -174,6 +174,7 @@ const AdminDashboard = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("pending");
+  const [mainSection, setMainSection] = useState<"grupos_section" | "categorias" | "banners" | "seo">("grupos_section");
 
   // Submissions state
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -1066,44 +1067,14 @@ const AdminDashboard = () => {
           </Button>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={mainSection} onValueChange={(v) => {
+              setMainSection(v as "grupos_section" | "categorias" | "banners" | "seo");
+              if (v === "banners") setActiveTab("banners");
+              else if (v === "categorias") setActiveTab("categorias");
+              else if (v === "grupos_section") setActiveTab("pending");
+            }}>
           <TabsList className="w-full">
-            <TabsTrigger value="pending" className="flex-1 gap-2">
-              <Clock className="h-4 w-4" />
-              Pendentes
-              {pendingCount !== null && pendingCount > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-yellow-600/20 text-yellow-400 border-yellow-600/30">
-                  {pendingCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="approved" className="flex-1 gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Aprovados
-            </TabsTrigger>
-            <TabsTrigger value="rejected" className="flex-1 gap-2">
-              <XCircle className="h-4 w-4" />
-              Rejeitados
-            </TabsTrigger>
-            <TabsTrigger value="edits" className="flex-1 gap-2">
-              <FileEdit className="h-4 w-4" />
-              Edições
-              {editRequests.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-orange-600/20 text-orange-400 border-orange-600/30">
-                  {editRequests.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="premium" className="flex-1 gap-2">
-              <Star className="h-4 w-4" />
-              Premium
-              {premiumGroups.length > 0 && (
-                <Badge variant="secondary" className="ml-1 bg-yellow-600/20 text-yellow-400 border-yellow-600/30">
-                  {premiumGroups.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="grupos" className="flex-1 gap-2">
+            <TabsTrigger value="grupos_section" className="flex-1 gap-2">
               <Search className="h-4 w-4" />
               Grupos
             </TabsTrigger>
@@ -1121,6 +1092,64 @@ const AdminDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
+
+          <TabsContent value="grupos_section" className="mt-4">
+            <div className="flex gap-6">
+              <nav className="w-44 shrink-0 flex flex-col gap-1 border-r border-border pr-4 pt-1">
+                <button
+                  onClick={() => setActiveTab("pending")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "pending" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Pendentes</span>
+                  {pendingCount !== null && pendingCount > 0 && (
+                    <Badge variant="secondary" className="ml-auto text-xs bg-yellow-600/20 text-yellow-400 border-yellow-600/30">{pendingCount}</Badge>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("approved")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "approved" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Aprovados</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("rejected")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "rejected" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <XCircle className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Rejeitados</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("edits")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "edits" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <FileEdit className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Edições</span>
+                  {editRequests.length > 0 && (
+                    <Badge variant="secondary" className="ml-auto text-xs bg-orange-600/20 text-orange-400 border-orange-600/30">{editRequests.length}</Badge>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("premium")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "premium" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <Star className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Premium</span>
+                  {premiumGroups.length > 0 && (
+                    <Badge variant="secondary" className="ml-auto text-xs bg-yellow-600/20 text-yellow-400 border-yellow-600/30">{premiumGroups.length}</Badge>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("grupos")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "grupos" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <Search className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Todos os Grupos</span>
+                </button>
+              </nav>
+              <div className="flex-1 min-w-0">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* Submission tabs */}
           {["pending", "approved", "rejected"].map((tab) => (
             <TabsContent key={tab} value={tab} className="mt-4 space-y-4">
@@ -1630,6 +1659,11 @@ const AdminDashboard = () => {
                 </p>
               </>
             )}
+          </TabsContent>
+
+                </Tabs>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Categorias tab */}
