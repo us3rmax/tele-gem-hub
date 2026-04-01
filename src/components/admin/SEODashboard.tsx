@@ -1,32 +1,72 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
-import { RefreshCw, MousePointerClick, Eye, Target, BarChart2, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp } from "lucide-react";
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
+} from "recharts";
+import {
+  MousePointerClick, Eye, Target, BarChart2, TrendingUp, TrendingDown,
+  CheckCircle, XCircle, Clock, AlertTriangle, RefreshCw, Activity, Cpu,
+} from "lucide-react";
 
-interface PeriodTotals { clicks: number; impressions: number; ctr: number; position: number }
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface Totals  { clicks: number; impressions: number; ctr: number; position: number }
+interface Row     { key: string; clicks: number; impressions: number; ctr: number; position: number }
+interface DayRow  { date: string; clicks: number; impressions: number }
+
+interface PeriodData extends Totals {
+  daily:    DayRow[];
+  queries?: Row[];
+  pages?:   Row[];
+}
+
 interface CacheData {
-  "7d": PeriodTotals; "28d": PeriodTotals; "90d": PeriodTotals;
+  "7d":  PeriodData;
+  "28d": PeriodData & { queries: Row[]; pages: Row[] };
+  "90d": PeriodData;
   supabase: { total_groups: number; new_this_week: number };
   updated_at: string;
 }
+
 interface HealthRow {
   task: string; last_run: string | null; last_success: string | null;
   last_error: string | null; status: string;
 }
-interface IndexingProgress { sent: string[]; errors: number; last_run: string }
+
+interface Indexing { sent: string[]; errors: number; last_run: string }
 
 type Period = "7d" | "28d" | "90d";
+type Tab    = "analytics" | "automacoes";
 
-const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 const num = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n));
+const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
-function hoursAgo(iso: string | null) { return iso ? (Date.now() - new Date(iso).getTime()) / 3_600_000 : Infinity; }
+function hoursAgo(iso: string | null) {
+  return iso ? (Date.now() - new Date(iso).getTime()) / 3_600_000 : Infinity;
+}
+
 function fmtRel(iso: string | null) {
   if (!iso) return "Nunca";
   const h = hoursAgo(iso);
-  if (h < 1) return `${Math.round(h * 60)}min atrás`;
+  if (h < 1)  return `${Math.round(h * 60)}min atrás`;
   if (h < 24) return `${Math.round(h)}h atrás`;
   return `${Math.round(h / 24)}d atrás`;
+}
+
+function nextRun(utcHour: number): string {
+  const now = new Date();
+  const next = new Date();
+  next.setUTCHours(utcHour, 0, 0, 0);
+  if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+  const diffH = Math.round((next.getTime() - now.getTime()) / 3_600_000);
+  const brtH  = (utcHour - 3 + 24) % 24;
+  return diffH < 1
+    ? "em menos de 1h"
+    : diffH < 24
+      ? `em ~${diffH}h (${brtH}h BRT)`
+      : `amanhã às ${brtH}h BRT`;
 }
 
 function computeStatus(row: HealthRow): "ok" | "error" | "late" | "pending" {
@@ -34,27 +74,80 @@ function computeStatus(row: HealthRow): "ok" | "error" | "late" | "pending" {
   return hoursAgo(row.last_success) > 25 ? (row.last_success ? "late" : "pending") : "ok";
 }
 
-const STATUS_CFG = {
-  ok:      { label: "OK",       icon: CheckCircle,   cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
-  error:   { label: "ERRO",     icon: XCircle,       cls: "text-red-400 bg-red-400/10 border-red-400/20" },
-  late:    { label: "ATRASADO", icon: AlertTriangle, cls: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" },
-  pending: { label: "PENDENTE", icon: Clock,         cls: "text-zinc-400 bg-zinc-800 border-zinc-700" },
+const STATUS = {
+  ok:      { label: "OK",       Icon: CheckCircle,   cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
+  error:   { label: "ERRO",     Icon: XCircle,       cls: "text-red-400 bg-red-400/10 border-red-400/20" },
+  late:    { label: "ATRASADO", Icon: AlertTriangle, cls: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" },
+  pending: { label: "PENDENTE", Icon: Clock,         cls: "text-zinc-400 bg-zinc-800 border-zinc-700" },
 };
 
-const TASK_LABELS: Record<string, string> = {
-  "daily-tasks": "Indexação + Cache SEO",
-  "health-check": "Health Check",
+const TASK_META: Record<string, { label: string; utcHour: number }> = {
+  "daily-tasks":  { label: "Indexação + Cache SEO", utcHour: 14 },
+  "health-check": { label: "Health Check",          utcHour: 15 },
 };
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, icon: Icon, sub }: {
+  label: string; value: string; icon: React.ElementType; sub?: string
+}) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="text-zinc-400 text-xs uppercase tracking-wide">{label}</span>
+        <Icon className="h-4 w-4 text-zinc-600" />
+      </div>
+      <div className="text-2xl font-bold text-white">{value}</div>
+      {sub && <div className="text-xs text-zinc-500">{sub}</div>}
+    </div>
+  );
+}
+
+function TopTable({ rows, labelFn, title }: {
+  rows: Row[]; title: string; labelFn: (k: string) => string
+}) {
+  if (!rows?.length) return null;
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 border-b border-zinc-800 text-sm font-semibold text-white">{title}</div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-zinc-500 border-b border-zinc-800">
+              <th className="text-left px-3 py-2">#</th>
+              <th className="text-left px-3 py-2">Nome</th>
+              <th className="text-right px-3 py-2">Cli.</th>
+              <th className="text-right px-3 py-2">Imp.</th>
+              <th className="text-right px-3 py-2">Pos.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.key} className={i % 2 === 0 ? "bg-zinc-900/50" : "bg-zinc-950/30"}>
+                <td className="px-3 py-1.5 text-zinc-600">{i + 1}</td>
+                <td className="px-3 py-1.5 text-zinc-200 max-w-[180px] truncate">{labelFn(r.key)}</td>
+                <td className="px-3 py-1.5 text-right text-zinc-300">{r.clicks}</td>
+                <td className="px-3 py-1.5 text-right text-zinc-400">{num(r.impressions)}</td>
+                <td className="px-3 py-1.5 text-right text-zinc-500">{r.position.toFixed(1)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function HealthCard({ row }: { row: HealthRow }) {
-  const s = computeStatus(row);
-  const { label, icon: Icon, cls } = STATUS_CFG[s];
+  const s   = computeStatus(row);
+  const cfg = STATUS[s];
+  const meta = TASK_META[row.task];
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-white truncate">{TASK_LABELS[row.task] ?? row.task}</span>
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${cls} shrink-0`}>
-          <Icon className="h-3 w-3" />{label}
+        <span className="text-sm font-semibold text-white">{meta?.label ?? row.task}</span>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${cfg.cls} shrink-0`}>
+          <cfg.Icon className="h-3 w-3" />{cfg.label}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -67,19 +160,30 @@ function HealthCard({ row }: { row: HealthRow }) {
           <div className={s === "ok" ? "text-emerald-400" : "text-zinc-200"}>{fmtRel(row.last_success)}</div>
         </div>
       </div>
+      {meta && (
+        <div className="text-xs text-zinc-500 flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Próxima execução: <span className="text-zinc-300">{nextRun(meta.utcHour)}</span>
+        </div>
+      )}
       {s === "error" && row.last_error && (
-        <div className="bg-red-950/30 border border-red-800/30 rounded p-2 text-red-300 text-xs font-mono truncate">{row.last_error}</div>
+        <div className="bg-red-950/30 border border-red-800/30 rounded p-2 text-red-300 text-xs font-mono truncate">
+          {row.last_error}
+        </div>
       )}
     </div>
   );
 }
 
+// ── Main Component ─────────────────────────────────────────────────────────────
+
 export default function SEODashboard() {
-  const [data, setData]         = useState<CacheData | null>(null);
-  const [health, setHealth]     = useState<HealthRow[]>([]);
-  const [indexing, setIndexing] = useState<IndexingProgress | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [period, setPeriod]     = useState<Period>("7d");
+  const [data,      setData]      = useState<CacheData | null>(null);
+  const [health,    setHealth]    = useState<HealthRow[]>([]);
+  const [indexing,  setIndexing]  = useState<Indexing | null>(null);
+  const [loading,   setLoading]   = useState(true);
+  const [tab,       setTab]       = useState<Tab>("analytics");
+  const [period,    setPeriod]    = useState<Period>("28d");
   const [updatedAt, setUpdatedAt] = useState("");
 
   useEffect(() => {
@@ -94,8 +198,8 @@ export default function SEODashboard() {
         setData(cacheRes.data.data as unknown as CacheData);
         setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) ?? "");
       }
-      if (healthRes.data) setHealth(healthRes.data as HealthRow[]);
-      if (idxRes.data?.value) setIndexing(idxRes.data.value as unknown as IndexingProgress);
+      if (healthRes.data)      setHealth(healthRes.data as HealthRow[]);
+      if (idxRes.data?.value)  setIndexing(idxRes.data.value as unknown as Indexing);
       setLoading(false);
     })();
   }, []);
@@ -106,128 +210,209 @@ export default function SEODashboard() {
     </div>
   );
 
-  if (!data) return (
-    <div className="py-12 text-center text-zinc-500">
-      <BarChart2 className="mx-auto h-10 w-10 opacity-30 mb-2" />
-      <p className="text-sm">Sem dados. Aguarde a próxima execução automática (11h BRT).</p>
-    </div>
-  );
-
-  const p  = data[period];
-  const sb = data.supabase;
-  const chartData = [
-    { period: "7d",  Cliques: data["7d"].clicks,  Impressões: data["7d"].impressions },
-    { period: "28d", Cliques: data["28d"].clicks, Impressões: data["28d"].impressions },
-    { period: "90d", Cliques: data["90d"].clicks, Impressões: data["90d"].impressions },
+  // ── Tab selector ────────────────────────────────────────────────────────────
+  const tabs: { id: Tab; label: string; Icon: React.ElementType }[] = [
+    { id: "analytics",  label: "Analytics",  Icon: Activity },
+    { id: "automacoes", label: "Automações", Icon: Cpu },
   ];
-  const idxTotal   = sb.total_groups + 19; // groups + priority URLs
-  const idxSent    = indexing?.sent.length ?? 0;
-  const idxPct     = idxTotal > 0 ? Math.round((idxSent / idxTotal) * 100) : 0;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-8">
 
-      {/* Header */}
+      {/* Top bar */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-white">SEO Dashboard</h2>
           {updatedAt && <p className="text-xs text-zinc-500">Atualizado em {updatedAt}</p>}
         </div>
         <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
-          {(["7d", "28d", "90d"] as Period[]).map(v => (
-            <button key={v} onClick={() => setPeriod(v)}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${period === v ? "bg-pink-600 text-white" : "text-zinc-400 hover:text-white"}`}>
-              {v}
+          {tabs.map(({ id, label, Icon }) => (
+            <button key={id} onClick={() => setTab(id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors
+                ${tab === id ? "bg-pink-600 text-white" : "text-zinc-400 hover:text-white"}`}>
+              <Icon className="h-3.5 w-3.5" />{label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Automation Status */}
-      {health.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-zinc-300">Status das Automações</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {health.map(row => <HealthCard key={row.task} row={row} />)}
-          </div>
-        </div>
+      {/* ── ABA 1: Analytics ─────────────────────────────────────────────── */}
+      {tab === "analytics" && (
+        <>
+          {!data ? (
+            <div className="py-16 text-center text-zinc-500">
+              <BarChart2 className="mx-auto h-10 w-10 opacity-30 mb-2" />
+              <p className="text-sm">Sem dados. Próxima atualização automática às 11h BRT.</p>
+            </div>
+          ) : (() => {
+            const p = data[period];
+            const daily = p.daily ?? [];
+            const queries = data["28d"].queries ?? [];
+            const pages   = data["28d"].pages   ?? [];
+
+            return (
+              <div className="space-y-4">
+
+                {/* Period toggle */}
+                <div className="flex items-center gap-1 w-fit bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+                  {(["7d", "28d", "90d"] as Period[]).map(v => (
+                    <button key={v} onClick={() => setPeriod(v)}
+                      className={`px-3 py-1 rounded text-xs font-medium transition-colors
+                        ${period === v ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-white"}`}>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Stat cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <StatCard label="Visitas (Cliques)" value={num(p.clicks)}         icon={MousePointerClick} sub="via Google Search" />
+                  <StatCard label="Impressões"        value={num(p.impressions)}    icon={Eye}               sub="na busca do Google" />
+                  <StatCard label="CTR"               value={pct(p.ctr)}            icon={Target}            sub="cliques / impressões" />
+                  <StatCard label="Posição Média"     value={p.position.toFixed(1)} icon={BarChart2}         sub="ranking médio" />
+                </div>
+
+                {/* Line chart */}
+                {daily.length > 0 && (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-zinc-300 mb-3">
+                      Cliques e Impressões — {period}
+                    </h3>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart data={daily} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                        <XAxis dataKey="date" tick={{ fill: "#71717a", fontSize: 10 }}
+                          tickFormatter={d => d.slice(5)} interval="preserveStartEnd" />
+                        <YAxis tick={{ fill: "#71717a", fontSize: 10 }} />
+                        <Tooltip
+                          contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 6, fontSize: 12 }}
+                          labelStyle={{ color: "#a1a1aa" }} />
+                        <Legend wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }} />
+                        <Line type="monotone" dataKey="impressions" stroke="#e91e63" dot={false} strokeWidth={2} name="Impressões" />
+                        <Line type="monotone" dataKey="clicks"      stroke="#22d3ee" dot={false} strokeWidth={2} name="Cliques" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Top tables */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <TopTable
+                    title="Top 10 Keywords (28d)"
+                    rows={queries}
+                    labelFn={k => k}
+                  />
+                  <TopTable
+                    title="Top 10 Páginas (28d)"
+                    rows={pages}
+                    labelFn={k => k.replace(/https?:\/\/(www\.)?canais18\.com/, "") || "/"}
+                  />
+                </div>
+
+                {/* Period comparison */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-zinc-300 mb-3">Comparativo de Períodos</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(["7d", "28d", "90d"] as Period[]).map(v => {
+                      const d = data[v];
+                      const isActive = v === period;
+                      return (
+                        <div key={v} onClick={() => setPeriod(v)} className={`rounded-lg p-3 cursor-pointer border transition-colors ${isActive ? "border-pink-600 bg-pink-600/5" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}>
+                          <div className="text-xs text-zinc-500 mb-1">{v}</div>
+                          <div className="text-lg font-bold text-white">{num(d.clicks)}</div>
+                          <div className="text-xs text-zinc-400">{num(d.impressions)} imp</div>
+                          <div className="text-xs text-zinc-500 mt-1">pos {d.position.toFixed(1)} · CTR {pct(d.ctr)}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            );
+          })()}
+        </>
       )}
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Cliques",      value: num(p.clicks),         icon: MousePointerClick },
-          { label: "Impressões",   value: num(p.impressions),    icon: Eye },
-          { label: "CTR",          value: pct(p.ctr),            icon: Target },
-          { label: "Posição Méd.", value: p.position.toFixed(1), icon: BarChart2 },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-400 text-xs uppercase tracking-wide">{label}</span>
-              <Icon className="h-4 w-4 text-zinc-600" />
+      {/* ── ABA 2: Automações ────────────────────────────────────────────── */}
+      {tab === "automacoes" && (
+        <div className="space-y-4">
+
+          {/* Health cards */}
+          <div>
+            <h3 className="text-sm font-semibold text-zinc-300 mb-2">Status das Tasks</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {health.length > 0
+                ? health.map(row => <HealthCard key={row.task} row={row} />)
+                : <p className="text-zinc-500 text-sm">Sem dados de saúde.</p>
+              }
             </div>
-            <div className="text-2xl font-bold text-white">{value}</div>
           </div>
-        ))}
-      </div>
 
-      {/* Chart */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-3">Cliques e Impressões por Período</h3>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis dataKey="period" tick={{ fill: "#71717a", fontSize: 11 }} />
-            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} />
-            <Tooltip
-              contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 6, fontSize: 12 }}
-              labelStyle={{ color: "#a1a1aa" }}
-            />
-            <Legend wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }} />
-            <Bar dataKey="Impressões" fill="#e91e63" radius={[3,3,0,0]} />
-            <Bar dataKey="Cliques"    fill="#22d3ee" radius={[3,3,0,0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+          {/* Indexing progress */}
+          {(() => {
+            const sent  = indexing?.sent.length ?? 0;
+            const total = (data?.supabase.total_groups ?? 0) + PRIORITY_URLS_COUNT;
+            const pctV  = total > 0 ? Math.round((sent / total) * 100) : 0;
+            const remaining = Math.max(0, total - sent);
+            const daysLeft  = Math.ceil(remaining / 200);
+            return (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-white">Progresso da Indexação Google</h3>
+                <div className="flex items-end gap-3">
+                  <span className="text-3xl font-bold text-white">{pctV}%</span>
+                  <span className="text-zinc-400 text-sm mb-1">{sent.toLocaleString("pt-BR")} / {total.toLocaleString("pt-BR")} URLs</span>
+                </div>
+                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-pink-600 to-pink-400 rounded-full transition-all"
+                    style={{ width: `${pctV}%` }} />
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div className="bg-zinc-800 rounded p-2">
+                    <div className="text-zinc-500">Enviadas</div>
+                    <div className="text-white font-bold text-base">{sent.toLocaleString("pt-BR")}</div>
+                  </div>
+                  <div className="bg-zinc-800 rounded p-2">
+                    <div className="text-zinc-500">Restantes</div>
+                    <div className="text-zinc-200 font-bold text-base">{remaining.toLocaleString("pt-BR")}</div>
+                  </div>
+                  <div className="bg-zinc-800 rounded p-2">
+                    <div className="text-zinc-500">Tempo est.</div>
+                    <div className="text-zinc-200 font-bold text-base">{daysLeft}d</div>
+                  </div>
+                </div>
+                <div className="text-xs text-zinc-500">
+                  Erros acumulados: <span className={`font-medium ${(indexing?.errors ?? 0) > 0 ? "text-red-400" : "text-zinc-400"}`}>{indexing?.errors ?? 0}</span>
+                  {indexing?.last_run && <span className="ml-3">Última run: {fmtRel(indexing.last_run)}</span>}
+                </div>
+              </div>
+            );
+          })()}
 
-      {/* Supabase Stats + Indexing */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-2">
-          <h3 className="text-sm font-semibold text-white">Grupos no Supabase</h3>
-          <div className="text-3xl font-bold text-white">{sb.total_groups.toLocaleString("pt-BR")}</div>
-          <div className="flex items-center gap-2 text-sm">
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
-            <span className="text-emerald-400 font-medium">+{sb.new_this_week}</span>
-            <span className="text-zinc-500">novos nos últimos 7 dias</span>
-          </div>
+          {/* Supabase groups */}
+          {data && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-white">Grupos no Banco</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-zinc-800 rounded p-3">
+                  <div className="text-zinc-500 text-xs">Total</div>
+                  <div className="text-2xl font-bold text-white">{data.supabase.total_groups.toLocaleString("pt-BR")}</div>
+                </div>
+                <div className="bg-zinc-800 rounded p-3">
+                  <div className="text-zinc-500 text-xs flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3 text-emerald-400" /> Esta semana
+                  </div>
+                  <div className="text-2xl font-bold text-emerald-400">+{data.supabase.new_this_week}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
-
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-white">Google Indexing API</h3>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold text-white">{idxPct}%</span>
-            <span className="text-zinc-500 text-sm mb-1">indexado</span>
-          </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-            <div className="h-full bg-pink-600 rounded-full transition-all" style={{ width: `${idxPct}%` }} />
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-xs">
-            <div className="bg-zinc-800 rounded p-2">
-              <div className="text-zinc-500">Enviadas</div>
-              <div className="text-white font-bold">{idxSent.toLocaleString("pt-BR")}</div>
-            </div>
-            <div className="bg-zinc-800 rounded p-2">
-              <div className="text-zinc-500">Erros</div>
-              <div className={`font-bold ${(indexing?.errors ?? 0) > 0 ? "text-red-400" : "text-zinc-400"}`}>{indexing?.errors ?? 0}</div>
-            </div>
-            <div className="bg-zinc-800 rounded p-2">
-              <div className="text-zinc-500">Última run</div>
-              <div className="text-zinc-300 text-[10px]">{fmtRel(indexing?.last_run ?? null)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
     </div>
   );
 }
+
+const PRIORITY_URLS_COUNT = 19;
