@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { TrendingUp, TrendingDown, Minus, RefreshCw, MousePointerClick, Eye, Target, BarChart2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, RefreshCw, MousePointerClick, Eye, Target, BarChart2, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Totals { clicks: number; impressions: number; ctr: number; position: number }
@@ -16,11 +16,40 @@ interface SupabaseStats {
 }
 interface CacheData { "7d": PeriodData; "28d": PeriodData; "90d": PeriodData; supabase: SupabaseStats; updated_at: string }
 
+interface HealthRow {
+  task: string;
+  last_run: string | null;
+  last_success: string | null;
+  last_error: string | null;
+  status: string;
+  updated_at: string | null;
+}
+
 type Period = "7d" | "28d" | "90d";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const num = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n));
+
+function hoursAgo(iso: string | null): number {
+  if (!iso) return Infinity;
+  return (Date.now() - new Date(iso).getTime()) / 3_600_000;
+}
+
+function fmtRelative(iso: string | null): string {
+  if (!iso) return "Nunca";
+  const h = hoursAgo(iso);
+  if (h < 1)  return `${Math.round(h * 60)}min atrás`;
+  if (h < 24) return `${Math.round(h)}h atrás`;
+  return `${Math.round(h / 24)}d atrás`;
+}
+
+function computeStatus(row: HealthRow): "ok" | "error" | "late" | "pending" {
+  if (row.status === "error") return "error";
+  const h = hoursAgo(row.last_success);
+  if (h > 25) return row.last_success ? "late" : "pending";
+  return "ok";
+}
 
 function Delta({ val, reverse = false, unit = "" }: { val: number; reverse?: boolean; unit?: string }) {
   if (Math.abs(val) < 0.05) return <span className="text-zinc-500 text-xs">—</span>;
@@ -50,24 +79,83 @@ function StatCard({ label, value, prev, icon: Icon, format }: {
   );
 }
 
+const TASK_LABELS: Record<string, string> = {
+  "daily-tasks":  "Indexação + Cache SEO",
+  "health-check": "Health Check",
+};
+
+const STATUS_CONFIG = {
+  ok:      { label: "OK",       icon: CheckCircle,    cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
+  error:   { label: "ERRO",     icon: XCircle,        cls: "text-red-400 bg-red-400/10 border-red-400/20" },
+  late:    { label: "ATRASADO", icon: AlertTriangle,  cls: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20" },
+  pending: { label: "PENDENTE", icon: Clock,          cls: "text-zinc-400 bg-zinc-800 border-zinc-700" },
+};
+
+function HealthCard({ row }: { row: HealthRow }) {
+  const status = computeStatus(row);
+  const cfg    = STATUS_CONFIG[status];
+  const Icon   = cfg.icon;
+  const label  = TASK_LABELS[row.task] ?? row.task;
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-semibold text-white truncate">{label}</span>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${cfg.cls} shrink-0`}>
+          <Icon className="h-3 w-3" />
+          {cfg.label}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="bg-zinc-800 rounded p-2">
+          <div className="text-zinc-500 mb-0.5">Última execução</div>
+          <div className="text-zinc-200">{fmtRelative(row.last_run)}</div>
+        </div>
+        <div className="bg-zinc-800 rounded p-2">
+          <div className="text-zinc-500 mb-0.5">Último sucesso</div>
+          <div className={`${status === "ok" ? "text-emerald-400" : "text-zinc-200"}`}>
+            {fmtRelative(row.last_success)}
+          </div>
+        </div>
+      </div>
+
+      {status === "error" && row.last_error && (
+        <div className="bg-red-950/30 border border-red-800/30 rounded p-2">
+          <div className="text-red-400 text-xs font-medium mb-0.5">Erro</div>
+          <div className="text-red-300 text-xs font-mono truncate">{row.last_error}</div>
+        </div>
+      )}
+
+      {status === "late" && (
+        <div className="bg-yellow-950/20 border border-yellow-800/20 rounded p-2 text-yellow-400 text-xs">
+          Sem execução há mais de 25h — verificar pg_cron
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function SEODashboard() {
-  const [data, setData]       = useState<CacheData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod]   = useState<Period>("7d");
+  const [data, setData]         = useState<CacheData | null>(null);
+  const [health, setHealth]     = useState<HealthRow[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [period, setPeriod]     = useState<Period>("7d");
   const [updatedAt, setUpdatedAt] = useState("");
 
   const load = async () => {
     setLoading(true);
-    const { data: rows } = await supabase
-      .from("seo_cache")
-      .select("data, updated_at")
-      .eq("key", "dashboard")
-      .single();
-    if (rows) {
-      setData(rows.data as unknown as CacheData);
-      setUpdatedAt(rows.updated_at?.slice(0, 10) || "");
+    const [cacheRes, healthRes] = await Promise.all([
+      supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
+      supabase.from("seo_health").select("*").order("task"),
+    ]);
+
+    if (cacheRes.data) {
+      setData(cacheRes.data.data as unknown as CacheData);
+      setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) || "");
     }
+    if (healthRes.data) setHealth(healthRes.data as HealthRow[]);
     setLoading(false);
   };
 
@@ -113,6 +201,16 @@ export default function SEODashboard() {
           ))}
         </div>
       </div>
+
+      {/* Automation Status */}
+      {health.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-zinc-300">Status das Automações</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {health.map(row => <HealthCard key={row.task} row={row} />)}
+          </div>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
