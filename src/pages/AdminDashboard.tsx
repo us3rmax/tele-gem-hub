@@ -236,6 +236,7 @@ const AdminDashboard = () => {
   const [groupsSourceFilter, setGroupsSourceFilter] = useState<"all" | "imported" | "user">("all");
   const [allGroups, setAllGroups] = useState<AllGroup[]>([]);
   const [allGroupsLoading, setAllGroupsLoading] = useState(false);
+  const [totalGroupsCount, setTotalGroupsCount] = useState<number>(0);
 
   // Premium groups state
   interface PremiumGroup {
@@ -686,13 +687,16 @@ const AdminDashboard = () => {
       .from("groups")
       .select(
         "id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by",
+        { count: "exact" }
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(500);
     if (error) {
       console.error("Error fetching all groups:", error);
       setAllGroups([]);
     } else {
       setAllGroups((data as any as AllGroup[]) || []);
+      setTotalGroupsCount(count ?? 0);
     }
     setAllGroupsLoading(false);
   };
@@ -1629,7 +1633,7 @@ const AdminDashboard = () => {
                 />
               </div>
               {(["all", "imported", "user"] as const).map((f) => {
-                const count = f === "all" ? allGroups.length : allGroups.filter((g) => g.source === f).length;
+                const count = f === "all" ? totalGroupsCount : allGroups.filter((g) => g.source === f).length;
                 const labels = { all: "Todos", imported: "📥 Importados", user: "👤 Usuários" };
                 return (
                   <button
