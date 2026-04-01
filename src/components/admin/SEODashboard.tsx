@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { RefreshCw, MousePointerClick, Eye, Target, BarChart2, CheckCircle, XCircle, Clock, AlertTriangle, TrendingUp } from "lucide-react";
 
 interface PeriodTotals { clicks: number; impressions: number; ctr: number; position: number }
@@ -12,6 +13,7 @@ interface HealthRow {
   task: string; last_run: string | null; last_success: string | null;
   last_error: string | null; status: string;
 }
+interface IndexingProgress { sent: string[]; errors: number; last_run: string }
 
 type Period = "7d" | "28d" | "90d";
 
@@ -73,24 +75,27 @@ function HealthCard({ row }: { row: HealthRow }) {
 }
 
 export default function SEODashboard() {
-  const [data, setData]       = useState<CacheData | null>(null);
-  const [health, setHealth]   = useState<HealthRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod]   = useState<Period>("7d");
+  const [data, setData]         = useState<CacheData | null>(null);
+  const [health, setHealth]     = useState<HealthRow[]>([]);
+  const [indexing, setIndexing] = useState<IndexingProgress | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [period, setPeriod]     = useState<Period>("7d");
   const [updatedAt, setUpdatedAt] = useState("");
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [cacheRes, healthRes] = await Promise.all([
+      const [cacheRes, healthRes, idxRes] = await Promise.all([
         supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
         supabase.from("seo_health").select("*").order("task"),
+        supabase.from("seo_config").select("value").eq("key", "indexing_progress").single(),
       ]);
       if (cacheRes.data) {
         setData(cacheRes.data.data as unknown as CacheData);
         setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) ?? "");
       }
       if (healthRes.data) setHealth(healthRes.data as HealthRow[]);
+      if (idxRes.data?.value) setIndexing(idxRes.data.value as unknown as IndexingProgress);
       setLoading(false);
     })();
   }, []);
@@ -110,6 +115,14 @@ export default function SEODashboard() {
 
   const p  = data[period];
   const sb = data.supabase;
+  const chartData = [
+    { period: "7d",  Cliques: data["7d"].clicks,  Impressões: data["7d"].impressions },
+    { period: "28d", Cliques: data["28d"].clicks, Impressões: data["28d"].impressions },
+    { period: "90d", Cliques: data["90d"].clicks, Impressões: data["90d"].impressions },
+  ];
+  const idxTotal   = sb.total_groups + 19; // groups + priority URLs
+  const idxSent    = indexing?.sent.length ?? 0;
+  const idxPct     = idxTotal > 0 ? Math.round((idxSent / idxTotal) * 100) : 0;
 
   return (
     <div className="space-y-6 pb-8">
@@ -158,7 +171,26 @@ export default function SEODashboard() {
         ))}
       </div>
 
-      {/* Supabase Stats */}
+      {/* Chart */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+        <h3 className="text-sm font-semibold text-zinc-300 mb-3">Cliques e Impressões por Período</h3>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+            <XAxis dataKey="period" tick={{ fill: "#71717a", fontSize: 11 }} />
+            <YAxis tick={{ fill: "#71717a", fontSize: 10 }} />
+            <Tooltip
+              contentStyle={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: 6, fontSize: 12 }}
+              labelStyle={{ color: "#a1a1aa" }}
+            />
+            <Legend wrapperStyle={{ fontSize: 11, color: "#a1a1aa" }} />
+            <Bar dataKey="Impressões" fill="#e91e63" radius={[3,3,0,0]} />
+            <Bar dataKey="Cliques"    fill="#22d3ee" radius={[3,3,0,0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Supabase Stats + Indexing */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-2">
           <h3 className="text-sm font-semibold text-white">Grupos no Supabase</h3>
@@ -169,17 +201,29 @@ export default function SEODashboard() {
             <span className="text-zinc-500">novos nos últimos 7 dias</span>
           </div>
         </div>
+
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-white">Comparativo de Períodos</h3>
-          <div className="space-y-2">
-            {(["7d", "28d", "90d"] as Period[]).map(v => (
-              <div key={v} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400 w-8">{v}</span>
-                <span className="text-zinc-300">{num(data[v].clicks)} cli</span>
-                <span className="text-zinc-300">{num(data[v].impressions)} imp</span>
-                <span className="text-zinc-400">pos {data[v].position.toFixed(1)}</span>
-              </div>
-            ))}
+          <h3 className="text-sm font-semibold text-white">Google Indexing API</h3>
+          <div className="flex items-end gap-2">
+            <span className="text-3xl font-bold text-white">{idxPct}%</span>
+            <span className="text-zinc-500 text-sm mb-1">indexado</span>
+          </div>
+          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-pink-600 rounded-full transition-all" style={{ width: `${idxPct}%` }} />
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="bg-zinc-800 rounded p-2">
+              <div className="text-zinc-500">Enviadas</div>
+              <div className="text-white font-bold">{idxSent.toLocaleString("pt-BR")}</div>
+            </div>
+            <div className="bg-zinc-800 rounded p-2">
+              <div className="text-zinc-500">Erros</div>
+              <div className={`font-bold ${(indexing?.errors ?? 0) > 0 ? "text-red-400" : "text-zinc-400"}`}>{indexing?.errors ?? 0}</div>
+            </div>
+            <div className="bg-zinc-800 rounded p-2">
+              <div className="text-zinc-500">Última run</div>
+              <div className="text-zinc-300 text-[10px]">{fmtRel(indexing?.last_run ?? null)}</div>
+            </div>
           </div>
         </div>
       </div>
