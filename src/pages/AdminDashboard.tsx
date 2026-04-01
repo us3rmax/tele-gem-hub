@@ -46,6 +46,7 @@ import {
   Copy,
   Search,
   BarChart2,
+  WifiOff,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
 
@@ -251,6 +252,10 @@ const AdminDashboard = () => {
     telegram_link: string;
   }
   const [premiumGroups, setPremiumGroups] = useState<PremiumGroup[]>([]);
+  const [brokenGroups, setBrokenGroups] = useState<{ id: string; name: string; telegram_link: string }[]>([]);
+  const [brokenGroupsLoading, setBrokenGroupsLoading] = useState(false);
+  const [brokenLinkEdits, setBrokenLinkEdits] = useState<Record<string, string>>({});
+  const [brokenSelected, setBrokenSelected] = useState<Set<string>>(new Set());
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [premiumSearch, setPremiumSearch] = useState("");
 
@@ -320,6 +325,8 @@ const AdminDashboard = () => {
       fetchPremiumGroups();
     } else if (activeTab === "grupos") {
       fetchAllGroups();
+    } else if (activeTab === "broken") {
+      fetchBrokenGroups();
     } else if (activeTab === "categorias") {
       fetchCategories();
     } else {
@@ -791,6 +798,59 @@ const AdminDashboard = () => {
     setPremiumLoading(false);
   };
 
+  const fetchBrokenGroups = async () => {
+    setBrokenGroupsLoading(true);
+    const { data, error } = await supabase
+      .from("groups")
+      .select("id, name, telegram_link")
+      .eq("broken", true)
+      .order("name");
+    if (error) {
+      console.error("Error fetching broken groups:", error);
+      setBrokenGroups([]);
+    } else {
+      setBrokenGroups(data || []);
+      const edits: Record<string, string> = {};
+      (data || []).forEach((g: { id: string; telegram_link: string }) => {
+        edits[g.id] = g.telegram_link;
+      });
+      setBrokenLinkEdits(edits);
+    }
+    setBrokenGroupsLoading(false);
+  };
+
+  const handleSaveBrokenLink = async (groupId: string) => {
+    const newLink = brokenLinkEdits[groupId]?.trim();
+    if (!newLink) return;
+    const { error } = await supabase
+      .from("groups")
+      .update({ telegram_link: newLink, broken: false })
+      .eq("id", groupId);
+    if (error) {
+      toast({ title: "Erro ao salvar link", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Link atualizado!" });
+      setBrokenGroups((prev) => prev.filter((g) => g.id !== groupId));
+      setBrokenSelected((prev) => { const s = new Set(prev); s.delete(groupId); return s; });
+    }
+  };
+
+  const handleSaveBrokenBulk = async () => {
+    if (brokenSelected.size === 0) return;
+    const updates = Array.from(brokenSelected).map((id) =>
+      supabase.from("groups").update({ telegram_link: brokenLinkEdits[id]?.trim(), broken: false }).eq("id", id)
+    );
+    const results = await Promise.all(updates);
+    const failed = results.filter((res) => res.error);
+    if (failed.length > 0) {
+      toast({ title: `${failed.length} erro(s) ao salvar`, variant: "destructive" });
+    } else {
+      toast({ title: `${brokenSelected.size} link(s) atualizados!` });
+      setBrokenGroups((prev) => prev.filter((g) => !brokenSelected.has(g.id)));
+      setBrokenSelected(new Set());
+    }
+  };
+
   const handleTogglePremium = async (groupId: string, newValue: boolean) => {
     const { error } = await supabase.from("groups").update({ is_premium: newValue }).eq("id", groupId);
     if (error) {
@@ -1146,6 +1206,16 @@ const AdminDashboard = () => {
                 >
                   <Search className="h-4 w-4 shrink-0" />
                   <span className="flex-1">Todos os Grupos</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("broken")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "broken" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <WifiOff className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Links Quebrados</span>
+                  {brokenGroups.length > 0 && (
+                    <Badge variant="secondary" className="ml-auto text-xs bg-red-600/20 text-red-400 border-red-600/30">{brokenGroups.length}</Badge>
+                  )}
                 </button>
               </nav>
               <div className="flex-1 min-w-0">
@@ -1660,6 +1730,97 @@ const AdminDashboard = () => {
               </>
             )}
           </TabsContent>
+
+            {/* Links Quebrados tab */}
+            <TabsContent value="broken" className="mt-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-foreground">Links Quebrados</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Grupos com telegram_link retornando 404/403/timeout. Corrija ou remova.
+                  </p>
+                </div>
+                {brokenSelected.size > 0 && (
+                  <Button size="sm" onClick={handleSaveBrokenBulk} className="gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Salvar {brokenSelected.size} selecionados
+                  </Button>
+                )}
+              </div>
+
+              {brokenGroupsLoading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : brokenGroups.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                  <p className="text-sm">Nenhum link quebrado encontrado.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card/50">
+                    <Checkbox
+                      checked={brokenSelected.size === brokenGroups.length && brokenGroups.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) setBrokenSelected(new Set(brokenGroups.map((g) => g.id)));
+                        else setBrokenSelected(new Set());
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Selecionar todos ({brokenGroups.length} grupos)
+                    </span>
+                  </div>
+                  {brokenGroups.map((group) => (
+                    <div
+                      key={group.id}
+                      className={`flex flex-col gap-2 rounded-xl border p-3 transition-colors ${
+                        brokenSelected.has(group.id) ? "border-primary/40 bg-primary/5" : "border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <Checkbox
+                          className="mt-0.5"
+                          checked={brokenSelected.has(group.id)}
+                          onCheckedChange={(checked) => {
+                            setBrokenSelected((prev) => {
+                              const s = new Set(prev);
+                              if (checked) s.add(group.id); else s.delete(group.id);
+                              return s;
+                            });
+                          }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground truncate">{group.name}</p>
+                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                            <WifiOff className="h-3 w-3 text-red-400 shrink-0" />
+                            {group.telegram_link}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 pl-6">
+                        <Input
+                          value={brokenLinkEdits[group.id] ?? group.telegram_link}
+                          onChange={(e) =>
+                            setBrokenLinkEdits((prev) => ({ ...prev, [group.id]: e.target.value }))
+                          }
+                          placeholder="Novo link do Telegram..."
+                          className="h-8 text-xs font-mono"
+                        />
+                        <Button
+                          size="sm"
+                          className="h-8 shrink-0"
+                          disabled={!brokenLinkEdits[group.id]?.trim() || brokenLinkEdits[group.id] === group.telegram_link}
+                          onClick={() => handleSaveBrokenLink(group.id)}
+                        >
+                          Salvar
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
                 </Tabs>
               </div>
