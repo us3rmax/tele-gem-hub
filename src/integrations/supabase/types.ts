@@ -255,6 +255,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_cron_schedules: {
+        Args: Record<PropertyKey, never>
+        Returns: { jobname: string; schedule: string }[]
+      }
       disable_expired_banners: { Args: never; Returns: undefined }
       has_role: {
         Args: {
