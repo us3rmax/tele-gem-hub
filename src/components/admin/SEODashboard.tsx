@@ -199,27 +199,33 @@ export default function SEODashboard() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [cacheRes, healthRes, idxRes, cronRes] = await Promise.all([
-        supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
-        supabase.from("seo_health").select("*").order("task"),
-        supabase.from("seo_config").select("value").eq("key", "indexing_progress").single(),
-        supabase.rpc("get_cron_schedules"),
-      ]);
-      if (cacheRes.data) {
-        setData(cacheRes.data.data as unknown as CacheData);
-        setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) ?? "");
-      }
-      if (healthRes.data)     setHealth(healthRes.data as HealthRow[]);
-      if (idxRes.data?.value) setIndexing(idxRes.data.value as unknown as Indexing);
-      if (cronRes.data) {
-        const map: Record<string, string> = {};
-        for (const row of cronRes.data as { jobname: string; schedule: string }[]) {
-          const task = JOBNAME_TO_TASK[row.jobname];
-          if (task) map[task] = row.schedule;
+      try {
+        const [cacheRes, healthRes, idxRes, cronRes] = await Promise.all([
+          supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
+          supabase.from("seo_health").select("*").order("task"),
+          supabase.from("seo_config").select("value").eq("key", "indexing_progress").single(),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (supabase as any).rpc("get_cron_schedules"),
+        ]);
+        if (cacheRes.data) {
+          setData(cacheRes.data.data as unknown as CacheData);
+          setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) ?? "");
         }
-        setSchedules(map);
+        if (healthRes.data)     setHealth(healthRes.data as HealthRow[]);
+        if (idxRes.data?.value) setIndexing(idxRes.data.value as unknown as Indexing);
+        if (cronRes?.data) {
+          const map: Record<string, string> = {};
+          for (const row of cronRes.data as { jobname: string; schedule: string }[]) {
+            const task = JOBNAME_TO_TASK[row.jobname];
+            if (task) map[task] = row.schedule;
+          }
+          setSchedules(map);
+        }
+      } catch (e) {
+        console.error("SEODashboard load error:", e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, []);
 
