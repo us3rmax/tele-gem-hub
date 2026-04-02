@@ -236,6 +236,8 @@ const AdminDashboard = () => {
   const [groupsSourceFilter, setGroupsSourceFilter] = useState<"all" | "imported" | "user">("all");
   const [allGroups, setAllGroups] = useState<AllGroup[]>([]);
   const [allGroupsLoading, setAllGroupsLoading] = useState(false);
+  const [allGroupsSearch, setAllGroupsSearch] = useState("");
+  const allGroupsSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Premium groups state
   interface PremiumGroup {
@@ -680,14 +682,17 @@ const AdminDashboard = () => {
 
   // --- All Groups logic ---
 
-  const fetchAllGroups = async () => {
+  const fetchAllGroups = async (search = "") => {
     setAllGroupsLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("groups")
       .select(
         "id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by",
       )
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (search.trim()) query = query.ilike("name", "%" + search.trim() + "%");
+    const { data, error } = await query;
     if (error) {
       console.error("Error fetching all groups:", error);
       setAllGroups([]);
@@ -696,6 +701,13 @@ const AdminDashboard = () => {
     }
     setAllGroupsLoading(false);
   };
+
+  useEffect(() => {
+    if (allGroupsSearchTimer.current) clearTimeout(allGroupsSearchTimer.current);
+    allGroupsSearchTimer.current = setTimeout(() => fetchAllGroups(allGroupsSearch), 400);
+    return () => { if (allGroupsSearchTimer.current) clearTimeout(allGroupsSearchTimer.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allGroupsSearch]);
 
   const fetchCategories = async () => {
     setCategoriesLoading(true);
@@ -1623,8 +1635,8 @@ const AdminDashboard = () => {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por nome..."
-                  value={premiumSearch}
-                  onChange={(e) => setPremiumSearch(e.target.value)}
+                  value={allGroupsSearch}
+                  onChange={(e) => setAllGroupsSearch(e.target.value)}
                   className="pl-10"
                 />
               </div>
