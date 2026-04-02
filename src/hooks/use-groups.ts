@@ -13,7 +13,12 @@ interface UseGroupsParams {
 }
 
 async function fetchPremiumGroups(): Promise<Grupo[]> {
-  const { data } = await supabase.from("groups").select("*").eq("is_premium", true).limit(50);
+  const { data } = await supabase
+    .from("groups")
+    .select("*")
+    .eq("is_premium", true)
+    .or("hidden.is.null,hidden.eq.false")
+    .limit(50);
   if (!data) return [];
   const pinned = (data as any[]).filter((g) => g.is_pinned);
   const unpinned = (data as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
@@ -24,6 +29,7 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
   let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
   if (!search) countQuery = countQuery.eq("is_premium", false);
   if (search) countQuery = countQuery.ilike("name", `%${search}%`);
+  countQuery = countQuery.or("hidden.is.null,hidden.eq.false");
   const { count } = await countQuery;
 
   const from = (page - 1) * perPage;
@@ -32,6 +38,7 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
   let query = supabase.from("groups").select("*");
   if (!search) query = query.eq("is_premium", false);
   if (search) query = query.ilike("name", `%${search}%`);
+  query = query.or("hidden.is.null,hidden.eq.false");
 
   switch (sort) {
     case "vistos":
@@ -88,7 +95,13 @@ export function useRelatedGroups(category: string | undefined, excludeId: string
     queryKey: ["related-groups", category, excludeId],
     queryFn: async () => {
       if (!category || !excludeId) return [];
-      const { data } = await supabase.from("groups").select("*").eq("category", category).neq("id", excludeId).limit(8);
+      const { data } = await supabase
+        .from("groups")
+        .select("*")
+        .eq("category", category)
+        .neq("id", excludeId)
+        .or("hidden.is.null,hidden.eq.false")
+        .limit(8);
       return ((data as Grupo[]) || []).sort(() => Math.random() - 0.5);
     },
     enabled: !!category && !!excludeId,
