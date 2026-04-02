@@ -55,18 +55,23 @@ function fmtRel(iso: string | null) {
   return `${Math.round(h / 24)}d atrás`;
 }
 
-function nextRun(utcHour: number): string {
-  const now = new Date();
+// Parses "30 16 * * *" → next run datetime string in BRT
+function nextRunFromCron(schedule: string | undefined): string {
+  if (!schedule) return "—";
+  const parts = schedule.trim().split(/\s+/);
+  const minute = parseInt(parts[0] ?? "0");
+  const hour   = parseInt(parts[1] ?? "0");
+  if (isNaN(minute) || isNaN(hour)) return "—";
+  const now  = new Date();
   const next = new Date();
-  next.setUTCHours(utcHour, 0, 0, 0);
+  next.setUTCHours(hour, minute, 0, 0);
   if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
-  const diffH = Math.round((next.getTime() - now.getTime()) / 3_600_000);
-  const brtH  = (utcHour - 3 + 24) % 24;
-  return diffH < 1
-    ? "em menos de 1h"
-    : diffH < 24
-      ? `em ~${diffH}h (${brtH}h BRT)`
-      : `amanhã às ${brtH}h BRT`;
+  const diffMin = Math.round((next.getTime() - now.getTime()) / 60_000);
+  const brtH    = (hour - 3 + 24) % 24;
+  const brtM    = minute.toString().padStart(2, "0");
+  if (diffMin < 60)  return `em ~${diffMin}min (${brtH}:${brtM} BRT)`;
+  if (diffMin < 1440) return `em ~${Math.round(diffMin / 60)}h (${brtH}:${brtM} BRT)`;
+  return `amanhã às ${brtH}:${brtM} BRT`;
 }
 
 function computeStatus(row: HealthRow): "ok" | "error" | "late" | "pending" {
@@ -81,9 +86,15 @@ const STATUS = {
   pending: { label: "PENDENTE", Icon: Clock,         cls: "text-zinc-400 bg-zinc-800 border-zinc-700" },
 };
 
-const TASK_META: Record<string, { label: string; utcHour: number }> = {
-  "daily-tasks":  { label: "Indexação + Cache SEO", utcHour: 14 },
-  "health-check": { label: "Health Check",          utcHour: 15 },
+const TASK_LABELS: Record<string, string> = {
+  "daily-tasks":  "Indexação + Cache SEO",
+  "health-check": "Health Check",
+};
+
+// jobname → task key mapping
+const JOBNAME_TO_TASK: Record<string, string> = {
+  "daily-tasks-11h":  "daily-tasks",
+  "health-check-12h": "health-check",
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -138,14 +149,14 @@ function TopTable({ rows, labelFn, title }: {
   );
 }
 
-function HealthCard({ row }: { row: HealthRow }) {
+function HealthCard({ row, schedule }: { row: HealthRow; schedule: string | undefined }) {
   const s   = computeStatus(row);
   const cfg = STATUS[s];
-  const meta = TASK_META[row.task];
+  const label = TASK_LABELS[row.task] ?? row.task;
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-white">{meta?.label ?? row.task}</span>
+        <span className="text-sm font-semibold text-white">{label}</span>
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${cfg.cls} shrink-0`}>
           <cfg.Icon className="h-3 w-3" />{cfg.label}
         </span>
@@ -160,12 +171,10 @@ function HealthCard({ row }: { row: HealthRow }) {
           <div className={s === "ok" ? "text-emerald-400" : "text-zinc-200"}>{fmtRel(row.last_success)}</div>
         </div>
       </div>
-      {meta && (
-        <div className="text-xs text-zinc-500 flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          Próxima execução: <span className="text-zinc-300">{nextRun(meta.utcHour)}</span>
-        </div>
-      )}
+      <div className="text-xs text-zinc-500 flex items-center gap-1">
+        <Clock className="h-3 w-3" />
+        Próxima execução: <span className="text-zinc-300">{nextRunFromCron(schedule)}</span>
+      </div>
       {s === "error" && row.last_error && (
         <div className="bg-red-950/30 border border-red-800/30 rounded p-2 text-red-300 text-xs font-mono truncate">
           {row.last_error}
@@ -181,6 +190,7 @@ export default function SEODashboard() {
   const [data,      setData]      = useState<CacheData | null>(null);
   const [health,    setHealth]    = useState<HealthRow[]>([]);
   const [indexing,  setIndexing]  = useState<Indexing | null>(null);
+  const [schedules, setSchedules] = useState<Record<string, string>>({});
   const [loading,   setLoading]   = useState(true);
   const [tab,       setTab]       = useState<Tab>("analytics");
   const [period,    setPeriod]    = useState<Period>("28d");
@@ -189,17 +199,26 @@ export default function SEODashboard() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [cacheRes, healthRes, idxRes] = await Promise.all([
+      const [cacheRes, healthRes, idxRes, cronRes] = await Promise.all([
         supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
         supabase.from("seo_health").select("*").order("task"),
         supabase.from("seo_config").select("value").eq("key", "indexing_progress").single(),
+        supabase.rpc("get_cron_schedules"),
       ]);
       if (cacheRes.data) {
         setData(cacheRes.data.data as unknown as CacheData);
         setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) ?? "");
       }
-      if (healthRes.data)      setHealth(healthRes.data as HealthRow[]);
-      if (idxRes.data?.value)  setIndexing(idxRes.data.value as unknown as Indexing);
+      if (healthRes.data)     setHealth(healthRes.data as HealthRow[]);
+      if (idxRes.data?.value) setIndexing(idxRes.data.value as unknown as Indexing);
+      if (cronRes.data) {
+        const map: Record<string, string> = {};
+        for (const row of cronRes.data as { jobname: string; schedule: string }[]) {
+          const task = JOBNAME_TO_TASK[row.jobname];
+          if (task) map[task] = row.schedule;
+        }
+        setSchedules(map);
+      }
       setLoading(false);
     })();
   }, []);
@@ -343,7 +362,7 @@ export default function SEODashboard() {
             <h3 className="text-sm font-semibold text-zinc-300 mb-2">Status das Tasks</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {health.length > 0
-                ? health.map(row => <HealthCard key={row.task} row={row} />)
+                ? health.map(row => <HealthCard key={row.task} row={row} schedule={schedules[row.task]} />)
                 : <p className="text-zinc-500 text-sm">Sem dados de saúde.</p>
               }
             </div>
