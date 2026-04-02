@@ -40,8 +40,8 @@ type Tab    = "analytics" | "automacoes";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const num = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(Math.round(n));
-const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
+const num = (n: number | null | undefined) => { const v = n ?? 0; return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v)); };
+const pct = (n: number | null | undefined) => `${((n ?? 0) * 100).toFixed(2)}%`;
 
 function hoursAgo(iso: string | null) {
   return iso ? (Date.now() - new Date(iso).getTime()) / 3_600_000 : Infinity;
@@ -139,7 +139,7 @@ function TopTable({ rows, labelFn, title }: {
                 <td className="px-3 py-1.5 text-zinc-200 max-w-[180px] truncate">{labelFn(r.key)}</td>
                 <td className="px-3 py-1.5 text-right text-zinc-300">{r.clicks}</td>
                 <td className="px-3 py-1.5 text-right text-zinc-400">{num(r.impressions)}</td>
-                <td className="px-3 py-1.5 text-right text-zinc-500">{r.position.toFixed(1)}</td>
+                <td className="px-3 py-1.5 text-right text-zinc-500">{(r.position ?? 0).toFixed(1)}</td>
               </tr>
             ))}
           </tbody>
@@ -293,7 +293,7 @@ export default function SEODashboard() {
                   <StatCard label="Visitas (Cliques)" value={num(p.clicks)}         icon={MousePointerClick} sub="via Google Search" />
                   <StatCard label="Impressões"        value={num(p.impressions)}    icon={Eye}               sub="na busca do Google" />
                   <StatCard label="CTR"               value={pct(p.ctr)}            icon={Target}            sub="cliques / impressões" />
-                  <StatCard label="Posição Média"     value={p.position.toFixed(1)} icon={BarChart2}         sub="ranking médio" />
+                  <StatCard label="Posição Média"     value={(p.position ?? 0).toFixed(1)} icon={BarChart2}         sub="ranking médio" />
                 </div>
 
                 {/* Line chart */}
@@ -345,7 +345,7 @@ export default function SEODashboard() {
                           <div className="text-xs text-zinc-500 mb-1">{v}</div>
                           <div className="text-lg font-bold text-white">{num(d.clicks)}</div>
                           <div className="text-xs text-zinc-400">{num(d.impressions)} imp</div>
-                          <div className="text-xs text-zinc-500 mt-1">pos {d.position.toFixed(1)} · CTR {pct(d.ctr)}</div>
+                          <div className="text-xs text-zinc-500 mt-1">pos {(d.position ?? 0).toFixed(1)} · CTR {pct(d.ctr)}</div>
                         </div>
                       );
                     })}
@@ -420,7 +420,7 @@ export default function SEODashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-zinc-800 rounded p-3">
                   <div className="text-zinc-500 text-xs">Total</div>
-                  <div className="text-2xl font-bold text-white">{data.supabase.total_groups.toLocaleString("pt-BR")}</div>
+                  <div className="text-2xl font-bold text-white">{(data.supabase.total_groups ?? 0).toLocaleString("pt-BR")}</div>
                 </div>
                 <div className="bg-zinc-800 rounded p-3">
                   <div className="text-zinc-500 text-xs flex items-center gap-1">
