@@ -1676,12 +1676,7 @@ const AdminDashboard = () => {
               <>
                 <div className="space-y-2">
                   {allGroups
-                    .filter((g) => {
-                      const matchSource = groupsSourceFilter === "all" || g.source === groupsSourceFilter;
-                      const matchSearch =
-                        !premiumSearch.trim() || g.name.toLowerCase().includes(premiumSearch.toLowerCase());
-                      return matchSource && matchSearch;
-                    })
+                    .filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter)
                     .slice(0, 50)
                     .map((group) => (
                       <div
@@ -1730,12 +1725,7 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                 </div>
-                {allGroups.filter((g) => {
-                  const matchSource = groupsSourceFilter === "all" || g.source === groupsSourceFilter;
-                  const matchSearch =
-                    !premiumSearch.trim() || g.name.toLowerCase().includes(premiumSearch.toLowerCase());
-                  return matchSource && matchSearch;
-                }).length === 0 && <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>}
+                {allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).length === 0 && <p className="py-12 text-center text-muted-foreground">Nenhum grupo encontrado.</p>}
                 <p className="text-xs text-center text-muted-foreground">
                   Mostrando primeiros 50 resultados. Use a busca para filtrar.
                 </p>
