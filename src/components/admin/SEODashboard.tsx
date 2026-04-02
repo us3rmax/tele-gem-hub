@@ -24,7 +24,7 @@ interface CacheData {
   "7d":  PeriodData;
   "28d": PeriodData & { queries: Row[]; pages: Row[] };
   "90d": PeriodData;
-  supabase: { total_groups: number; new_this_week: number };
+  supabase: { total_groups: number; new_this_week?: number; new_last_7d?: number };
   updated_at: string;
 }
 
@@ -426,7 +426,7 @@ export default function SEODashboard() {
                   <div className="text-zinc-500 text-xs flex items-center gap-1">
                     <TrendingUp className="h-3 w-3 text-emerald-400" /> Esta semana
                   </div>
-                  <div className="text-2xl font-bold text-emerald-400">+{data.supabase.new_this_week}</div>
+                  <div className="text-2xl font-bold text-emerald-400">+{(data.supabase.new_this_week ?? data.supabase.new_last_7d ?? 0)}</div>
                 </div>
               </div>
             </div>
