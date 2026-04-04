@@ -49,6 +49,20 @@ import { EromeVazadoPage } from "./pages/landing/LandingPages";
 import { EromeVazouPage } from "./pages/landing/LandingPages";
 import { EromeGostosaPage } from "./pages/landing/LandingPages";
 import { VazadosEromePage } from "./pages/landing/LandingPages";
+import { DraSophiaPrivacyPage } from "./pages/landing/LandingPages";
+import { EromeJulianaSilvaPage } from "./pages/landing/LandingPages";
+import { BiaAlbinaEromePage } from "./pages/landing/LandingPages";
+import { MicheleUmezuOnlyfansPage } from "./pages/landing/LandingPages";
+import { CosvickyeEromePage } from "./pages/landing/LandingPages";
+import { NayzinhaEromePage } from "./pages/landing/LandingPages";
+import { PrivacyBadMiPage } from "./pages/landing/LandingPages";
+import { PrivacyDisplayApkPage } from "./pages/landing/LandingPages";
+import { EromeNicoleRodriguesPage } from "./pages/landing/LandingPages";
+import { NyviEstephanEromePage } from "./pages/landing/LandingPages";
+import { NayaraEromePage } from "./pages/landing/LandingPages";
+import { JeniferNovakiPrivacyPage } from "./pages/landing/LandingPages";
+import { CamilaPradoPrivacyPage } from "./pages/landing/LandingPages";
+import { MaeEFilhaEromePage } from "./pages/landing/LandingPages";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -205,6 +219,20 @@ const App = () => (
                     <Route path="/erome-vazou" element={<EromeVazouPage />} />
                     <Route path="/erome-gostosa" element={<EromeGostosaPage />} />
                     <Route path="/vazados-erome" element={<VazadosEromePage />} />
+                    <Route path="/dra-sophia-privacy" element={<DraSophiaPrivacyPage />} />
+                    <Route path="/erome-juliana-silva" element={<EromeJulianaSilvaPage />} />
+                    <Route path="/bia-albina-erome" element={<BiaAlbinaEromePage />} />
+                    <Route path="/michele-umezu-onlyfans" element={<MicheleUmezuOnlyfansPage />} />
+                    <Route path="/cosvickye-erome" element={<CosvickyeEromePage />} />
+                    <Route path="/nayzinha-erome" element={<NayzinhaEromePage />} />
+                    <Route path="/privacy-bad-mi" element={<PrivacyBadMiPage />} />
+                    <Route path="/privacy-display-apk" element={<PrivacyDisplayApkPage />} />
+                    <Route path="/erome-nicole-rodrigues" element={<EromeNicoleRodriguesPage />} />
+                    <Route path="/nyvi-estephan-erome" element={<NyviEstephanEromePage />} />
+                    <Route path="/nayara-erome" element={<NayaraEromePage />} />
+                    <Route path="/jenifer-novaki-privacy" element={<JeniferNovakiPrivacyPage />} />
+                    <Route path="/camila-prado-privacy" element={<CamilaPradoPrivacyPage />} />
+                    <Route path="/mae-e-filha-erome" element={<MaeEFilhaEromePage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
