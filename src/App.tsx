@@ -21,6 +21,26 @@ import { XvideosPornoTelegramPage } from "./pages/landing/LandingPages";
 import { VideoPornoTelegramPage } from "./pages/landing/LandingPages";
 import { PornoGratisTelegramPage } from "./pages/landing/LandingPages";
 import { PutariaBrasileiraTelegramPage } from "./pages/landing/LandingPages";
+import { GruposDePutariaTelegramPage } from "./pages/landing/LandingPages";
+import { GrupoDePutariaTelegramPage } from "./pages/landing/LandingPages";
+import { VazouTelegramPage } from "./pages/landing/LandingPages";
+import { VazadoTelegramPage } from "./pages/landing/LandingPages";
+import { FamososNusTelegramPage } from "./pages/landing/LandingPages";
+import { OnlyfansPacksPage } from "./pages/landing/LandingPages";
+import { OnlyfansVazadosPage } from "./pages/landing/LandingPages";
+import { GrupoTelegram18Page } from "./pages/landing/LandingPages";
+import { GruposTelegramPodeTudoPage } from "./pages/landing/LandingPages";
+import { TelegramSexoPage } from "./pages/landing/LandingPages";
+import { VazadinhosTelegramPage } from "./pages/landing/LandingPages";
+import { AmadorasQuentesPage } from "./pages/landing/LandingPages";
+import { GruposTelegramSecretosPage } from "./pages/landing/LandingPages";
+import { Grupos18TelegramPage } from "./pages/landing/LandingPages";
+import { GruposTelegramVazadosPage } from "./pages/landing/LandingPages";
+import { PrivacyTelegramPage } from "./pages/landing/LandingPages";
+import { GrupoTelegramProibidoPage } from "./pages/landing/LandingPages";
+import { SexoTelegramPage } from "./pages/landing/LandingPages";
+import { TelegramOnlyfansPage } from "./pages/landing/LandingPages";
+import { GruposTelegramPage } from "./pages/landing/LandingPages";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -149,6 +169,26 @@ const App = () => (
                     <Route path="/video-porno-telegram" element={<VideoPornoTelegramPage />} />
                     <Route path="/porno-gratis-telegram" element={<PornoGratisTelegramPage />} />
                     <Route path="/putaria-brasileira-telegram" element={<PutariaBrasileiraTelegramPage />} />
+                    <Route path="/grupos-de-putaria-telegram" element={<GruposDePutariaTelegramPage />} />
+                    <Route path="/grupo-de-putaria-telegram" element={<GrupoDePutariaTelegramPage />} />
+                    <Route path="/vazou-telegram" element={<VazouTelegramPage />} />
+                    <Route path="/vazado-telegram" element={<VazadoTelegramPage />} />
+                    <Route path="/famosos-nus-telegram" element={<FamososNusTelegramPage />} />
+                    <Route path="/onlyfans-packs" element={<OnlyfansPacksPage />} />
+                    <Route path="/onlyfans-vazados" element={<OnlyfansVazadosPage />} />
+                    <Route path="/grupo-telegram-18" element={<GrupoTelegram18Page />} />
+                    <Route path="/grupos-telegram-pode-tudo" element={<GruposTelegramPodeTudoPage />} />
+                    <Route path="/telegram-sexo" element={<TelegramSexoPage />} />
+                    <Route path="/vazadinhos-telegram" element={<VazadinhosTelegramPage />} />
+                    <Route path="/amadoras-quentes" element={<AmadorasQuentesPage />} />
+                    <Route path="/grupos-telegram-secretos" element={<GruposTelegramSecretosPage />} />
+                    <Route path="/grupos-18-telegram" element={<Grupos18TelegramPage />} />
+                    <Route path="/grupos-telegram-vazados" element={<GruposTelegramVazadosPage />} />
+                    <Route path="/privacy-telegram" element={<PrivacyTelegramPage />} />
+                    <Route path="/grupo-telegram-proibido" element={<GrupoTelegramProibidoPage />} />
+                    <Route path="/sexo-telegram" element={<SexoTelegramPage />} />
+                    <Route path="/telegram-onlyfans" element={<TelegramOnlyfansPage />} />
+                    <Route path="/grupos-telegram" element={<GruposTelegramPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
