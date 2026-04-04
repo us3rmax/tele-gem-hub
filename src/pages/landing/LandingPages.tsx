@@ -132,3 +132,123 @@ export function PutariaBrasileiraTelegramPage() {
   const data = LANDING_PAGES.find((p) => p.rota === "/putaria-brasileira-telegram")!;
   return <LandingPage {...data} />;
 }
+
+// /grupos-de-putaria-telegram
+export function GruposDePutariaTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupos-de-putaria-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupo-de-putaria-telegram
+export function GrupoDePutariaTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupo-de-putaria-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /vazou-telegram
+export function VazouTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/vazou-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /vazado-telegram
+export function VazadoTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/vazado-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /famosos-nus-telegram
+export function FamososNusTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/famosos-nus-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /onlyfans-packs
+export function OnlyfansPacksPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/onlyfans-packs")!;
+  return <LandingPage {...data} />;
+}
+
+// /onlyfans-vazados
+export function OnlyfansVazadosPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/onlyfans-vazados")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupo-telegram-18
+export function GrupoTelegram18Page() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupo-telegram-18")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupos-telegram-pode-tudo
+export function GruposTelegramPodeTudoPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupos-telegram-pode-tudo")!;
+  return <LandingPage {...data} />;
+}
+
+// /telegram-sexo
+export function TelegramSexoPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/telegram-sexo")!;
+  return <LandingPage {...data} />;
+}
+
+// /vazadinhos-telegram
+export function VazadinhosTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/vazadinhos-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /amadoras-quentes
+export function AmadorasQuentesPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/amadoras-quentes")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupos-telegram-secretos
+export function GruposTelegramSecretosPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupos-telegram-secretos")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupos-18-telegram
+export function Grupos18TelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupos-18-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupos-telegram-vazados
+export function GruposTelegramVazadosPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupos-telegram-vazados")!;
+  return <LandingPage {...data} />;
+}
+
+// /privacy-telegram
+export function PrivacyTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/privacy-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupo-telegram-proibido
+export function GrupoTelegramProibidoPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupo-telegram-proibido")!;
+  return <LandingPage {...data} />;
+}
+
+// /sexo-telegram
+export function SexoTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/sexo-telegram")!;
+  return <LandingPage {...data} />;
+}
+
+// /telegram-onlyfans
+export function TelegramOnlyfansPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/telegram-onlyfans")!;
+  return <LandingPage {...data} />;
+}
+
+// /grupos-telegram
+export function GruposTelegramPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/grupos-telegram")!;
+  return <LandingPage {...data} />;
+}
