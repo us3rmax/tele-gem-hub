@@ -300,3 +300,87 @@ export function VazadosEromePage() {
   const data = LANDING_PAGES.find((p) => p.rota === "/vazados-erome")!;
   return <LandingPage {...data} />;
 }
+
+// /dra-sophia-privacy
+export function DraSophiaPrivacyPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/dra-sophia-privacy")!;
+  return <LandingPage {...data} />;
+}
+
+// /erome-juliana-silva
+export function EromeJulianaSilvaPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/erome-juliana-silva")!;
+  return <LandingPage {...data} />;
+}
+
+// /bia-albina-erome
+export function BiaAlbinaEromePage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/bia-albina-erome")!;
+  return <LandingPage {...data} />;
+}
+
+// /michele-umezu-onlyfans
+export function MicheleUmezuOnlyfansPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/michele-umezu-onlyfans")!;
+  return <LandingPage {...data} />;
+}
+
+// /cosvickye-erome
+export function CosvickyeEromePage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/cosvickye-erome")!;
+  return <LandingPage {...data} />;
+}
+
+// /nayzinha-erome
+export function NayzinhaEromePage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/nayzinha-erome")!;
+  return <LandingPage {...data} />;
+}
+
+// /privacy-bad-mi
+export function PrivacyBadMiPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/privacy-bad-mi")!;
+  return <LandingPage {...data} />;
+}
+
+// /privacy-display-apk
+export function PrivacyDisplayApkPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/privacy-display-apk")!;
+  return <LandingPage {...data} />;
+}
+
+// /erome-nicole-rodrigues
+export function EromeNicoleRodriguesPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/erome-nicole-rodrigues")!;
+  return <LandingPage {...data} />;
+}
+
+// /nyvi-estephan-erome
+export function NyviEstephanEromePage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/nyvi-estephan-erome")!;
+  return <LandingPage {...data} />;
+}
+
+// /nayara-erome
+export function NayaraEromePage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/nayara-erome")!;
+  return <LandingPage {...data} />;
+}
+
+// /jenifer-novaki-privacy
+export function JeniferNovakiPrivacyPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/jenifer-novaki-privacy")!;
+  return <LandingPage {...data} />;
+}
+
+// /camila-prado-privacy
+export function CamilaPradoPrivacyPage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/camila-prado-privacy")!;
+  return <LandingPage {...data} />;
+}
+
+// /mae-e-filha-erome
+export function MaeEFilhaEromePage() {
+  const data = LANDING_PAGES.find((pg) => pg.rota === "/mae-e-filha-erome")!;
+  return <LandingPage {...data} />;
+}
