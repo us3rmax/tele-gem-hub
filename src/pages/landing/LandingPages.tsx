@@ -270,3 +270,33 @@ export function PrivacyVazadosPage() {
   const data = LANDING_PAGES.find((p) => p.rota === "/privacy-vazados")!;
   return <LandingPage {...data} />;
 }
+
+// /erome-vazados
+export function EromeVazadosPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/erome-vazados")!;
+  return <LandingPage {...data} />;
+}
+
+// /erome-vazado
+export function EromeVazadoPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/erome-vazado")!;
+  return <LandingPage {...data} />;
+}
+
+// /erome-vazou
+export function EromeVazouPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/erome-vazou")!;
+  return <LandingPage {...data} />;
+}
+
+// /erome-gostosa
+export function EromeGostosaPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/erome-gostosa")!;
+  return <LandingPage {...data} />;
+}
+
+// /vazados-erome
+export function VazadosEromePage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/vazados-erome")!;
+  return <LandingPage {...data} />;
+}
