@@ -114,6 +114,7 @@ interface AllGroup {
   created_at: string;
   source: string;
   submitted_by: string | null;
+  featured: boolean;
 }
 
 interface Submission {
@@ -682,12 +683,27 @@ const AdminDashboard = () => {
 
   // --- All Groups logic ---
 
+
+  const toggleFeatured = async (group: AllGroup) => {
+    const newVal = !group.featured;
+    const { error } = await supabase
+      .from("groups")
+      .update({ featured: newVal })
+      .eq("id", group.id);
+    if (!error) {
+      setAllGroups((prev) =>
+        prev.map((g) => (g.id === group.id ? { ...g, featured: newVal } : g))
+      );
+      toast({ title: newVal ? "⭐ Destacado!" : "Destaque removido", duration: 1500 });
+    }
+  };
+
   const fetchAllGroups = async (search = "") => {
     setAllGroupsLoading(true);
     let query = supabase
       .from("groups")
       .select(
-        "id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by",
+        "id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by, featured",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -1705,6 +1721,15 @@ const AdminDashboard = () => {
                           <p className="text-xs text-muted-foreground">{group.member_count} membros</p>
                         </div>
                         <div className="flex shrink-0 gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className={`h-8 px-2 ${group.featured ? "border-yellow-500 text-yellow-500 hover:bg-yellow-500/10" : ""}`}
+                            onClick={() => toggleFeatured(group)}
+                            title={group.featured ? "Remover destaque" : "Destacar grupo"}
+                          >
+                            <Star className={`h-3 w-3 ${group.featured ? "fill-yellow-500 text-yellow-500" : ""}`} />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
