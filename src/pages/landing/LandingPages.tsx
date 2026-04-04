@@ -252,3 +252,21 @@ export function GruposTelegramPage() {
   const data = LANDING_PAGES.find((p) => p.rota === "/grupos-telegram")!;
   return <LandingPage {...data} />;
 }
+
+// /privacy-gratis
+export function PrivacyGratisPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/privacy-gratis")!;
+  return <LandingPage {...data} />;
+}
+
+// /erome-privacy
+export function EromePrivacyPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/erome-privacy")!;
+  return <LandingPage {...data} />;
+}
+
+// /privacy-vazados
+export function PrivacyVazadosPage() {
+  const data = LANDING_PAGES.find((p) => p.rota === "/privacy-vazados")!;
+  return <LandingPage {...data} />;
+}
