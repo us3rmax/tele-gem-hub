@@ -41,6 +41,9 @@ import { GrupoTelegramProibidoPage } from "./pages/landing/LandingPages";
 import { SexoTelegramPage } from "./pages/landing/LandingPages";
 import { TelegramOnlyfansPage } from "./pages/landing/LandingPages";
 import { GruposTelegramPage } from "./pages/landing/LandingPages";
+import { PrivacyGratisPage } from "./pages/landing/LandingPages";
+import { EromePrivacyPage } from "./pages/landing/LandingPages";
+import { PrivacyVazadosPage } from "./pages/landing/LandingPages";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -189,6 +192,9 @@ const App = () => (
                     <Route path="/sexo-telegram" element={<SexoTelegramPage />} />
                     <Route path="/telegram-onlyfans" element={<TelegramOnlyfansPage />} />
                     <Route path="/grupos-telegram" element={<GruposTelegramPage />} />
+                    <Route path="/privacy-gratis" element={<PrivacyGratisPage />} />
+                    <Route path="/erome-privacy" element={<EromePrivacyPage />} />
+                    <Route path="/privacy-vazados" element={<PrivacyVazadosPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
