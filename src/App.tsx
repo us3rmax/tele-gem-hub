@@ -8,6 +8,19 @@ import { NovinhasTelegramPage } from "./pages/landing/LandingPages";
 import { VazadosTelegramPage } from "./pages/landing/LandingPages";
 import { OnlyfansTelegramPage } from "./pages/landing/LandingPages";
 import { CanalDePutariaPage } from "./pages/landing/LandingPages";
+import { TelegramProibidoPage } from "./pages/landing/LandingPages";
+import { TelegramVazadosPage } from "./pages/landing/LandingPages";
+import { PutariaBrasileiraPage } from "./pages/landing/LandingPages";
+import { ChatSexoTelegramPage } from "./pages/landing/LandingPages";
+import { XvideosPutariaPage } from "./pages/landing/LandingPages";
+import { VideoSexoTelegramPage } from "./pages/landing/LandingPages";
+import { MulheresNuasTelegramPage } from "./pages/landing/LandingPages";
+import { VideosEroticosTelegramPage } from "./pages/landing/LandingPages";
+import { LinksTelegramPage } from "./pages/landing/LandingPages";
+import { XvideosPornoTelegramPage } from "./pages/landing/LandingPages";
+import { VideoPornoTelegramPage } from "./pages/landing/LandingPages";
+import { PornoGratisTelegramPage } from "./pages/landing/LandingPages";
+import { PutariaBrasileiraTelegramPage } from "./pages/landing/LandingPages";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -123,6 +136,19 @@ const App = () => (
 
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
                     <Route path="/categoria/:slug" element={<CategoryPage />} />
+                    <Route path="/telegram-proibido" element={<TelegramProibidoPage />} />
+                    <Route path="/telegram-vazados" element={<TelegramVazadosPage />} />
+                    <Route path="/putaria-brasileira" element={<PutariaBrasileiraPage />} />
+                    <Route path="/chat-sexo-telegram" element={<ChatSexoTelegramPage />} />
+                    <Route path="/xvideos-putaria" element={<XvideosPutariaPage />} />
+                    <Route path="/video-sexo-telegram" element={<VideoSexoTelegramPage />} />
+                    <Route path="/mulheres-nuas-telegram" element={<MulheresNuasTelegramPage />} />
+                    <Route path="/videos-eroticos-telegram" element={<VideosEroticosTelegramPage />} />
+                    <Route path="/links-telegram" element={<LinksTelegramPage />} />
+                    <Route path="/xvideos-porno-telegram" element={<XvideosPornoTelegramPage />} />
+                    <Route path="/video-porno-telegram" element={<VideoPornoTelegramPage />} />
+                    <Route path="/porno-gratis-telegram" element={<PornoGratisTelegramPage />} />
+                    <Route path="/putaria-brasileira-telegram" element={<PutariaBrasileiraTelegramPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
