@@ -676,18 +676,38 @@ const CategoryLanding = () => {
     const fetchGroups = async () => {
       setLoading(true);
 
-      const { data, error } = await supabase
+      // Busca featured=true primeiro
+      const { data: featuredData } = await supabase
         .from("groups")
         .select("*")
         .or(config.filter)
-        .eq("is_premium", false)
+        .eq("featured", true)
+        .or("hidden.is.null,hidden.eq.false")
         .order("member_count", { ascending: false })
         .limit(12);
 
-      if (!error && data) {
-        setGrupos(data as Grupo[]);
+      const featured = featuredData || [];
+      let result: Grupo[] = featured as Grupo[];
+
+      // Completa até 12 com não-featured
+      if (featured.length < 12) {
+        const featuredIds = featured.map((g: any) => g.id);
+        let fillQuery = supabase
+          .from("groups")
+          .select("*")
+          .or(config.filter)
+          .or("featured.is.null,featured.eq.false")
+          .or("hidden.is.null,hidden.eq.false")
+          .order("member_count", { ascending: false })
+          .limit(12 - featured.length);
+        if (featuredIds.length > 0) {
+          fillQuery = fillQuery.not("id", "in", `(${featuredIds.join(",")})`);
+        }
+        const { data: fillData } = await fillQuery;
+        result = [...featured, ...(fillData || [])] as Grupo[];
       }
 
+      setGrupos(result);
       setLoading(false);
     };
 
@@ -709,6 +729,13 @@ const CategoryLanding = () => {
       <main className="mx-auto max-w-7xl space-y-8 px-4 py-6">
         <section className="space-y-4">
           <h1 className="text-3xl font-bold text-foreground sm:text-4xl">{config.title}</h1>
+
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Ver Todos os Grupos →
+          </Link>
 
           <div className="prose prose-invert max-w-none">
             <p className="text-base text-muted-foreground leading-relaxed">
