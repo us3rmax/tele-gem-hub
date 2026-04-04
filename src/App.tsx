@@ -44,6 +44,11 @@ import { GruposTelegramPage } from "./pages/landing/LandingPages";
 import { PrivacyGratisPage } from "./pages/landing/LandingPages";
 import { EromePrivacyPage } from "./pages/landing/LandingPages";
 import { PrivacyVazadosPage } from "./pages/landing/LandingPages";
+import { EromeVazadosPage } from "./pages/landing/LandingPages";
+import { EromeVazadoPage } from "./pages/landing/LandingPages";
+import { EromeVazouPage } from "./pages/landing/LandingPages";
+import { EromeGostosaPage } from "./pages/landing/LandingPages";
+import { VazadosEromePage } from "./pages/landing/LandingPages";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -195,6 +200,11 @@ const App = () => (
                     <Route path="/privacy-gratis" element={<PrivacyGratisPage />} />
                     <Route path="/erome-privacy" element={<EromePrivacyPage />} />
                     <Route path="/privacy-vazados" element={<PrivacyVazadosPage />} />
+                    <Route path="/erome-vazados" element={<EromeVazadosPage />} />
+                    <Route path="/erome-vazado" element={<EromeVazadoPage />} />
+                    <Route path="/erome-vazou" element={<EromeVazouPage />} />
+                    <Route path="/erome-gostosa" element={<EromeGostosaPage />} />
+                    <Route path="/vazados-erome" element={<VazadosEromePage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
