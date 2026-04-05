@@ -26,15 +26,32 @@ async function fetchPremiumGroups(): Promise<Grupo[]> {
 }
 
 async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
+  const from = (page - 1) * perPage;
+
+  // ── Em alta: score = views + clicks_count + member_count (últimos 30 dias) ──
+  if (sort === "hot") {
+    const { data, error } = await (supabase as any).rpc("get_hot_groups", {
+      p_limit: perPage,
+      p_offset: from,
+      p_search: search || null,
+    });
+    if (error) throw error;
+    const rows = (data as any[]) || [];
+    const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
+    return {
+      groups: rows.map(({ total_count, ...g }: any) => g) as Grupo[],
+      totalCount,
+    };
+  }
+
+  // ── Outros filtros ────────────────────────────────────────────────────────
   let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
   if (!search) countQuery = countQuery.eq("is_premium", false);
   if (search) countQuery = countQuery.ilike("name", `%${search}%`);
   countQuery = countQuery.or("hidden.is.null,hidden.eq.false");
   const { count } = await countQuery;
 
-  const from = (page - 1) * perPage;
   const to = from + perPage - 1;
-
   let query = supabase.from("groups").select("*");
   if (!search) query = query.eq("is_premium", false);
   if (search) query = query.ilike("name", `%${search}%`);
@@ -47,7 +64,7 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
     case "votados":
       query = query.order("member_count", { ascending: false });
       break;
-    case "hot":
+    case "recentes":
     default:
       query = query.order("created_at", { ascending: false });
   }
