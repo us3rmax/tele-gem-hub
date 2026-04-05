@@ -255,6 +255,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_hot_groups: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string | null
+        }
+        Returns: {
+          id: string
+          created_at: string
+          name: string
+          description: string | null
+          category: string
+          thumbnail_url: string | null
+          telegram_link: string | null
+          member_count: number | null
+          is_premium: boolean | null
+          is_verified: boolean | null
+          views: number | null
+          clicks_count: number | null
+          submitted_by: string | null
+          is_pinned: boolean | null
+          source: string | null
+          broken: boolean | null
+          hidden: boolean | null
+          featured: boolean | null
+          total_count: number
+        }[]
+      }
       get_cron_schedules: {
         Args: Record<PropertyKey, never>
         Returns: { jobname: string; schedule: string }[]
