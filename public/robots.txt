@@ -15,5 +15,5 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-Sitemap: https://canais18.com/sitemap.xml
+Sitemap: https://www.canais18.com/sitemap.xml
 Crawl-delay: 1
