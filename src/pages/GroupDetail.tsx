@@ -93,12 +93,12 @@ const GroupDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`${grupo.name} - Canal Telegram 18+ | Canais18`}
+        title={`${grupo.name} — Grupo Telegram +18 | Canais18`}
         description={seoDescription}
         keywords={`canal telegram 18, ${grupo.category.toLowerCase()}, ${grupo.name}, telegram ${grupo.category.toLowerCase()}`}
         ogImage={grupo.thumbnail_url || undefined}
         ogType="article"
-        canonicalUrl={`https://canais18.com${groupPath(grupo)}`}
+        canonicalUrl={`https://www.canais18.com${groupPath(grupo)}`}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "ItemPage",
