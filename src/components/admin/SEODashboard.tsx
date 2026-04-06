@@ -33,7 +33,7 @@ interface HealthRow {
   last_error: string | null; status: string;
 }
 
-interface Indexing { sent: string[]; errors: number; last_run: string }
+interface Indexing { sentCount: number; last_run: string }
 
 type Period = "7d" | "28d" | "90d";
 type Tab    = "analytics" | "automacoes";
@@ -203,7 +203,7 @@ export default function SEODashboard() {
         const [cacheRes, healthRes, idxRes, cronRes] = await Promise.all([
           supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
           supabase.from("seo_health").select("*").order("task"),
-          supabase.from("seo_config").select("value").eq("key", "indexing_progress").single(),
+          supabase.from("indexing_progress").select("sent_count, date"),
           supabase.rpc("get_cron_schedules"),
         ]);
         if (cacheRes.data) {
@@ -211,7 +211,12 @@ export default function SEODashboard() {
           setUpdatedAt(cacheRes.data.updated_at?.slice(0, 10) ?? "");
         }
         if (healthRes.data)     setHealth(healthRes.data as HealthRow[]);
-        if (idxRes.data?.value) setIndexing(idxRes.data.value as unknown as Indexing);
+        if (idxRes.data) {
+          const rows = idxRes.data as { sent_count: number; date: string }[];
+          const sentCount = rows.reduce((acc, r) => acc + (r.sent_count ?? 0), 0);
+          const last_run  = rows.length > 0 ? rows.reduce((a, b) => a.date > b.date ? a : b).date : "";
+          setIndexing({ sentCount, last_run });
+        }
         if (cronRes?.data) {
           const map: Record<string, string> = {};
           for (const row of cronRes.data as { jobname: string; schedule: string }[]) {
@@ -375,11 +380,11 @@ export default function SEODashboard() {
 
           {/* Indexing progress */}
           {(() => {
-            const sent  = indexing?.sent.length ?? 0;
+            const sent  = indexing?.sentCount ?? 0;
             const total = (data?.supabase.total_groups ?? 0) + PRIORITY_URLS_COUNT;
             const pctV  = total > 0 ? Math.round((sent / total) * 100) : 0;
             const remaining = Math.max(0, total - sent);
-            const daysLeft  = Math.ceil(remaining / 200);
+            const daysLeft  = Math.ceil(remaining / 1200);
             return (
               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
                 <h3 className="text-sm font-semibold text-white">Progresso da Indexação Google</h3>
@@ -406,7 +411,7 @@ export default function SEODashboard() {
                   </div>
                 </div>
                 <div className="text-xs text-zinc-500">
-                  Erros acumulados: <span className={`font-medium ${(indexing?.errors ?? 0) > 0 ? "text-red-400" : "text-zinc-400"}`}>{indexing?.errors ?? 0}</span>
+                  Enviadas hoje: <span className="font-medium text-zinc-300">{indexing?.sentCount?.toLocaleString("pt-BR") ?? 0} URLs</span>
                   {indexing?.last_run && <span className="ml-3">Última run: {fmtRel(indexing.last_run)}</span>}
                 </div>
               </div>
@@ -439,4 +444,4 @@ export default function SEODashboard() {
   );
 }
 
-const PRIORITY_URLS_COUNT = 19;
+const PRIORITY_URLS_COUNT = 82;
