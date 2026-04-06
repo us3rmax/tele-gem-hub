@@ -716,7 +716,7 @@ const CategoryLanding = () => {
         title={config.seoTitle}
         description={config.description}
         keywords={config.keywords}
-        canonicalUrl={`https://canais18.com${location.pathname}`}
+        canonicalUrl={`https://www.canais18.com${location.pathname}`}
       />
 
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
