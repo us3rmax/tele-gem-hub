@@ -424,7 +424,7 @@ export default function SEODashboard() {
                   </div>
                 </div>
                 <div className="text-xs text-zinc-500">
-                  Enviadas hoje: <span className="font-medium text-zinc-300">{indexing?.sentCount?.toLocaleString("pt-BR") ?? 0} URLs</span>
+                  Total enviadas: <span className="font-medium text-zinc-300">{indexing?.sentCount?.toLocaleString("pt-BR") ?? 0} URLs</span>
                   {indexing?.last_run && <span className="ml-3">Última run: {fmtRel(indexing.last_run)}</span>}
                 </div>
               </div>
@@ -494,7 +494,7 @@ export default function SEODashboard() {
                   <div className="text-zinc-500 text-xs flex items-center gap-1">
                     <TrendingUp className="h-3 w-3 text-emerald-400" /> Esta semana
                   </div>
-                  <div className="text-2xl font-bold text-emerald-400">+{(data.supabase.new_this_week ?? data.supabase.new_last_7d ?? 0)}</div>
+                  <div className="text-2xl font-bold text-emerald-400">+{(data.supabase.new_this_week ?? data.supabase.new_last_7d ?? 0).toLocaleString("pt-BR")}</div>
                 </div>
               </div>
             </div>
