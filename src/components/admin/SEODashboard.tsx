@@ -35,6 +35,16 @@ interface HealthRow {
 
 interface Indexing { sentCount: number; last_run: string }
 
+interface GscHealth {
+  indexed_28d:       number;
+  sitemap_submitted: number;
+  sitemap_indexed:   number;
+  sitemap_errors:    number;
+  error_types:       { type: string; count: number }[];
+  date:              string;
+  alerts:            string[];
+}
+
 type Period = "7d" | "28d" | "90d";
 type Tab    = "analytics" | "automacoes";
 
@@ -190,6 +200,7 @@ export default function SEODashboard() {
   const [data,      setData]      = useState<CacheData | null>(null);
   const [health,    setHealth]    = useState<HealthRow[]>([]);
   const [indexing,  setIndexing]  = useState<Indexing | null>(null);
+  const [gscHealth, setGscHealth] = useState<GscHealth | null>(null);
   const [schedules, setSchedules] = useState<Record<string, string>>({});
   const [loading,   setLoading]   = useState(true);
   const [tab,       setTab]       = useState<Tab>("analytics");
@@ -200,11 +211,12 @@ export default function SEODashboard() {
     (async () => {
       setLoading(true);
       try {
-        const [cacheRes, healthRes, idxRes, cronRes] = await Promise.all([
+        const [cacheRes, healthRes, idxRes, cronRes, gscRes] = await Promise.all([
           supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
           supabase.from("seo_health").select("*").order("task"),
           supabase.from("indexing_progress").select("sent_count, date"),
           supabase.rpc("get_cron_schedules"),
+          supabase.from("seo_cache").select("data").eq("key", "gsc_health").single(),
         ]);
         if (cacheRes.data) {
           setData(cacheRes.data.data as unknown as CacheData);
@@ -225,6 +237,7 @@ export default function SEODashboard() {
           }
           setSchedules(map);
         }
+        if (gscRes?.data?.data) setGscHealth(gscRes.data.data as unknown as GscHealth);
       } catch (e) {
         console.error("SEODashboard load error:", e);
       } finally {
@@ -417,6 +430,56 @@ export default function SEODashboard() {
               </div>
             );
           })()}
+
+          {/* Cobertura de Indice GSC */}
+          {gscHealth && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Cobertura de Indice</h3>
+                <span className="text-xs text-zinc-500">{gscHealth.date}</span>
+              </div>
+              {gscHealth.alerts && gscHealth.alerts.length > 0 && (
+                <div className="bg-red-950 border border-red-800 rounded p-2 space-y-1">
+                  {gscHealth.alerts.map((a, i) => (
+                    <div key={i} className="text-xs text-red-400 font-medium">{a}</div>
+                  ))}
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="bg-zinc-800 rounded p-3">
+                  <div className="text-zinc-500 text-xs">Indexadas (28d)</div>
+                  <div className="text-xl font-bold text-white">{(gscHealth.indexed_28d ?? 0).toLocaleString("pt-BR")}</div>
+                </div>
+                <div className="bg-zinc-800 rounded p-3">
+                  <div className="text-zinc-500 text-xs">No Sitemap</div>
+                  <div className="text-xl font-bold text-white">{(gscHealth.sitemap_submitted ?? 0).toLocaleString("pt-BR")}</div>
+                </div>
+                <div className="bg-zinc-800 rounded p-3">
+                  <div className="text-zinc-500 text-xs">Indexadas Sitemap</div>
+                  <div className="text-xl font-bold text-emerald-400">{(gscHealth.sitemap_indexed ?? 0).toLocaleString("pt-BR")}</div>
+                </div>
+                <div className="bg-zinc-800 rounded p-3">
+                  <div className="text-zinc-500 text-xs">Erros Sitemap</div>
+                  <div className={`text-xl font-bold ${(gscHealth.sitemap_errors ?? 0) > 0 ? "text-red-400" : "text-zinc-400"}`}>
+                    {gscHealth.sitemap_errors ?? 0}
+                  </div>
+                </div>
+              </div>
+              {gscHealth.error_types && gscHealth.error_types.length > 0 && (
+                <div>
+                  <div className="text-xs text-zinc-500 mb-1">Top erros de cobertura</div>
+                  <div className="space-y-1">
+                    {gscHealth.error_types.slice(0, 5).map((e) => (
+                      <div key={e.type} className="flex justify-between text-xs">
+                        <span className="text-zinc-400">{e.type}</span>
+                        <span className="text-red-400 font-medium">{e.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Supabase groups */}
           {data && (
