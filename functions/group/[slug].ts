@@ -1,5 +1,3 @@
-import { groupPath, generateSlug } from "../../src/lib/slug";
-
 interface Group {
   id: string;
   name: string;
@@ -22,6 +20,23 @@ function extractIdFromSlug(slugParam: string): string {
   return slugParam;
 }
 
+function generateSlug(name: string): string {
+  let slug = name.toLowerCase();
+  slug = slug.replace(/[^\x20-\x7E]/g, "");
+  slug = slug.replace(/[\s_]+/g, "-");
+  slug = slug.replace(/[^a-z0-9-]/g, "");
+  slug = slug.replace(/-+/g, "-");
+  slug = slug.replace(/^-+|-+$/g, "");
+  slug = slug.slice(0, 60).replace(/-+$/, "");
+  return slug;
+}
+
+function groupPath(grupo: { id: string; name: string }): string {
+  const slug = generateSlug(grupo.name);
+  const compactId = grupo.id.replace(/-/g, "");
+  return `/group/${slug}-${compactId}`;
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -42,7 +57,6 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const SUPABASE_URL = ctx.env.SUPABASE_URL;
   const SUPABASE_ANON_KEY = ctx.env.SUPABASE_ANON_KEY;
 
-  // Fetch group from Supabase REST API
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/groups?id=eq.${groupId}&select=*&limit=1`,
     {
@@ -58,11 +72,9 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const grupo = data?.[0];
 
   if (!grupo) {
-    // Group not found — serve the SPA shell so React can handle 404
     return ctx.next();
   }
 
-  // Fetch the index.html shell
   const indexRes = await ctx.env.ASSETS.fetch(new URL("/index.html", ctx.request.url));
   const html = await indexRes.text();
 
@@ -90,7 +102,6 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     },
   });
 
-  // Inject SEO tags into <head>
   const seoTags = `
     <title>${escapeHtml(grupo.name)} — Grupo Telegram +18 | Canais18</title>
     <meta name="description" content="${escapeHtml(seoDescription)}" />
@@ -103,7 +114,6 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     <meta name="robots" content="index, follow" />
     <script type="application/ld+json">${jsonLd}</script>`;
 
-  // Inject a visible content block for Googlebot before </body>
   const googleBotContent = `
   <div id="ssg-content" style="display:none" aria-hidden="true">
     <h1>${escapeHtml(grupo.name)}</h1>
