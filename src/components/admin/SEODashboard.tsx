@@ -33,7 +33,16 @@ interface HealthRow {
   last_error: string | null; status: string;
 }
 
-interface Indexing { sentCount: number; last_run: string }
+interface Indexing { sentToday: number; lastDate: string }
+
+interface BotLog {
+  id: string;
+  url: string;
+  ip: string | null;
+  user_agent: string | null;
+  bot_type: string;
+  created_at: string;
+}
 
 interface GscHealth {
   indexed_28d:       number;
@@ -197,26 +206,30 @@ function HealthCard({ row, schedule }: { row: HealthRow; schedule: string | unde
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function SEODashboard() {
-  const [data,      setData]      = useState<CacheData | null>(null);
-  const [health,    setHealth]    = useState<HealthRow[]>([]);
-  const [indexing,  setIndexing]  = useState<Indexing | null>(null);
-  const [gscHealth, setGscHealth] = useState<GscHealth | null>(null);
-  const [schedules, setSchedules] = useState<Record<string, string>>({});
-  const [loading,   setLoading]   = useState(true);
-  const [tab,       setTab]       = useState<Tab>("analytics");
-  const [period,    setPeriod]    = useState<Period>("28d");
-  const [updatedAt, setUpdatedAt] = useState("");
+  const [data,         setData]         = useState<CacheData | null>(null);
+  const [health,       setHealth]       = useState<HealthRow[]>([]);
+  const [indexing,     setIndexing]     = useState<Indexing | null>(null);
+  const [gscHealth,    setGscHealth]    = useState<GscHealth | null>(null);
+  const [schedules,    setSchedules]    = useState<Record<string, string>>({});
+  const [sitemapCount, setSitemapCount] = useState<number>(33);
+  const [botLogs,      setBotLogs]      = useState<BotLog[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [tab,          setTab]          = useState<Tab>("analytics");
+  const [period,       setPeriod]       = useState<Period>("28d");
+  const [updatedAt,    setUpdatedAt]    = useState("");
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [cacheRes, healthRes, idxRes, cronRes, gscRes] = await Promise.all([
+        const [cacheRes, healthRes, idxRes, cronRes, gscRes, sitemapRes, botRes] = await Promise.all([
           supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
           supabase.from("seo_health").select("*").order("task"),
-          supabase.from("indexing_progress").select("sent_count, date"),
+          supabase.from("indexing_progress").select("sent_count, date").order("date", { ascending: false }).limit(10),
           supabase.rpc("get_cron_schedules"),
           supabase.from("seo_cache").select("data").eq("key", "gsc_health").single(),
+          supabase.from("seo_config").select("value").eq("key", "sitemap_url_count").single(),
+          supabase.from("bot_logs").select("*").order("created_at", { ascending: false }).limit(10),
         ]);
         if (cacheRes.data) {
           setData(cacheRes.data.data as unknown as CacheData);
@@ -224,10 +237,15 @@ export default function SEODashboard() {
         }
         if (healthRes.data)     setHealth(healthRes.data as HealthRow[]);
         if (idxRes.data) {
-          const rows = idxRes.data as { sent_count: number; date: string }[];
-          const sentCount = rows.reduce((acc, r) => acc + (r.sent_count ?? 0), 0);
-          const last_run  = rows.length > 0 ? rows.reduce((a, b) => a.date > b.date ? a : b).date : "";
-          setIndexing({ sentCount, last_run });
+          const rows     = idxRes.data as { sent_count: number; date: string }[];
+          const todayStr = new Date().toISOString().split("T")[0];
+          // soma apenas o run de hoje (daily-tasks envia 33 URLs por execução)
+          const sentToday = rows
+            .filter(r => r.date === todayStr)
+            .reduce((acc, r) => acc + (r.sent_count ?? 0), 0);
+          // data do run mais recente (rows já vem DESC)
+          const lastDate = rows.length > 0 ? rows[0].date : "";
+          setIndexing({ sentToday, lastDate });
         }
         if (cronRes?.data) {
           const map: Record<string, string> = {};
@@ -238,6 +256,11 @@ export default function SEODashboard() {
           setSchedules(map);
         }
         if (gscRes?.data?.data) setGscHealth(gscRes.data.data as unknown as GscHealth);
+        if (sitemapRes?.data?.value) {
+          const v = sitemapRes.data.value as { count?: number };
+          if (typeof v.count === "number") setSitemapCount(v.count);
+        }
+        if (botRes?.data) setBotLogs(botRes.data as BotLog[]);
       } catch (e) {
         console.error("SEODashboard load error:", e);
       } finally {
@@ -391,41 +414,65 @@ export default function SEODashboard() {
             </div>
           </div>
 
-          {/* Indexing progress */}
+          {/* Indexing progress — baseado apenas na estratégia atual (33 URLs do sitemap) */}
           {(() => {
-            const sent  = indexing?.sentCount ?? 0;
-            const total = (data?.supabase.total_groups ?? 0) + PRIORITY_URLS_COUNT;
-            const pctV  = total > 0 ? Math.round((sent / total) * 100) : 0;
-            const remaining = Math.max(0, total - sent);
-            const daysLeft  = Math.ceil(remaining / 1200);
+            const sentToday  = indexing?.sentToday ?? 0;
+            const total      = sitemapCount; // 33, de seo_config.sitemap_url_count
+            const pctV       = Math.min(100, total > 0 ? Math.round((sentToday / total) * 100) : 0);
+            const lastDate   = indexing?.lastDate ?? "";
+            // horário da última execução vem do seo_health (mais preciso que indexing_progress.date)
+            const dailyHealth = health.find(h => h.task === "daily-tasks");
+            const lastRunIso  = dailyHealth?.last_success ?? null;
+            const ranToday    = lastDate === new Date().toISOString().split("T")[0];
             return (
               <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-white">Progresso da Indexação Google</h3>
-                <div className="flex items-end gap-3">
-                  <span className="text-3xl font-bold text-white">{pctV}%</span>
-                  <span className="text-zinc-400 text-sm mb-1">{sent.toLocaleString("pt-BR")} / {total.toLocaleString("pt-BR")} URLs</span>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white">Indexação Google — Hoje</h3>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                    ranToday
+                      ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+                      : "text-zinc-500 bg-zinc-800 border-zinc-700"
+                  }`}>
+                    {ranToday ? "Executado hoje" : lastDate ? `Último: ${lastDate}` : "Nunca"}
+                  </span>
                 </div>
-                <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-pink-600 to-pink-400 rounded-full transition-all"
-                    style={{ width: `${pctV}%` }} />
+
+                {/* Barra de progresso do dia */}
+                <div>
+                  <div className="flex items-end gap-2 mb-2">
+                    <span className="text-3xl font-bold text-white">{sentToday}</span>
+                    <span className="text-zinc-400 text-sm mb-1">/ {total} URLs enviadas hoje</span>
+                  </div>
+                  <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${sentToday >= total ? "bg-emerald-500" : "bg-gradient-to-r from-pink-600 to-pink-400"}`}
+                      style={{ width: `${pctV}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
+                    <span>0</span>
+                    <span>{total} URLs no sitemap</span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 text-xs">
+
+                {/* Mini grid */}
+                <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="bg-zinc-800 rounded p-2">
-                    <div className="text-zinc-500">Enviadas</div>
-                    <div className="text-white font-bold text-base">{sent.toLocaleString("pt-BR")}</div>
+                    <div className="text-zinc-500">Sitemap atual</div>
+                    <div className="text-white font-bold text-base">{total}</div>
                   </div>
                   <div className="bg-zinc-800 rounded p-2">
-                    <div className="text-zinc-500">Restantes</div>
-                    <div className="text-zinc-200 font-bold text-base">{remaining.toLocaleString("pt-BR")}</div>
+                    <div className="text-zinc-500">Enviadas hoje</div>
+                    <div className={`font-bold text-base ${sentToday >= total ? "text-emerald-400" : "text-zinc-200"}`}>
+                      {sentToday}
+                    </div>
                   </div>
                   <div className="bg-zinc-800 rounded p-2">
-                    <div className="text-zinc-500">Tempo est.</div>
-                    <div className="text-zinc-200 font-bold text-base">{daysLeft}d</div>
+                    <div className="text-zinc-500">Última execução</div>
+                    <div className="text-zinc-200 font-bold text-base leading-tight">
+                      {lastRunIso ? fmtRel(lastRunIso) : lastDate || "—"}
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-zinc-500">
-                  Total enviadas: <span className="font-medium text-zinc-300">{indexing?.sentCount?.toLocaleString("pt-BR") ?? 0} URLs</span>
-                  {indexing?.last_run && <span className="ml-3">Última run: {fmtRel(indexing.last_run)}</span>}
                 </div>
               </div>
             );
@@ -481,6 +528,38 @@ export default function SEODashboard() {
             </div>
           )}
 
+          {/* Visitas do Googlebot */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Visitas do Googlebot</h3>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${botLogs.length > 0 ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" : "text-zinc-500 bg-zinc-800 border-zinc-700"}`}>
+                {botLogs.length > 0 ? `${botLogs.length} registros` : "Sem visitas"}
+              </span>
+            </div>
+            {botLogs.length === 0 ? (
+              <p className="text-zinc-500 text-xs">Nenhuma visita registrada ainda. O Worker loga automaticamente quando o Googlebot bater em /group/*.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {botLogs.map(log => (
+                  <div key={log.id} className="bg-zinc-800 rounded p-2 text-xs flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-zinc-200 truncate font-mono">
+                        {log.url.replace("https://www.canais18.com", "")}
+                      </div>
+                      <div className="text-zinc-500 mt-0.5">
+                        {fmtRel(log.created_at)}
+                        {log.ip && <span className="ml-2 font-mono">{log.ip}</span>}
+                      </div>
+                    </div>
+                    <span className="text-emerald-400 shrink-0 text-[10px] font-bold uppercase mt-0.5">
+                      {log.bot_type}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Supabase groups */}
           {data && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
@@ -507,4 +586,4 @@ export default function SEODashboard() {
   );
 }
 
-const PRIORITY_URLS_COUNT = 82;
+// sitemapCount é buscado dinamicamente de seo_config.key='sitemap_url_count'
