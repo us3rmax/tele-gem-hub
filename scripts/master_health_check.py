@@ -509,12 +509,61 @@ def send_report():
     status = "enviado" if r.status_code in (200, 201) else f"erro {r.status_code}"
     print(f"\n[Email] {status} -> {EMAIL_TO}")
 
+# ── Salva resultado no Supabase ───────────────────────────────────────────────
+
+def save_result():
+    has_critical = any(c.status == "fail" and c.critical for c in _results)
+    has_fail     = any(c.status == "fail" for c in _results)
+    counts       = {s: sum(1 for c in _results if c.status == s)
+                    for s in ("ok", "warn", "fail")}
+
+    overall = "critical" if has_critical else "warning" if has_fail else "ok"
+
+    failures = [
+        {"name": c.name, "message": c.message, "critical": c.critical,
+         "details": c.details[:5]}
+        for c in _results if c.status == "fail"
+    ]
+    warnings = [
+        {"name": c.name, "message": c.message}
+        for c in _results if c.status == "warn"
+    ]
+
+    payload = {
+        "timestamp":  datetime.now(timezone.utc).isoformat(),
+        "status":     overall,
+        "total_ok":   counts["ok"],
+        "total_warn": counts["warn"],
+        "total_fail": counts["fail"],
+        "failures":   failures,
+        "warnings":   warnings,
+    }
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("[Supabase] Credenciais ausentes — resultado nao salvo")
+        return
+
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/seo_cache",
+            headers={**_SB, "Content-Type": "application/json",
+                     "Prefer": "resolution=merge-duplicates"},
+            json={"key": "health_check_result", "data": payload},
+            timeout=10,
+        )
+        if r.status_code in (200, 201):
+            print(f"[Supabase] Salvo em seo_cache (key=health_check_result) | status={overall}")
+        else:
+            print(f"[Supabase] Erro {r.status_code}: {r.text[:120]}")
+    except Exception as e:
+        print(f"[Supabase] Falha ao salvar resultado: {e}")
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     print("=" * 62)
-    print(f"  master_health_check.py — {now}")
+    print(f"  master_health_check.py -- {now}")
     print("=" * 62)
 
     check_ssr()
@@ -523,6 +572,7 @@ def main():
     check_cloudflare()
     check_supabase()
     check_canonicals()
+    save_result()   # persiste no Supabase antes do email
     send_report()
 
     counts = {s: sum(1 for c in _results if c.status == s)
@@ -530,7 +580,7 @@ def main():
     has_critical = any(c.status == "fail" and c.critical for c in _results)
 
     print("\n" + "=" * 62)
-    print(f"  RESULTADO: {counts['ok']} OK · {counts['warn']} avisos · {counts['fail']} falhas")
+    print(f"  RESULTADO: {counts['ok']} OK | {counts['warn']} avisos | {counts['fail']} falhas")
     print("=" * 62)
 
     if has_critical:
