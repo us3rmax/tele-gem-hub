@@ -54,6 +54,23 @@ interface GscHealth {
   alerts:            string[];
 }
 
+interface HCFailure {
+  name:     string;
+  message:  string;
+  critical: boolean;
+  details?: string[];
+}
+
+interface HealthCheckResult {
+  timestamp:  string;
+  status:     "ok" | "warning" | "critical";
+  total_ok:   number;
+  total_warn: number;
+  total_fail: number;
+  failures:   HCFailure[];
+  warnings:   { name: string; message: string }[];
+}
+
 type Period = "7d" | "28d" | "90d";
 type Tab    = "analytics" | "automacoes";
 
@@ -213,6 +230,7 @@ export default function SEODashboard() {
   const [schedules,    setSchedules]    = useState<Record<string, string>>({});
   const [sitemapCount, setSitemapCount] = useState<number>(33);
   const [botLogs,      setBotLogs]      = useState<BotLog[]>([]);
+  const [hcResult,     setHcResult]     = useState<HealthCheckResult | null>(null);
   const [loading,      setLoading]      = useState(true);
   const [tab,          setTab]          = useState<Tab>("analytics");
   const [period,       setPeriod]       = useState<Period>("28d");
@@ -222,7 +240,7 @@ export default function SEODashboard() {
     (async () => {
       setLoading(true);
       try {
-        const [cacheRes, healthRes, idxRes, cronRes, gscRes, sitemapRes, botRes] = await Promise.all([
+        const [cacheRes, healthRes, idxRes, cronRes, gscRes, sitemapRes, botRes, hcRes] = await Promise.all([
           supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
           supabase.from("seo_health").select("*").order("task"),
           supabase.from("indexing_progress").select("sent_count, date").order("date", { ascending: false }).limit(10),
@@ -230,6 +248,7 @@ export default function SEODashboard() {
           supabase.from("seo_cache").select("data").eq("key", "gsc_health").single(),
           supabase.from("seo_config").select("value").eq("key", "sitemap_url_count").single(),
           supabase.from("bot_logs").select("*").order("created_at", { ascending: false }).limit(10),
+          supabase.from("seo_cache").select("data").eq("key", "health_check_result").single(),
         ]);
         if (cacheRes.data) {
           setData(cacheRes.data.data as unknown as CacheData);
@@ -261,6 +280,7 @@ export default function SEODashboard() {
           if (typeof v.count === "number") setSitemapCount(v.count);
         }
         if (botRes?.data) setBotLogs(botRes.data as BotLog[]);
+        if (hcRes?.data?.data) setHcResult(hcRes.data.data as unknown as HealthCheckResult);
       } catch (e) {
         console.error("SEODashboard load error:", e);
       } finally {
@@ -402,6 +422,118 @@ export default function SEODashboard() {
       {/* ── ABA 2: Automações ────────────────────────────────────────────── */}
       {tab === "automacoes" && (
         <div className="space-y-4">
+
+          {/* ── Health Check do Sistema ────────────────────────────────── */}
+          {(() => {
+            const HC_SCHEDULE = "0 18 * * *"; // 18h UTC = 15h BRT
+            const hcNextRun   = nextRunFromCron(HC_SCHEDULE);
+
+            if (!hcResult) {
+              return (
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">Health Check do Sistema</h3>
+                    <span className="text-xs text-zinc-600 bg-zinc-800 border border-zinc-700 px-2 py-0.5 rounded-full">
+                      Aguardando 1ª execução
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-2">
+                    Primeira execução: {hcNextRun}
+                  </p>
+                </div>
+              );
+            }
+
+            const s = hcResult.status;
+            const cfg = {
+              ok:       { label: "TUDO OK",  cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20", bar: "bg-emerald-500",  Icon: CheckCircle   },
+              warning:  { label: "ATENÇÃO",  cls: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",   bar: "bg-yellow-500",  Icon: AlertTriangle },
+              critical: { label: "CRÍTICO",  cls: "text-red-400 bg-red-400/10 border-red-400/20",            bar: "bg-red-500",     Icon: XCircle       },
+            }[s];
+
+            const total = hcResult.total_ok + hcResult.total_warn + hcResult.total_fail;
+
+            return (
+              <div className={`bg-zinc-900 border rounded-lg p-4 space-y-3 ${
+                s === "critical" ? "border-red-800/40" :
+                s === "warning"  ? "border-yellow-800/40" :
+                                   "border-zinc-800"
+              }`}>
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-white">Health Check do Sistema</h3>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border shrink-0 ${cfg.cls}`}>
+                    <cfg.Icon className="h-3 w-3" />{cfg.label}
+                  </span>
+                </div>
+
+                {/* Barra de checks */}
+                <div>
+                  <div className="flex justify-between text-[11px] text-zinc-500 mb-1">
+                    <span>{hcResult.total_ok} OK · {hcResult.total_warn} avisos · {hcResult.total_fail} falhas</span>
+                    <span>{total} verificações</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden flex gap-px">
+                    <div className="h-full bg-emerald-500 transition-all"
+                         style={{ width: `${total > 0 ? (hcResult.total_ok / total) * 100 : 0}%` }} />
+                    {hcResult.total_warn > 0 && (
+                      <div className="h-full bg-yellow-500 transition-all"
+                           style={{ width: `${(hcResult.total_warn / total) * 100}%` }} />
+                    )}
+                    {hcResult.total_fail > 0 && (
+                      <div className="h-full bg-red-500 transition-all"
+                           style={{ width: `${(hcResult.total_fail / total) * 100}%` }} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Falhas — só exibe se houver */}
+                {hcResult.failures.length > 0 && (
+                  <div className="space-y-1.5">
+                    {hcResult.failures.map((f, i) => (
+                      <div key={i} className="bg-red-950/30 border border-red-900/30 rounded p-2 text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <XCircle className="h-3 w-3 text-red-400 shrink-0" />
+                          <span className="text-red-300 font-medium">{f.name}</span>
+                          {f.critical && (
+                            <span className="text-[10px] bg-red-900/50 text-red-400 px-1 rounded">CRÍTICO</span>
+                          )}
+                        </div>
+                        <p className="text-red-400/80 mt-0.5 ml-4.5 font-mono text-[11px]">{f.message}</p>
+                        {f.details?.slice(0, 3).map((d, j) => (
+                          <p key={j} className="text-red-500/60 ml-4.5 font-mono text-[10px] truncate">{d}</p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Avisos — só exibe se houver e não houver falhas */}
+                {hcResult.failures.length === 0 && hcResult.warnings.length > 0 && (
+                  <div className="space-y-1">
+                    {hcResult.warnings.slice(0, 3).map((w, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-yellow-400/80">
+                        <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                        <span><span className="font-medium">{w.name}:</span> {w.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="flex items-center justify-between text-[11px] text-zinc-500 pt-1 border-t border-zinc-800">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Última: {fmtRel(hcResult.timestamp)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Próxima: {hcNextRun}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Health cards */}
           <div>
