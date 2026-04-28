@@ -1,0 +1,52 @@
+name: SEO Cache Update
+
+on:
+  schedule:
+    - cron: '0 17 * * *'   # 17h UTC = 14h BRT
+  workflow_dispatch:
+
+jobs:
+  update-seo-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install requests python-dotenv \
+            google-auth google-auth-httplib2 google-api-python-client \
+            supabase
+
+      - name: Write Google credentials file
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > /tmp/gcp_credentials.json
+
+      - name: Run update_seo_cache.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp_credentials.json
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_DESTINO: ${{ secrets.EMAIL_DESTINO }}
+        run: python scripts/update_seo_cache.py
+
+      - name: Run gsc_health_monitor.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp_credentials.json
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_DESTINO: ${{ secrets.EMAIL_DESTINO }}
+        run: python scripts/gsc_health_monitor.py
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f /tmp/gcp_credentials.json
