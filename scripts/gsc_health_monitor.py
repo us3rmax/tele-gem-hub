@@ -12,9 +12,10 @@ Usage:
 
 import sys, os, json, argparse
 from datetime import date, timedelta
+sys.stdout.reconfigure(encoding="utf-8")
 
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv("C:/canais18-seo/.env")
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -22,10 +23,10 @@ from supabase import create_client
 import requests as req_lib
 
 CREDS_FILE  = os.path.normpath(os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip())
-SITE        = "https://canais18.com/"
+SITE        = "https://www.canais18.com/"
 RESEND_KEY  = os.getenv("RESEND_API_KEY")
 EMAIL_TO    = os.getenv("EMAIL_DESTINO", "tggrupos@proton.me")
-CACHE_FILE  = os.getenv("GSC_CACHE_FILE", "/tmp/gsc_health_cache.json")
+CACHE_FILE  = "C:/canais18-seo/gsc_health_cache.json"
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
