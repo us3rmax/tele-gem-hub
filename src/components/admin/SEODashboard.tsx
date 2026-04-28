@@ -629,7 +629,7 @@ export default function SEODashboard() {
               )}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="bg-zinc-800 rounded p-3">
-                  <div className="text-zinc-500 text-xs">Indexadas (28d)</div>
+                  <div className="text-zinc-500 text-xs" title="Páginas que apareceram nos resultados de busca nos últimos 28d — proxy de indexação">Com impressão (28d)</div>
                   <div className="text-xl font-bold text-white">{(gscHealth.indexed_28d ?? 0).toLocaleString("pt-BR")}</div>
                 </div>
                 <div className="bg-zinc-800 rounded p-3">
