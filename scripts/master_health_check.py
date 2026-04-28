@@ -433,7 +433,56 @@ def check_canonicals():
     except Exception as e:
         fail("www fetch", str(e), critical=True)
 
-# ── 7. Email ──────────────────────────────────────────────────────────────────
+# ── 7. RPCs críticas do Supabase ─────────────────────────────────────────────
+
+def check_rpcs():
+    print("\n[7] RPCs Supabase")
+
+    # ── get_hot_groups ────────────────────────────────────────────────────────
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/rpc/get_hot_groups",
+            headers={**_SB, "Content-Type": "application/json"},
+            json={"p_limit": 1, "p_offset": 0},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            rows = r.json()
+            if isinstance(rows, list) and len(rows) > 0:
+                total = rows[0].get("total_count", "?")
+                ok("RPC get_hot_groups", f"OK -> 1 grupo retornado (total_count={total})")
+            else:
+                warn("RPC get_hot_groups", f"Chamada OK mas lista vazia (status {r.status_code})")
+        else:
+            body = r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text
+            msg  = body.get("message", str(body)) if isinstance(body, dict) else str(body)
+            fail("RPC get_hot_groups", f"HTTP {r.status_code}: {msg[:120]}", critical=True)
+    except Exception as e:
+        fail("RPC get_hot_groups", f"{type(e).__name__}: {e}", critical=True)
+
+    # ── get_cron_schedules ────────────────────────────────────────────────────
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/rpc/get_cron_schedules",
+            headers={**_SB, "Content-Type": "application/json"},
+            json={},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            rows = r.json()
+            if isinstance(rows, list) and len(rows) > 0:
+                names = ", ".join(row.get("jobname", "?") for row in rows)
+                ok("RPC get_cron_schedules", f"OK -> {len(rows)} job(s): {names}")
+            else:
+                warn("RPC get_cron_schedules", "Chamada OK mas sem jobs retornados")
+        else:
+            body = r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text
+            msg  = body.get("message", str(body)) if isinstance(body, dict) else str(body)
+            fail("RPC get_cron_schedules", f"HTTP {r.status_code}: {msg[:120]}", critical=True)
+    except Exception as e:
+        fail("RPC get_cron_schedules", f"{type(e).__name__}: {e}", critical=True)
+
+# ── 8. Email ──────────────────────────────────────────────────────────────────
 
 def send_report():
     has_critical = any(c.status == "fail" and c.critical for c in _results)
@@ -572,6 +621,7 @@ def main():
     check_cloudflare()
     check_supabase()
     check_canonicals()
+    check_rpcs()
     save_result()   # persiste no Supabase antes do email
     send_report()
 
