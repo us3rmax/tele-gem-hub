@@ -15,7 +15,7 @@ from datetime import date, timedelta
 sys.stdout.reconfigure(encoding="utf-8")
 
 from dotenv import load_dotenv
-load_dotenv("C:/canais18-seo/.env")
+load_dotenv()  # env vars injetadas pelo GitHub Actions
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -26,7 +26,7 @@ CREDS_FILE  = os.path.normpath(os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").s
 SITE        = "https://www.canais18.com/"
 RESEND_KEY  = os.getenv("RESEND_API_KEY")
 EMAIL_TO    = os.getenv("EMAIL_DESTINO", "tggrupos@proton.me")
-CACHE_FILE  = "C:/canais18-seo/gsc_health_cache.json"
+CACHE_FILE  = os.getenv("GSC_CACHE_FILE", "/tmp/gsc_health_cache.json")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
@@ -313,7 +313,10 @@ def save_to_supabase(current: dict, alerts: list[str]):
 # ── Task Scheduler ────────────────────────────────────────────────────────────
 
 def add_to_scheduler():
-    import subprocess
+    import platform, subprocess
+    if platform.system() != "Windows":
+        print("[SKIP] add_to_scheduler: requer Windows (schtasks). Use GitHub Actions no Linux.")
+        return
     task_name = "Canais18GSCHealthMonitor"
     cmd = r"python C:\canais18-seo\gsc_health_monitor.py"
 
