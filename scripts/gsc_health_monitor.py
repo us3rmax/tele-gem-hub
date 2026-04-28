@@ -51,7 +51,11 @@ def fetch_coverage():
 
     def fmt(d): return d.strftime("%Y-%m-%d")
 
-    # Páginas com pelo menos 1 impressão nos últimos 28 dias = proxy de "indexadas"
+    # "Páginas com impressão nos últimos 28 dias" via Search Analytics.
+    # NOTA: não é o mesmo que "indexadas" no Index Coverage do GSC.
+    # A GSC Index Coverage API não tem endpoint bulk — usamos este proxy:
+    # uma URL que aparece nos resultados de busca está necessariamente indexada.
+    # URLs indexadas mas sem impressões (novas) aparecem em sitemap_indexed abaixo.
     body_indexed = {
         "startDate": fmt(start), "endDate": fmt(end),
         "dimensions": ["page"], "rowLimit": 25000,
