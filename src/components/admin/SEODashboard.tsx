@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
@@ -232,7 +233,9 @@ export default function SEODashboard() {
   const [botLogs,      setBotLogs]      = useState<BotLog[]>([]);
   const [hcResult,     setHcResult]     = useState<HealthCheckResult | null>(null);
   const [loading,      setLoading]      = useState(true);
-  const [tab,          setTab]          = useState<Tab>("analytics");
+  const { subTab: _seoSubTab } = useParams<{ subTab?: string }>();
+  const tab = (_seoSubTab === "automacoes" ? "automacoes" : "analytics") as Tab;
+  const navigateSeo = useNavigate();
   const [period,       setPeriod]       = useState<Period>("28d");
   const [updatedAt,    setUpdatedAt]    = useState("");
 
@@ -312,7 +315,7 @@ export default function SEODashboard() {
         </div>
         <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
           {tabs.map(({ id, label, Icon }) => (
-            <button key={id} onClick={() => setTab(id)}
+            <button key={id} onClick={() => navigateSeo(`/admin/seo/${id}`)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors
                 ${tab === id ? "bg-pink-600 text-white" : "text-zinc-400 hover:text-white"}`}>
               <Icon className="h-3.5 w-3.5" />{label}
