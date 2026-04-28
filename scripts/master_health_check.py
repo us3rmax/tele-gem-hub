@@ -67,10 +67,10 @@ _results: list[Check] = []
 
 def _add(c: Check) -> Check:
     _results.append(c)
-    icon = {"ok": "✓", "warn": "⚠", "fail": "✗"}[c.status]
+    icon = {"ok": "[OK]", "warn": "[WN]", "fail": "[!!]"}[c.status]
     print(f"  {icon} {c.name}: {c.message}")
     for d in c.details[:3]:
-        print(f"      → {d}")
+        print(f"       > {d}")
     return c
 
 def ok(name, msg, **kw):   return _add(Check(name, "ok",   msg, **kw))
@@ -254,9 +254,9 @@ def check_gsc():
         if prev:
             prev_imp = (prev[0]["data"].get("28d", {}).get("totals", {}).get("impressions", 0))
             if prev_imp > 10 and impressions < prev_imp * 0.5:
-                fail("GSC queda", f"Impressões: {prev_imp} → {impressions} (queda >50%)", critical=True)
+                fail("GSC queda", f"Impressões: {prev_imp} -> {impressions} (queda >50%)", critical=True)
             else:
-                ok("GSC estabilidade", f"Impressões estáveis ({prev_imp} → {impressions})")
+                ok("GSC estabilidade", f"Impressões estáveis ({prev_imp} -> {impressions})")
     except Exception:
         pass  # primeira execução sem histórico
 
@@ -304,7 +304,7 @@ def check_cloudflare():
         None
     )
     if wildcard:
-        ok("CF bot-prerender", "Rota www.canais18.com/* → bot-prerender ativa")
+        ok("CF bot-prerender", "Rota www.canais18.com/* -> bot-prerender ativa")
     else:
         fail("CF bot-prerender",
              "Rota wildcard ausente ou apontando para worker errado", critical=True)
@@ -318,7 +318,7 @@ def check_cloudflare():
         fail("CF Workers fantasmas",
              f"{len(ghost)} rota(s) específica(s) conflitante(s) detectada(s)",
              critical=False,
-             details=[f"{rt['pattern']} → {rt.get('script','?')}" for rt in ghost[:8]])
+             details=[f"{rt['pattern']} -> {rt.get('script','?')}" for rt in ghost[:8]])
     else:
         ok("CF Workers fantasmas", "Nenhuma rota específica conflitante")
 
@@ -409,7 +409,7 @@ def check_canonicals():
             code     = r.status_code
             location = r.headers.get("Location", "")
             if code in (301, 302, 308) and "www.canais18.com" in location:
-                ok(f"Redirect {proto}", f"HTTP {code} → {location.split('?')[0]}")
+                ok(f"Redirect {proto}", f"HTTP {code} -> {location.split('?')[0]}")
             elif code in (301, 302, 308):
                 fail(f"Redirect {proto}",
                      f"HTTP {code} mas Location='{location}' não aponta para www", critical=False)
@@ -427,9 +427,9 @@ def check_canonicals():
     try:
         r = requests.get(f"{BASE}/", timeout=12, allow_redirects=True)
         if r.status_code == 200:
-            ok("www status", f"https://www.canais18.com/ → 200 OK")
+            ok("www status", f"https://www.canais18.com/ -> 200 OK")
         else:
-            fail("www status", f"https://www.canais18.com/ → HTTP {r.status_code}", critical=True)
+            fail("www status", f"https://www.canais18.com/ -> HTTP {r.status_code}", critical=True)
     except Exception as e:
         fail("www fetch", str(e), critical=True)
 
@@ -507,7 +507,7 @@ def send_report():
         timeout=15,
     )
     status = "enviado" if r.status_code in (200, 201) else f"erro {r.status_code}"
-    print(f"\n[Email] {status} → {EMAIL_TO}")
+    print(f"\n[Email] {status} -> {EMAIL_TO}")
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
