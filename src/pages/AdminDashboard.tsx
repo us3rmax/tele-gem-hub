@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -175,8 +175,32 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("pending");
-  const [mainSection, setMainSection] = useState<"grupos_section" | "categorias" | "banners" | "seo">("grupos_section");
+  // URL-driven navigation — useParams substitui useState
+  const { mainTab = "grupos", subTab } = useParams<{ mainTab?: string; subTab?: string }>();
+
+  const _subToTab: Record<string, string> = {
+    pendentes: "pending",  aprovados: "approved",  rejeitados: "rejected",
+    edicoes:   "edits",    premium:   "premium",   todos:      "grupos",
+    quebrados: "broken",
+  };
+  const _tabToSub: Record<string, string> = {
+    pending:  "pendentes", approved: "aprovados",  rejected: "rejeitados",
+    edits:    "edicoes",   premium:  "premium",    grupos:   "todos",
+    broken:   "quebrados",
+  };
+
+  const mainSection = (
+    mainTab === "categorias" ? "categorias"    :
+    mainTab === "banners"    ? "banners"       :
+    mainTab === "seo"        ? "seo"           :
+    "grupos_section"
+  ) as "grupos_section" | "categorias" | "banners" | "seo";
+
+  const activeTab =
+    mainTab === "grupos"     ? (_subToTab[subTab ?? ""] ?? "pending") :
+    mainTab === "banners"    ? "banners"    :
+    mainTab === "categorias" ? "categorias" :
+    "pending";
 
   // Submissions state
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -1156,10 +1180,10 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs value={mainSection} onValueChange={(v) => {
-              setMainSection(v as "grupos_section" | "categorias" | "banners" | "seo");
-              if (v === "banners") setActiveTab("banners");
-              else if (v === "categorias") setActiveTab("categorias");
-              else if (v === "grupos_section") setActiveTab("pending");
+              if (v === "grupos_section") navigate("/admin/grupos/pendentes");
+              else if (v === "categorias") navigate("/admin/categorias");
+              else if (v === "banners")    navigate("/admin/banners");
+              else if (v === "seo")        navigate("/admin/seo/analytics");
             }}>
           <TabsList className="w-full">
             <TabsTrigger value="grupos_section" className="flex-1 gap-2">
@@ -1185,7 +1209,7 @@ const AdminDashboard = () => {
             <div className="flex gap-6">
               <nav className="w-44 shrink-0 flex flex-col gap-1 border-r border-border pr-4 pt-1">
                 <button
-                  onClick={() => setActiveTab("pending")}
+                  onClick={() => navigate("/admin/grupos/pendentes")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "pending" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <Clock className="h-4 w-4 shrink-0" />
@@ -1195,21 +1219,21 @@ const AdminDashboard = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => setActiveTab("approved")}
+                  onClick={() => navigate("/admin/grupos/aprovados")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "approved" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <CheckCircle className="h-4 w-4 shrink-0" />
                   <span className="flex-1">Aprovados</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab("rejected")}
+                  onClick={() => navigate("/admin/grupos/rejeitados")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "rejected" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <XCircle className="h-4 w-4 shrink-0" />
                   <span className="flex-1">Rejeitados</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab("edits")}
+                  onClick={() => navigate("/admin/grupos/edicoes")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "edits" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <FileEdit className="h-4 w-4 shrink-0" />
@@ -1219,7 +1243,7 @@ const AdminDashboard = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => setActiveTab("premium")}
+                  onClick={() => navigate("/admin/grupos/premium")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "premium" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <Star className="h-4 w-4 shrink-0" />
@@ -1229,14 +1253,14 @@ const AdminDashboard = () => {
                   )}
                 </button>
                 <button
-                  onClick={() => setActiveTab("grupos")}
+                  onClick={() => navigate("/admin/grupos/todos")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "grupos" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <Search className="h-4 w-4 shrink-0" />
                   <span className="flex-1">Todos os Grupos</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab("broken")}
+                  onClick={() => navigate("/admin/grupos/quebrados")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "broken" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
                   <WifiOff className="h-4 w-4 shrink-0" />
@@ -1247,7 +1271,7 @@ const AdminDashboard = () => {
                 </button>
               </nav>
               <div className="flex-1 min-w-0">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <Tabs value={activeTab} onValueChange={(v) => navigate(`/admin/grupos/${_tabToSub[v] ?? v}`)}>
           {/* Submission tabs */}
           {["pending", "approved", "rejected"].map((tab) => (
             <TabsContent key={tab} value={tab} className="mt-4 space-y-4">
