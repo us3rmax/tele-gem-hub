@@ -1,3 +1,6 @@
+import sys
+sys.stdout.reconfigure(encoding="utf-8")
+
 from dotenv import load_dotenv
 import os, json, requests
 from datetime import date, timedelta
@@ -8,7 +11,7 @@ from supabase import create_client
 load_dotenv()
 
 CREDS_FILE = os.path.normpath(os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip())
-SITE       = "https://canais18.com/"
+SITE       = "https://www.canais18.com/"
 sb         = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 
 creds = service_account.Credentials.from_service_account_file(
