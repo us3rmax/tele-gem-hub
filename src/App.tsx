@@ -69,8 +69,25 @@ const App = () => (
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/submit" element={<SubmitGroup />} />
                     <Route path="/my-groups" element={<MyGroups />} />
+                    {/* Admin — URL preserva aba ativa ao recarregar */}
                     <Route
                       path="/admin"
+                      element={
+                        <ProtectedRoute requireAdmin>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/:mainTab"
+                      element={
+                        <ProtectedRoute requireAdmin>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/:mainTab/:subTab"
                       element={
                         <ProtectedRoute requireAdmin>
                           <AdminDashboard />
