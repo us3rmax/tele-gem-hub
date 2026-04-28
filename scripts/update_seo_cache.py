@@ -1,7 +1,5 @@
-import sys
 from dotenv import load_dotenv
-import os
-load_dotenv(), json, requests
+import os, json, requests
 from datetime import date, timedelta
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
