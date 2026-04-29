@@ -13,6 +13,13 @@ from typing import Literal
 import requests
 from dotenv import load_dotenv
 
+try:
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build as gapi_build
+    _HAS_GOOGLE = True
+except ImportError:
+    _HAS_GOOGLE = False
+
 load_dotenv()
 
 # ── Configuração ──────────────────────────────────────────────────────────────
@@ -482,7 +489,113 @@ def check_rpcs():
     except Exception as e:
         fail("RPC get_cron_schedules", f"{type(e).__name__}: {e}", critical=True)
 
-# ── 8. Email ──────────────────────────────────────────────────────────────────
+# ── 8. GSC Index Coverage via URL Inspection API ─────────────────────────────
+
+# Estados do coverageState que indicam problema
+_PROBLEM_STATES = {
+    "Crawled - currently not indexed",
+    "Discovered - currently not indexed",
+    "Excluded by 'noindex' tag",
+    "Blocked by robots.txt",
+    "Soft 404",
+    "Server error (5xx)",
+    "Not found (404)",
+    "Alternate page with proper canonical tag",
+    "Page with redirect",
+}
+_INDEXED_STATE  = "Submitted and indexed"
+_UNKNOWN_STATE  = "URL is unknown to Google"
+
+def _build_gsc():
+    creds_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    if not creds_file or not os.path.exists(creds_file):
+        return None
+    creds = service_account.Credentials.from_service_account_file(
+        creds_file,
+        scopes=["https://www.googleapis.com/auth/webmasters.readonly"],
+    )
+    return gapi_build("searchconsole", "v1", credentials=creds)
+
+def check_index_coverage():
+    print("\n[8] GSC Index Coverage (URL Inspection)")
+
+    if not _HAS_GOOGLE:
+        warn("Index Coverage", "google-auth nao instalado — pulando"); return
+
+    gsc = _build_gsc()
+    if gsc is None:
+        warn("Index Coverage", "GOOGLE_APPLICATION_CREDENTIALS ausente ou arquivo nao existe"); return
+
+    site = "https://www.canais18.com/"
+    results, problems, indexed, unknown = [], [], [], []
+
+    for url in SITEMAP_URLS:
+        try:
+            r   = gsc.urlInspection().index().inspect(
+                body={"inspectionUrl": url, "siteUrl": site}
+            ).execute()
+            idx   = r.get("inspectionResult", {}).get("indexStatusResult", {})
+            state = idx.get("coverageState", "UNKNOWN")
+            verdict  = idx.get("indexingState", "")
+            crawl_t  = idx.get("lastCrawlTime", "")
+            robots   = idx.get("robotsTxtState", "")
+            entry = {
+                "url":          url,
+                "coverageState":state,
+                "indexingState":verdict,
+                "lastCrawlTime":crawl_t,
+                "robotsTxtState": robots,
+            }
+            results.append(entry)
+            if state == _INDEXED_STATE:
+                indexed.append(url)
+            elif state == _UNKNOWN_STATE or not state:
+                unknown.append(url)
+            elif any(prob.lower() in state.lower() for prob in _PROBLEM_STATES):
+                problems.append(entry)
+        except Exception as e:
+            results.append({"url": url, "coverageState": f"API_ERROR: {e}", "error": True})
+        time.sleep(0.4)  # 2.5 req/s < quota de 2 QPS
+
+    # Salva no Supabase para o dashboard
+    payload = {
+        "timestamp":     datetime.now(timezone.utc).isoformat(),
+        "site":          site,
+        "total_urls":    len(SITEMAP_URLS),
+        "indexed":       len(indexed),
+        "unknown":       len(unknown),
+        "problems":      len(problems),
+        "problem_urls":  problems,
+        "indexed_urls":  indexed,
+    }
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/seo_cache",
+            headers={**_SB, "Content-Type": "application/json",
+                     "Prefer": "resolution=merge-duplicates"},
+            json={"key": "index_coverage_result", "data": payload},
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+    # Avalia resultado
+    if problems:
+        details = [f"{p['url']} -> {p['coverageState']}" for p in problems]
+        is_cat = any(
+            any(slug in p["url"] for slug in ["telegram-", "grupos-", "onlyfans-",
+                "amadoras-", "gay-", "fetiche-", "casadas-", "celebridades-",
+                "asiaticas-", "bdsm-", "bbw-", "coroas-"])
+            for p in problems
+        )
+        fail("Index Coverage",
+             f"{len(problems)} URL(s) com problema de indexacao nas {len(SITEMAP_URLS)} do sitemap",
+             critical=is_cat, details=details)
+    else:
+        ok("Index Coverage",
+           f"{len(indexed)} indexadas · {len(unknown)} desconhecidas (novas) · 0 com problema")
+
+# ── 9. Email ──────────────────────────────────────────────────────────────────
 
 def send_report():
     has_critical = any(c.status == "fail" and c.critical for c in _results)
@@ -622,6 +735,7 @@ def main():
     check_supabase()
     check_canonicals()
     check_rpcs()
+    check_index_coverage()
     save_result()   # persiste no Supabase antes do email
     send_report()
 
