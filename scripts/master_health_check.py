@@ -31,6 +31,8 @@ CF_TOKEN         = os.getenv("CLOUDFLARE_API_TOKEN", "")
 RESEND_KEY       = os.getenv("RESEND_API_KEY", "")
 EMAIL_TO         = os.getenv("EMAIL_DESTINO", "tggrupos@proton.me")
 SUPABASE_REF     = "lymjjozpdsdoloahsyey"
+GITHUB_TOKEN     = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO      = "us3rmax/tele-gem-hub"
 
 BASE             = "https://www.canais18.com"
 SITEMAP_URL      = f"{BASE}/sitemap.xml"
@@ -109,7 +111,7 @@ def check_ssr():
     session = requests.Session()
     session.headers.update({"User-Agent": GOOGLEBOT_UA})
 
-    status_fails, size_fails, noindex_fails, canonical_warns = [], [], [], []
+    status_fails, size_fails, noindex_fails, canonical_warns, worker_fails = [], [], [], [], []
     total = len(SITEMAP_URLS)
 
     for url in SITEMAP_URLS:
@@ -145,6 +147,10 @@ def check_ssr():
         if is_cat and 'noindex' in html.lower():
             noindex_fails.append(url)
 
+        # Categorias devem ter X-Landing-Source (confirma que o Worker interceptou)
+        if is_cat and not r.headers.get("X-Landing-Source", ""):
+            worker_fails.append(f"{url.replace(BASE,'') or '/'}: sem X-Landing-Source (SPA em vez de SSR)")
+
         time.sleep(0.25)  # gentil com os servidores
 
     all_issues = status_fails + size_fails + noindex_fails
@@ -160,6 +166,15 @@ def check_ssr():
                  details=canonical_warns[:5])
         else:
             ok("SSR Googlebot", f"{total}/{total} URLs: status 200, tamanho OK, sem noindex indevido")
+
+    # Verifica Worker interception separadamente (X-Landing-Source)
+    n_cat = len(CATEGORY_SLUGS)
+    if worker_fails:
+        fail("SSR Worker",
+             f"{len(worker_fails)}/{n_cat} categoria(s) sem X-Landing-Source (SPA servido em vez de Edge Function)",
+             critical=True, details=worker_fails[:8])
+    else:
+        ok("SSR Worker", f"{n_cat}/{n_cat} categorias com X-Landing-Source confirmado")
 
 # ── 2. Sitemap ────────────────────────────────────────────────────────────────
 
@@ -404,6 +419,41 @@ def check_supabase():
     except Exception as e:
         warn("seo_health", str(e))
 
+    # indexing_progress — confirma que daily-tasks enviou 33 URLs hoje
+    try:
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        rows = sb_get("indexing_progress", f"?select=sent_count,project_id&date=eq.{today_str}")
+        sent_today = sum(r.get("sent_count", 0) for r in rows)
+        if sent_today >= 33:
+            ok("indexing_progress hoje", f"{sent_today} URLs enviadas hoje pela daily-tasks")
+        elif sent_today > 0:
+            warn("indexing_progress hoje", f"Apenas {sent_today}/33 URLs enviadas hoje")
+        else:
+            warn("indexing_progress hoje", "0 URLs enviadas hoje (normal se < 13:30 BRT, erro se tarde)")
+    except Exception as e:
+        warn("indexing_progress", str(e))
+
+    # Grupos broken=true e hidden=false — visíveis no site
+    try:
+        if SUPABASE_MGMT:
+            result = mgmt_query(
+                "SELECT COUNT(*)::int AS cnt FROM public.groups "
+                "WHERE broken = true AND (hidden IS NULL OR hidden = false)"
+            )
+            broken_count = result[0]["cnt"] if result else 0
+        else:
+            rows = sb_get("groups", "?select=id&broken=eq.true&hidden=not.is.true&limit=500")
+            broken_count = len(rows)
+
+        if broken_count == 0:
+            ok("Grupos broken", "0 grupos quebrados visiveis no site")
+        else:
+            warn("Grupos broken",
+                 f"{broken_count} grupo(s) com broken=true e hidden=false (visiveis para usuarios)",
+                 critical=False)
+    except Exception as e:
+        warn("Grupos broken", str(e))
+
 # ── 6. Canonicals e redirect www ─────────────────────────────────────────────
 
 def check_canonicals():
@@ -595,7 +645,55 @@ def check_index_coverage():
         ok("Index Coverage",
            f"{len(indexed)} indexadas · {len(unknown)} desconhecidas (novas) · 0 com problema")
 
-# ── 9. Email ──────────────────────────────────────────────────────────────────
+# ── 9. GitHub Actions — status dos últimos runs ──────────────────────────────
+
+def check_github_actions():
+    print("\n[9] GitHub Actions")
+
+    if not GITHUB_TOKEN:
+        warn("GH Actions", "GITHUB_TOKEN ausente — adicione ao workflow env: GITHUB_TOKEN: ${{ github.token }}")
+        return
+
+    gh = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+    workflows = {
+        "seo_cache.yml":           "SEO Cache Update",
+        "master_health_check.yml": "Master Health Check",
+    }
+    for filename, label in workflows.items():
+        try:
+            r = requests.get(
+                f"https://api.github.com/repos/{GITHUB_REPO}/actions/workflows/{filename}/runs",
+                params={"per_page": 1},
+                headers=gh, timeout=15,
+            )
+            if r.status_code == 404:
+                warn(f"GH {label}", "Workflow nao encontrado"); continue
+            if r.status_code != 200:
+                warn(f"GH {label}", f"API HTTP {r.status_code}"); continue
+
+            runs = r.json().get("workflow_runs", [])
+            if not runs:
+                warn(f"GH {label}", "Sem execucoes registradas"); continue
+
+            run        = runs[0]
+            conclusion = run.get("conclusion")   # success | failure | cancelled | skipped
+            status     = run.get("status")       # completed | in_progress | queued
+            created    = run.get("created_at", "")[:16].replace("T", " ")
+
+            if conclusion == "success":
+                ok(f"GH {label}", f"OK — ultimo run: success ({created} UTC)")
+            elif conclusion == "failure":
+                fail(f"GH {label}",
+                     f"Ultimo run FALHOU ({created} UTC) — dados podem estar desatualizados",
+                     critical=True)
+            elif status in ("in_progress", "queued"):
+                warn(f"GH {label}", f"Em andamento ({created} UTC)")
+            else:
+                warn(f"GH {label}", f"conclusion={conclusion} status={status} ({created} UTC)")
+        except Exception as e:
+            warn(f"GH {label}", f"{type(e).__name__}: {e}")
+
+# ── 10. Email ─────────────────────────────────────────────────────────────────
 
 def send_report():
     has_critical = any(c.status == "fail" and c.critical for c in _results)
@@ -736,6 +834,7 @@ def main():
     check_canonicals()
     check_rpcs()
     check_index_coverage()
+    check_github_actions()
     save_result()   # persiste no Supabase antes do email
     send_report()
 
