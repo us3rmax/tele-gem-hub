@@ -24,19 +24,15 @@ function getPlaceholderBg(category: string) {
   return categoryColors[category] || "from-gray-500 to-gray-700";
 }
 
+import { Link } from "react-router-dom";
+
 const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boolean;}) => {
-  const navigate = useNavigate();
   const hasThumbnail = !!grupo.thumbnail_url;
 
-  const handleCardClick = () => {
-    navigate(groupPath(grupo));
-  };
-
   return (
-    <div
-      onClick={handleCardClick}
+    <Link
+      to={groupPath(grupo)}
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
-
       {/* Image / Placeholder */}
       <div className="relative h-32 overflow-hidden sm:h-36">
         {hasThumbnail ?
@@ -47,14 +43,11 @@ const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boo
           height={144}
           className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
           loading="lazy" /> :
-
-
         <div className={`flex h-full w-full items-center justify-center bg-gradient-to-br ${getPlaceholderBg(grupo.category)} transition-transform duration-500 group-hover:scale-110`}>
             <span className="text-3xl font-bold text-white/80">{grupo.name.charAt(0)}</span>
           </div>
         }
         
-
         {/* Badges */}
         {!hideBadges &&
         <div className="absolute left-2 top-2 flex gap-1.5">
@@ -65,32 +58,25 @@ const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boo
           }
           </div>
         }
-
         
       </div>
-
       {/* Content */}
       <div className="p-3 sm:p-4">
         <h3 className="line-clamp-1 text-sm font-semibold text-card-foreground">{grupo.name}</h3>
-
         <span className="mt-1.5 inline-block rounded-full bg-secondary px-2.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
           {grupo.category}
         </span>
-
         <div className="mt-3 flex items-center justify-between">
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             👥 {formatMembers(grupo.member_count)}
           </span>
-
           <span
             className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90">
-
             Entrar <Send className="h-3 w-3 bg-primary" />
           </span>
         </div>
       </div>
-    </div>);
-
+    </Link>);
 };
 
 export default GroupCard;
