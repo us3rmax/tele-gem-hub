@@ -38,18 +38,18 @@ const Index = () => {
         title="Canais Telegram 18+ | Canais18 - Putaria, Porno, Grupos Adultos"
         description="Encontre os melhores canais telegram 18+. Putaria, porno, novinhas, amadoras, vazados e mais. 151+ canais verificados e atualizados diariamente. Entre agora!"
         keywords="canais 18, canais telegram 18, telegram adulto, canais putaria telegram, canais porno telegram, telegram 18+"
-        canonicalUrl="https://canais18.com/"
+        canonicalUrl="https://www.canais18.com/"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "Canais18",
           alternateName: "Canais Telegram 18+",
-          url: "https://canais18.com",
+          url: "https://www.canais18.com",
           description: "Diretório de canais telegram 18+ verificados",
           inLanguage: "pt-BR",
           potentialAction: {
             "@type": "SearchAction",
-            target: "https://canais18.com/?search={search_term_string}",
+            target: "https://www.canais18.com/?search={search_term_string}",
             "query-input": "required name=search_term_string",
           },
         }}
