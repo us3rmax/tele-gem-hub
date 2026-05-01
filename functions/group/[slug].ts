@@ -115,7 +115,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     <script type="application/ld+json">${jsonLd}</script>`;
 
   const googleBotContent = `
-  <div id="ssg-content" style="display:none" aria-hidden="true">
+  <div id="ssg-content">
     <h1>${escapeHtml(grupo.name)}</h1>
     <p>${escapeHtml(seoDescription)}</p>
     <p>Categoria: ${escapeHtml(grupo.category)}</p>
