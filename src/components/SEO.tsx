@@ -10,7 +10,7 @@ interface SEOProps {
   jsonLd?: Record<string, unknown>;
 }
 
-const SITE_URL = "https://canais18.com";
+const SITE_URL = "https://www.canais18.com";
 
 const SEO = ({
   title,
