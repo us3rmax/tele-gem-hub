@@ -104,7 +104,7 @@ const GroupDetail = () => {
           "@type": "ItemPage",
           name: `${grupo.name} - Canal Telegram 18+`,
           description: seoDescription,
-          url: `https://canais18.com${groupPath(grupo)}`,
+          url: `https://www.canais18.com${groupPath(grupo)}`,
           image: grupo.thumbnail_url || undefined,
           datePublished: grupo.created_at,
           dateModified: grupo.created_at,
@@ -118,15 +118,15 @@ const GroupDetail = () => {
           breadcrumb: {
             "@type": "BreadcrumbList",
             itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Canais18", item: "https://canais18.com" },
-              { "@type": "ListItem", position: 2, name: grupo.category, item: `https://canais18.com/?category=${encodeURIComponent(grupo.category)}` },
-              { "@type": "ListItem", position: 3, name: grupo.name, item: `https://canais18.com${groupPath(grupo)}` },
+              { "@type": "ListItem", position: 1, name: "Canais18", item: "https://www.canais18.com" },
+              { "@type": "ListItem", position: 2, name: grupo.category, item: `https://www.canais18.com/?category=${encodeURIComponent(grupo.category)}` },
+              { "@type": "ListItem", position: 3, name: grupo.name, item: `https://www.canais18.com${groupPath(grupo)}` },
             ],
           },
           publisher: {
             "@type": "Organization",
             name: "Canais18",
-            logo: { "@type": "ImageObject", url: "https://canais18.com/logo.png" },
+            logo: { "@type": "ImageObject", url: "https://www.canais18.com/logo.png" },
           },
         }}
       />
