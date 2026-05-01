@@ -1,5 +1,5 @@
+import { Link } from "react-router-dom";
 import { Star, Send } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import type { Grupo } from "@/data/mock";
 import { groupPath } from "@/lib/slug";
 
