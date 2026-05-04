@@ -672,7 +672,7 @@ export default function SEODashboard() {
               </span>
             </div>
             {botLogs.length === 0 ? (
-              <p className="text-zinc-500 text-xs">Nenhuma visita registrada ainda. O Worker loga automaticamente quando o Googlebot bater em /group/*.</p>
+              <p className="text-zinc-500 text-xs">Nenhuma visita registrada ainda. O Worker loga automaticamente quando o Googlebot visitar qualquer página do site.</p>
             ) : (
               <div className="space-y-1.5">
                 {botLogs.map(log => (
