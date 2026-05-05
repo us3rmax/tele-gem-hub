@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const BASE_URL = "https://canais18.com";
+const BASE_URL = "https://www.canais18.com";
 
 const STATIC_PAGES = [
   { path: "/", priority: "1.0", changefreq: "daily" },
