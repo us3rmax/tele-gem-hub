@@ -51,7 +51,7 @@ const CategoryPage = () => {
     fetchGroups();
   }, [category]);
 
-  const canonicalUrl = `https://canais18.com/categoria/${slug}`;
+  const canonicalUrl = `https://www.canais18.com/categoria/${slug}`;
   const seoTitle = `${category} Telegram - Canais e Grupos | Canais18`;
   const seoDescription = `Encontre os melhores canais telegram ${category.toLowerCase()}. ${grupos.length > 0 ? `${grupos.length} grupos` : "Grupos"} verificados e atualizados. Acesse grátis!`;
 
@@ -64,7 +64,7 @@ const CategoryPage = () => {
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Canais18", item: "https://canais18.com" },
+        { "@type": "ListItem", position: 1, name: "Canais18", item: "https://www.canais18.com" },
         { "@type": "ListItem", position: 2, name: category, item: canonicalUrl },
       ],
     },
