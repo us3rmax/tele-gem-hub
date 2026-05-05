@@ -34,7 +34,7 @@ const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boo
       to={groupPath(grupo)}
       className="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
       {/* Image / Placeholder */}
-      <div className="relative h-32 overflow-hidden sm:h-36">
+      <div className="relative h-48 overflow-hidden sm:h-52">
         {hasThumbnail ?
         <img
           src={grupo.thumbnail_url!}
