@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
         html: `
           <h2>Olá Admin,</h2>
           <p>Existem <strong>${count}</strong> canais aguardando aprovação no Canais18.</p>
-          <p><a href="https://canais18.com/admin">Ver grupos pendentes</a></p>
+          <p><a href="https://www.canais18.com/admin">Ver grupos pendentes</a></p>
         `,
       }),
     });

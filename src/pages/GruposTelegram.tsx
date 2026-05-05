@@ -71,13 +71,13 @@ const GruposTelegram = () => {
         title="Grupos Telegram - 151+ Canais | Canais18"
         description="Encontre os melhores grupos do Telegram. +151 canais verificados. Entre agora!"
         keywords="grupos telegram, canais telegram, grupos telegram brasil, entrar grupos telegram"
-        canonicalUrl="https://canais18.com/grupos-telegram"
+        canonicalUrl="https://www.canais18.com/grupos-telegram"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "CollectionPage",
           name: "Grupos Telegram - Canais18",
           description: "Diretório com os melhores grupos do Telegram verificados.",
-          url: "https://canais18.com/grupos-telegram",
+          url: "https://www.canais18.com/grupos-telegram",
           inLanguage: "pt-BR",
           mainEntity: {
             "@type": "ItemList",

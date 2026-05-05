@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://canais18.com/auth/login",
+      redirectTo: "https://www.canais18.com/auth/login",
     });
 
     if (error) {
