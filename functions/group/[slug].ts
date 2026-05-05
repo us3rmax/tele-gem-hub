@@ -72,7 +72,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const grupo = data?.[0];
 
   if (!grupo) {
-    return ctx.next();
+    return new Response("Not Found", { status: 404 });
   }
 
   const indexRes = await ctx.env.ASSETS.fetch(new URL("/index.html", ctx.request.url));
