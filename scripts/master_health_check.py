@@ -195,9 +195,9 @@ def check_sitemap():
     url_count = xml.count("<loc>")
     try:
         rows = sb_get("seo_config", "?select=value&key=eq.sitemap_url_count")
-        expected = url_count
+        
     except Exception:
-        expected = url_count  # aceita qualquer contagem > 0
+          # aceita qualquer contagem > 0
 
     if url_count == expected:
         ok("Sitemap contagem", f"{url_count} URLs (esperado {expected})")
