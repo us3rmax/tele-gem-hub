@@ -49,7 +49,10 @@ const Index = () => {
           inLanguage: "pt-BR",
           potentialAction: {
             "@type": "SearchAction",
-            target: "https://www.canais18.com/?search={search_term_string}",
+            target: {
+  "@type": "EntryPoint",
+  urlTemplate: "https://www.canais18.com/?search={search_term_string}",
+},
             "query-input": "required name=search_term_string",
           },
         }}
