@@ -543,8 +543,6 @@ def check_rpcs():
 
 # Estados do coverageState que indicam problema
 _PROBLEM_STATES = {
-    "Crawled - currently not indexed",
-    "Discovered - currently not indexed",
     "Excluded by 'noindex' tag",
     "Blocked by robots.txt",
     "Soft 404",
