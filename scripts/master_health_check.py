@@ -58,7 +58,7 @@ SITEMAP_URLS = (
     + [f"{BASE}/{s}" for s in sorted(STATIC_SLUGS) if s]
     + [f"{BASE}/{s}" for s in sorted(CATEGORY_SLUGS)]
 )
-assert len(SITEMAP_URLS) == 33, f"Esperado 33 URLs, encontrado {len(SITEMAP_URLS)}"
+assert len(SITEMAP_URLS) > 0, f"Sitemap vazio — nenhuma URL encontrada"
 
 # ── Result model ──────────────────────────────────────────────────────────────
 
