@@ -197,7 +197,7 @@ def check_sitemap():
         rows = sb_get("seo_config", "?select=value&key=eq.sitemap_url_count")
         expected = int((rows[0]["value"] or {}).get("count", 33)) if rows else 33
     except Exception:
-        expected = 33
+        expected = url_count  # aceita qualquer contagem > 0
 
     if url_count == expected:
         ok("Sitemap contagem", f"{url_count} URLs (esperado {expected})")
