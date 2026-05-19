@@ -33,8 +33,7 @@ const GroupDetail = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sort, setSort] = useState("recentes");
 
-  const groupId = slug ? extractIdFromSlug(slug) : undefined;
-  const { data: grupo, isLoading: loading, isError } = useGroupDetail(groupId);
+  const { data: grupo, isLoading: loading, isError } = useGroupDetail(slug);
   const { data: related = [] } = useRelatedGroups(grupo?.category, grupo?.id);
 
   // Increment views (fire-and-forget)
