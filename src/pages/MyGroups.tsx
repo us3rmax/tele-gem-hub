@@ -82,7 +82,7 @@ const MyGroups = () => {
     // Fetch groups submitted by user (via submitted_by column)
     const { data: directGroups } = await supabase
       .from("groups")
-      .select("id, name, description, category, telegram_link, thumbnail_url, views, clicks_count, is_premium, is_verified, created_at")
+      .select("id, name, description, category, telegram_link, thumbnail_url, views, clicks_count, is_premium, is_verified, created_at, slug")
       .eq("submitted_by", user.id);
 
     // Also fetch from approved submissions to find groups by telegram_link
@@ -102,7 +102,7 @@ const MyGroups = () => {
       if (missingLinks.length > 0) {
         const { data: extraGroups } = await supabase
           .from("groups")
-          .select("id, name, description, category, telegram_link, thumbnail_url, views, clicks_count, is_premium, is_verified, created_at")
+          .select("id, name, description, category, telegram_link, thumbnail_url, views, clicks_count, is_premium, is_verified, created_at, slug")
           .in("telegram_link", missingLinks);
 
         if (extraGroups) {
