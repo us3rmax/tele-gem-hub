@@ -9,6 +9,7 @@ export interface Grupo {
   is_premium: boolean;
   is_verified: boolean;
   is_pinned?: boolean;
+  slug: string;
   views?: number;
   clicks_count?: number;
   source?: string;
