@@ -31,10 +31,11 @@ function generateSlug(name: string): string {
   return slug;
 }
 
-function groupPath(grupo: { id: string; name: string }): string {
-  const slug = generateSlug(grupo.name);
+function groupPath(grupo: { id: string; name: string; slug?: string }): string {
+  if (grupo.slug) return `/group/${grupo.slug}`;
+  const s = generateSlug(grupo.name);
   const compactId = grupo.id.replace(/-/g, "");
-  return `/group/${slug}-${compactId}`;
+  return `/group/${s}-${compactId}`;
 }
 
 function escapeHtml(str: string): string {
