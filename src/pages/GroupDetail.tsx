@@ -186,7 +186,7 @@ const GroupDetail = () => {
               </div>
             )}
             
-              href={grupo.telegram_link}
+              <a href={grupo.telegram_link}
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-14 w-full max-w-md items-center justify-center gap-2 rounded-lg bg-primary text-base font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90"
