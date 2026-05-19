@@ -111,23 +111,12 @@ const App = () => (
                     <Route path="/vazados-telegram" element={<CategoryLanding />} />
                     <Route path="/onlyfans-telegram" element={<CategoryLanding />} />
                     <Route path="/canal-de-putaria" element={<CategoryLanding />} />
+                    <Route path="/putaria-telegram" element={<CategoryLanding />} />
                     <Route path="/2257" element={<Usc2257 />} />
                     <Route path="/removal" element={<Removal />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/" element={<Index />} />
                     <Route path="/grupos-telegram" element={<GruposTelegram />} />
-
-                    {/* Landing pages SEO — keywords de alto volume */}
-                    <Route path="/telegram-porno" element={<CategoryLanding />} />
-                    <Route path="/telegram-xxx" element={<CategoryLanding />} />
-                    <Route path="/putaria-telegram" element={<CategoryLanding />} />
-                    <Route path="/telegram-putaria" element={<CategoryLanding />} />
-                    <Route path="/grupos-putaria-telegram" element={<CategoryLanding />} />
-                    <Route path="/grupos-telegram-18" element={<CategoryLanding />} />
-                    <Route path="/novinhas-telegram" element={<CategoryLanding />} />
-                    <Route path="/vazados-telegram" element={<CategoryLanding />} />
-                    <Route path="/onlyfans-telegram" element={<CategoryLanding />} />
-                    <Route path="/canal-de-putaria" element={<CategoryLanding />} />
 
                     <Route path="/grupos/:category" element={<CategoryLanding />} />
                     <Route path="/categoria/:slug" element={<CategoryPage />} />
@@ -163,7 +152,6 @@ const App = () => (
                     <Route path="/grupo-telegram-proibido" element={<CategoryLanding />} />
                     <Route path="/sexo-telegram" element={<CategoryLanding />} />
                     <Route path="/telegram-onlyfans" element={<CategoryLanding />} />
-                    <Route path="/grupos-telegram" element={<CategoryLanding />} />
                     <Route path="/privacy-gratis" element={<CategoryLanding />} />
                     <Route path="/erome-privacy" element={<CategoryLanding />} />
                     <Route path="/privacy-vazados" element={<CategoryLanding />} />

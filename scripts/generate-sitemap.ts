@@ -13,7 +13,7 @@ const STATIC_PAGES = [
   { path: "/submit", priority: "0.6", changefreq: "monthly", lastmod: "2026-02-20" },
   { path: "/privacy", priority: "0.3", changefreq: "monthly", lastmod: "2026-02-20" },
   { path: "/terms", priority: "0.3", changefreq: "monthly", lastmod: "2026-02-20" },
-  { path: "/contact", priority: "0.3", changefreq: "monthly", lastmod: "2026-02-20" },
+  { path: "/contato", priority: "0.3", changefreq: "monthly", lastmod: "2026-02-20" },
 ];
 
 function generateSlug(name: string): string {
