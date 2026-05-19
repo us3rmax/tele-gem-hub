@@ -99,7 +99,7 @@ export function useGroupDetail(slugParam: string | undefined) {
     queryFn: async () => {
       if (!slugParam) throw new Error("No slug");
       
-      // Tenta buscar pelo slug curto primeiro
+      // Tenta buscar pelo slug exato primeiro
       const { data: bySlug } = await supabase
         .from("groups")
         .select("*")
@@ -107,18 +107,29 @@ export function useGroupDetail(slugParam: string | undefined) {
         .maybeSingle();
       
       if (bySlug) return bySlug as Grupo;
-      
-      // Fallback: busca pelo ID longo (URLs antigas)
-      const match = slugParam.match(/([a-f0-9]{32})$/);
-      if (match) {
-        const hex = match[1];
+
+      // Tenta extrair o ID curto (8 chars hex) do final do slug
+      const shortMatch = slugParam.match(/([a-f0-9]{8})$/);
+      if (shortMatch) {
+        const { data: byShortId } = await supabase
+          .from("groups")
+          .select("*")
+          .ilike("slug", `%-${shortMatch[1]}`)
+          .maybeSingle();
+        if (byShortId) return byShortId as Grupo;
+      }
+
+      // Fallback: extrai UUID completo (32 chars) para URLs antigas
+      const fullMatch = slugParam.match(/([a-f0-9]{32})$/);
+      if (fullMatch) {
+        const hex = fullMatch[1];
         const uuid = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
         const { data: byId } = await supabase
           .from("groups")
           .select("*")
           .eq("id", uuid)
           .maybeSingle();
-        if (byId) return byId as Grupo;
+        if (byId) return byId as Grupo | null;
       }
       
       return null;
