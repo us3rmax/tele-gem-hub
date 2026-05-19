@@ -86,7 +86,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     return new Response("Not Found", { status: 404 });
   }
 
-  const indexRes = await ctx.env.ASSETS.fetch(new URL("/index.html", ctx.request.url));
+  const indexRes = await ctx.env.ASSETS.fetch(new Request("https://dummy.com/index.html"));
   const html = await indexRes.text();
 
   const canonicalUrl = `https://www.canais18.com${groupPath(grupo)}`;
