@@ -6,6 +6,7 @@ interface Group {
   member_count: number;
   thumbnail_url: string | null;
   telegram_link: string;
+  slug?: string;
   views: number | null;
   is_premium: boolean | null;
   created_at: string;
@@ -46,6 +47,11 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function formatMembers(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
+  return n.toString();
+}
+
 export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_KEY: string }> = async (ctx) => {
   const slug = ctx.params.slug as string;
   const SUPABASE_URL = ctx.env.SUPABASE_URL;
@@ -62,26 +68,19 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     `${SUPABASE_URL}/rest/v1/groups?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`,
     { headers }
   );
-  let data: Group[] = await res.json();
+  let rows: Group[] = await res.json();
 
   // Fallback: busca pelo ID longo (URLs antigas já indexadas)
-  if (!data?.[0]) {
+  if (!rows?.[0]) {
     const groupId = extractIdFromSlug(slug);
     res = await fetch(
       `${SUPABASE_URL}/rest/v1/groups?id=eq.${groupId}&select=*&limit=1`,
       { headers }
     );
-    data = await res.json();
+    rows = await res.json();
   }
 
-  const grupo = data?.[0];
-
-  if (!grupo) {
-    return new Response("Not Found", { status: 404 });
-  }
-
-  const data: Group[] = await res.json();
-  const grupo = data?.[0];
+  const grupo = rows?.[0];
 
   if (!grupo) {
     return new Response("Not Found", { status: 404 });
