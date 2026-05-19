@@ -484,7 +484,7 @@ const AdminDashboard = () => {
   const openEditGroupModal = async (groupId: string) => {
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified")
+      .select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified, slug")
       .eq("id", groupId)
       .maybeSingle();
     if (error || !data) {
@@ -621,7 +621,7 @@ const AdminDashboard = () => {
       groupIds.length > 0
         ? supabase
             .from("groups")
-            .select("id, name, description, category, telegram_link, thumbnail_url")
+            .select("id, name, description, category, telegram_link, thumbnail_url, slug")
             .in("id", groupIds)
         : Promise.resolve({ data: [] }),
       userIds.length > 0
