@@ -126,12 +126,12 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     <script type="application/ld+json">${jsonLd}</script>`;
 
   const googleBotContent = `
-  <div id="ssg-content">
-    <h1>${escapeHtml(grupo.name)}</h1>
-    <p>${escapeHtml(seoDescription)}</p>
-    <p>Categoria: ${escapeHtml(grupo.category)}</p>
-    <p>Membros: ${formatMembers(grupo.member_count)}</p>
-  </div>`;
+<div id="ssg-content" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
+  <h1>${escapeHtml(grupo.name)}</h1>
+  <p>${escapeHtml(seoDescription)}</p>
+  <p>Categoria: ${escapeHtml(grupo.category)}</p>
+  <p>Membros: ${formatMembers(grupo.member_count)}</p>
+</div>`;
 
   const injectedHtml = html
     .replace(/<title>.*?<\/title>/i, "")
