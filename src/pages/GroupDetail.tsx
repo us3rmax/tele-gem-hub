@@ -9,7 +9,6 @@ import BannerAd from "@/components/BannerAd";
 import GroupCard from "@/components/GroupCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
-import { extractIdFromSlug } from "@/lib/slug";
 import { useGroupDetail, useRelatedGroups } from "@/hooks/use-groups";
 
 function formatMembers(n: number) {
@@ -36,7 +35,6 @@ const GroupDetail = () => {
   const { data: grupo, isLoading: loading, isError } = useGroupDetail(slug);
   const { data: related = [] } = useRelatedGroups(grupo?.category, grupo?.id);
 
-  // Increment views (fire-and-forget)
   useEffect(() => {
     if (grupo?.id) {
       supabase.from("groups").update({ views: (grupo.views || 0) + 1 }).eq("id", grupo.id).then(() => {});
@@ -146,7 +144,7 @@ const GroupDetail = () => {
         <BannerAd position="top" />
 
         <section className="space-y-2 sm:space-y-4">
-        <div className="mx-auto w-full max-w-[140px] sm:max-w-[400px]">
+          <div className="mx-auto w-full max-w-[140px] sm:max-w-[400px]">
             <div className="relative aspect-square overflow-hidden rounded-xl border border-border">
               {grupo.thumbnail_url ? (
                 <img
@@ -187,7 +185,7 @@ const GroupDetail = () => {
                 </span>
               </div>
             )}
-            <a
+            
               href={grupo.telegram_link}
               target="_blank"
               rel="noopener noreferrer"
