@@ -45,28 +45,39 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function formatMembers(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k`;
-  return n.toString();
-}
-
 export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_KEY: string }> = async (ctx) => {
   const slug = ctx.params.slug as string;
-  const groupId = extractIdFromSlug(slug);
-
   const SUPABASE_URL = ctx.env.SUPABASE_URL;
   const SUPABASE_ANON_KEY = ctx.env.SUPABASE_ANON_KEY;
 
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/groups?id=eq.${groupId}&select=*&limit=1`,
-    {
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-      },
-    }
+  const headers = {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
+  };
+
+  // Tenta buscar pelo slug curto primeiro
+  let res = await fetch(
+    `${SUPABASE_URL}/rest/v1/groups?slug=eq.${encodeURIComponent(slug)}&select=*&limit=1`,
+    { headers }
   );
+  let data: Group[] = await res.json();
+
+  // Fallback: busca pelo ID longo (URLs antigas já indexadas)
+  if (!data?.[0]) {
+    const groupId = extractIdFromSlug(slug);
+    res = await fetch(
+      `${SUPABASE_URL}/rest/v1/groups?id=eq.${groupId}&select=*&limit=1`,
+      { headers }
+    );
+    data = await res.json();
+  }
+
+  const grupo = data?.[0];
+
+  if (!grupo) {
+    return new Response("Not Found", { status: 404 });
+  }
 
   const data: Group[] = await res.json();
   const grupo = data?.[0];
