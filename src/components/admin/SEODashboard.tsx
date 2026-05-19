@@ -72,6 +72,13 @@ interface HealthCheckResult {
   warnings:   { name: string; message: string }[];
 }
 
+interface CloudflareStats {
+  googlebot_visits_24h: number;
+  errors_404_24h: number;
+  cache_hit_rate: number;
+  updated_at: string;
+}
+
 type Period = "7d" | "28d" | "90d";
 type Tab    = "analytics" | "automacoes";
 
@@ -232,6 +239,7 @@ export default function SEODashboard() {
   const [sitemapCount, setSitemapCount] = useState<number>(33);
   const [botLogs,      setBotLogs]      = useState<BotLog[]>([]);
   const [hcResult,     setHcResult]     = useState<HealthCheckResult | null>(null);
+  const [cfStats,      setCfStats]      = useState<CloudflareStats | null>(null);
   const [loading,      setLoading]      = useState(true);
   const { subTab: _seoSubTab } = useParams<{ subTab?: string }>();
   const tab = (_seoSubTab === "automacoes" ? "automacoes" : "analytics") as Tab;
@@ -243,7 +251,7 @@ export default function SEODashboard() {
     (async () => {
       setLoading(true);
       try {
-        const [cacheRes, healthRes, idxRes, cronRes, gscRes, sitemapRes, botRes, hcRes] = await Promise.all([
+        const [cacheRes, healthRes, idxRes, cronRes, gscRes, sitemapRes, botRes, hcRes, cfRes] = await Promise.all([
           supabase.from("seo_cache").select("data, updated_at").eq("key", "dashboard").single(),
           supabase.from("seo_health").select("*").order("task"),
           supabase.from("indexing_progress").select("sent_count, date").order("date", { ascending: false }).limit(10),
@@ -252,6 +260,7 @@ export default function SEODashboard() {
           supabase.from("seo_config").select("value").eq("key", "sitemap_url_count").single(),
           supabase.from("bot_logs").select("*").order("created_at", { ascending: false }).limit(10),
           supabase.from("seo_cache").select("data").eq("key", "health_check_result").single(),
+          supabase.from("seo_cache").select("data").eq("key", "cloudflare_stats").single(),
         ]);
         if (cacheRes.data) {
           setData(cacheRes.data.data as unknown as CacheData);
@@ -284,6 +293,7 @@ export default function SEODashboard() {
         }
         if (botRes?.data) setBotLogs(botRes.data as BotLog[]);
         if (hcRes?.data?.data) setHcResult(hcRes.data.data as unknown as HealthCheckResult);
+        if (cfRes?.data?.data) setCfStats(cfRes.data.data as unknown as CloudflareStats);
       } catch (e) {
         console.error("SEODashboard load error:", e);
       } finally {
@@ -612,6 +622,41 @@ export default function SEODashboard() {
               </div>
             );
           })()}
+
+          {/* Cloudflare SEO Health */}
+          {cfStats && (
+            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-white">Saúde SEO (Cloudflare)</h3>
+                <span className="text-xs text-zinc-500">Atualizado {fmtRel(cfStats.updated_at)}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-zinc-800 rounded p-3 flex flex-col gap-1">
+                  <div className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Googlebot (24h)</div>
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-emerald-400" />
+                    <div className="text-2xl font-bold text-white">{cfStats.googlebot_visits_24h}</div>
+                  </div>
+                </div>
+                <div className="bg-zinc-800 rounded p-3 flex flex-col gap-1">
+                  <div className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Erros 404 (24h)</div>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className={`h-4 w-4 ${cfStats.errors_404_24h > 0 ? "text-red-400" : "text-zinc-500"}`} />
+                    <div className={`text-2xl font-bold ${cfStats.errors_404_24h > 0 ? "text-red-400" : "text-white"}`}>
+                      {cfStats.errors_404_24h}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-zinc-800 rounded p-3 flex flex-col gap-1">
+                  <div className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Taxa de Cache</div>
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-pink-500" />
+                    <div className="text-2xl font-bold text-white">{cfStats.cache_hit_rate}%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cobertura de Indice GSC */}
           {gscHealth && (
