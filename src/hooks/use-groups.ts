@@ -93,16 +93,37 @@ export function useGroups(params: UseGroupsParams) {
   });
 }
 
-export function useGroupDetail(groupId: string | undefined) {
+export function useGroupDetail(slugParam: string | undefined) {
   return useQuery({
-    queryKey: ["group", groupId],
+    queryKey: ["group", slugParam],
     queryFn: async () => {
-      if (!groupId) throw new Error("No ID");
-      const { data, error } = await supabase.from("groups").select("*").eq("id", groupId).maybeSingle();
-      if (error) throw error;
-      return data as Grupo | null;
+      if (!slugParam) throw new Error("No slug");
+      
+      // Tenta buscar pelo slug curto primeiro
+      const { data: bySlug } = await supabase
+        .from("groups")
+        .select("*")
+        .eq("slug", slugParam)
+        .maybeSingle();
+      
+      if (bySlug) return bySlug as Grupo;
+      
+      // Fallback: busca pelo ID longo (URLs antigas)
+      const match = slugParam.match(/([a-f0-9]{32})$/);
+      if (match) {
+        const hex = match[1];
+        const uuid = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+        const { data: byId } = await supabase
+          .from("groups")
+          .select("*")
+          .eq("id", uuid)
+          .maybeSingle();
+        if (byId) return byId as Grupo;
+      }
+      
+      return null;
     },
-    enabled: !!groupId,
+    enabled: !!slugParam,
     staleTime: 2 * 60 * 1000,
   });
 }
