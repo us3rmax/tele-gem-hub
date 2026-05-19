@@ -16,10 +16,11 @@ export function generateSlug(name: string): string {
  * Create a group URL path with slug and full ID.
  * Format: /group/{slug}-{id} where id has hyphens removed
  */
-export function groupPath(grupo: { id: string; name: string }): string {
-  const slug = generateSlug(grupo.name);
+export function groupPath(grupo: { id: string; name: string; slug?: string | null }): string {
+  if (grupo.slug) return `/group/${grupo.slug}`;
+  const s = generateSlug(grupo.name);
   const compactId = grupo.id.replace(/-/g, '');
-  return `/group/${slug}-${compactId}`;
+  return `/group/${s}-${compactId}`;
 }
 
 /**
