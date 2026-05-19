@@ -22,10 +22,30 @@ const SEO_TO_DB_MAP: Record<string, string> = {
   "canal-de-putaria": "putaria",
   "grupo-putaria-telegram": "putaria",
   "canais-putaria-telegram": "putaria",
+  "putaria-brasileira": "putaria",
+  "putaria-brasileira-telegram": "putaria",
+  "grupos-de-putaria-telegram": "putaria",
+  "grupo-de-putaria-telegram": "putaria",
+  "xvideos-putaria": "putaria",
+  "video-porno-telegram": "putaria",
+  "porno-gratis-telegram": "putaria",
+  "xvideos-porno-telegram": "putaria",
+  "telegram-sexo": "putaria",
+  "sexo-telegram": "putaria",
+  "video-sexo-telegram": "putaria",
+  "videos-eroticos-telegram": "putaria",
+  "chat-sexo-telegram": "putaria",
   "grupos-telegram-18": "geral",
   "canais-telegram-18": "geral",
   "telegram-adulto": "geral",
   "grupos-telegram-geral": "geral",
+  "links-telegram": "geral",
+  "telegram-proibido": "geral",
+  "grupo-telegram-18": "geral",
+  "grupos-telegram-pode-tudo": "geral",
+  "grupos-telegram-secretos": "geral",
+  "grupos-18-telegram": "geral",
+  "grupo-telegram-proibido": "geral",
   "novinhas-telegram": "novinhas",
   "vazados-telegram": "vazados",
   "gay-telegram": "gay",
@@ -68,9 +88,15 @@ async function fetchCategoryGroups(category: string): Promise<Group[]> {
 
 function renderGroups(groups: Group[], categoryName: string): string {
   if (!groups.length) return `<p style='text-align:center;padding:40px;color:#666;'>Nenhum grupo encontrado na categoria ${categoryName}.</p>`;
+  
+  // Trava: Filtrar grupos que não têm nome ou link do telegram (mínimo necessário)
+  const validGroups = groups.filter(g => g.name && g.telegram_link);
+  
+  if (!validGroups.length) return `<p style='text-align:center;padding:40px;color:#666;'>Nenhum conteúdo válido disponível no momento.</p>`;
+
   return `
   <div class="groups-grid">
-    ${groups.map((g) => {
+    ${validGroups.map((g) => {
       const groupSlug = g.slug || g.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
       const thumb = g.thumbnail_url 
         ? `<img src="${g.thumbnail_url}" alt="${g.name}" loading="lazy" class="card-img">`
@@ -92,8 +118,20 @@ serve(async (req) => {
   const url = new URL(req.url);
   const pathPart = url.pathname.split("/").filter(p => p && !["functions", "v1", "landing-pages"].includes(p)).pop();
   const pageSlug = url.searchParams.get("page") || pathPart || "telegram-putaria";
-  const dbCategory = SEO_TO_DB_MAP[pageSlug] || "putaria";
+  
+  // Se o slug não existir no mapeamento, retornamos 404 para evitar páginas vazias ou lixo
+  if (!SEO_TO_DB_MAP[pageSlug]) {
+    return new Response("Página não encontrada", { status: 404 });
+  }
+
+  const dbCategory = SEO_TO_DB_MAP[pageSlug];
   const groups = await fetchCategoryGroups(dbCategory);
+  
+  // Se a query retornar conteúdo vazio, podemos optar por não exibir a página ou mostrar erro
+  if (!groups || groups.length === 0) {
+     return new Response("Conteúdo temporariamente indisponível", { status: 404 });
+  }
+
   const seo = SEO_DATA[pageSlug] || {
     h1: `${pageSlug.replace(/-/g, " ").toUpperCase()}: Grupos Ativos`,
     desc: `Acesse os melhores grupos de ${pageSlug.replace(/-/g, " ")} no Telegram. Links verificados no canais18.com.`
