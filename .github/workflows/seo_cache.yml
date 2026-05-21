@@ -46,6 +46,12 @@ jobs:
           GSC_CACHE_FILE: /tmp/gsc_health_cache.json
         run: python scripts/gsc_health_monitor.py
 
+      - name: Run update_cloudflare_seo_cache.py
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python scripts/update_cloudflare_seo_cache.py
+
       - name: Cleanup credentials
         if: always()
         run: rm -f /tmp/gcp_credentials.json
