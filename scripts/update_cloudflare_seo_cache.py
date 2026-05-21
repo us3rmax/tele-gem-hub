@@ -55,16 +55,29 @@ def fetch_cf_data():
     try:
         # Fetch 1d stats
         resp1 = requests.post(url, headers=headers, json={"query": query_1d, "variables": {"zoneTag": ZONE_ID, "date": yesterday_date}})
-        zones = resp1.json().get("data", {}).get("viewer", {}).get("zones", []); print(f"Zones found: {len(zones)}"); stats_1d = zones[0] if zones else None["httpRequests1dGroups"][0]["sum"]
-        requests_total = stats_1d["requests"]
-        cached_total = stats_1d["cachedRequests"]
+        data1 = resp1.json()
+        zones1 = data1.get("data", {}).get("viewer", {}).get("zones", [])
+        
+        requests_total = 0
+        cached_total = 0
+        if zones1 and zones1[0].get("httpRequests1dGroups"):
+            stats_1d = zones1[0]["httpRequests1dGroups"][0]["sum"]
+            requests_total = stats_1d.get("requests", 0)
+            cached_total = stats_1d.get("cachedRequests", 0)
+        
         cache_hit_rate = (cached_total / requests_total * 100) if requests_total > 0 else 0
         
         # Fetch adaptive stats
         resp2 = requests.post(url, headers=headers, json={"query": query_adaptive, "variables": {"zoneTag": ZONE_ID, "datetime": dt_yesterday}})
-        a_zone = resp2.json()["data"]["viewer"]["zones"][0]
-        googlebot_count = a_zone["googlebot"][0]["count"] if a_zone["googlebot"] else 0
-        errors404_count = a_zone["errors404"][0]["count"] if a_zone["errors404"] else 0
+        data2 = resp2.json()
+        zones2 = data2.get("data", {}).get("viewer", {}).get("zones", [])
+        
+        googlebot_count = 0
+        errors404_count = 0
+        if zones2:
+            a_zone = zones2[0]
+            googlebot_count = a_zone["googlebot"][0]["count"] if a_zone.get("googlebot") else 0
+            errors404_count = a_zone["errors404"][0]["count"] if a_zone.get("errors404") else 0
         
         return {
             "googlebot_visits_24h": googlebot_count,
@@ -74,8 +87,8 @@ def fetch_cf_data():
         }
     except Exception as e:
         print(f"Error fetching CF data: {e}")
-        if 'resp1' in locals(): print(f"Response 1: {resp1.text}")
-        if 'resp2' in locals(): print(f"Response 2: {resp2.text}")
+        if 'data1' in locals(): print(f"Response 1: {json.dumps(data1)}")
+        if 'data2' in locals(): print(f"Response 2: {json.dumps(data2)}")
         return None
 
 def update_supabase(data):
@@ -83,7 +96,7 @@ def update_supabase(data):
         print("SUPABASE_SERVICE_ROLE_KEY not found")
         return
     
-    url = f"{SUPABASE_URL}/rest/v1/seo_cache?key=eq.cloudflare_stats"
+    url = f"{SUPABASE_URL}/rest/v1/seo_cache"
     headers = {
         "apikey": SUPABASE_SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
@@ -98,7 +111,7 @@ def update_supabase(data):
     }
     
     # Upsert
-    resp = requests.post(f"{SUPABASE_URL}/rest/v1/seo_cache", headers=headers, json=payload, params={"on_conflict": "key"})
+    resp = requests.post(url, headers=headers, json=payload, params={"on_conflict": "key"})
     if resp.status_code in [200, 201, 204]:
         print("Supabase cache updated successfully")
     else:
