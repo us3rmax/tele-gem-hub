@@ -16,7 +16,7 @@ def fetch_cf_data():
         "Content-Type": "application/json"
     }
     
-    # 1. Cache Stats (1d)
+    # 1. Cache Stats (1d) - Usando data fixa (ontem)
     yesterday_date = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
     query_1d = """
     query ($zoneTag: String!, $date: Date!) {
@@ -34,7 +34,8 @@ def fetch_cf_data():
     """
     
     # 2. Adaptive Stats (Googlebot & 404)
-    dt_yesterday = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Ajuste: Usar 23h para evitar erro de "wider than 1d" devido a milissegundos
+    dt_yesterday = (datetime.utcnow() - timedelta(hours=23, minutes=50)).strftime("%Y-%m-%dT%H:%M:%SZ")
     query_adaptive = """
     query ($zoneTag: String!, $datetime: datetime!) {
       viewer {
