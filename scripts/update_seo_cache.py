@@ -151,6 +151,19 @@ sb.table("seo_cache").upsert(
     on_conflict="key"
 ).execute()
 
+# Reporte de saúde
+now_iso = datetime.now().isoformat()
+sb.table("seo_health").upsert(
+    {
+        "task": "daily-tasks",
+        "last_run": now_iso,
+        "last_success": now_iso,
+        "status": "ok",
+        "last_error": None
+    },
+    on_conflict="task"
+).execute()
+
 print(f"\nCache salvo em seo_cache (key=dashboard)")
 print(f"  7d:  {data_7d['totals']['impressions']} impressões, {data_7d['totals']['clicks']} cliques")
 print(f"  28d: {data_28d['totals']['impressions']} impressões, {data_28d['totals']['clicks']} cliques")

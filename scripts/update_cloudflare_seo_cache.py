@@ -115,6 +115,16 @@ def update_supabase(data):
     resp = requests.post(url, headers=headers, json=payload, params={"on_conflict": "key"})
     if resp.status_code in [200, 201, 204]:
         print("Supabase cache updated successfully")
+        
+        # Reporte de saúde (opcional, mas bom para monitorar)
+        health_payload = {
+            "task": "cloudflare-stats",
+            "last_run": datetime.utcnow().isoformat(),
+            "last_success": datetime.utcnow().isoformat(),
+            "status": "ok",
+            "last_error": None
+        }
+        requests.post(f"{SUPABASE_URL}/rest/v1/seo_health", headers=headers, json=health_payload, params={"on_conflict": "task"})
     else:
         print(f"Error updating Supabase: {resp.status_code} - {resp.text}")
 

@@ -307,7 +307,21 @@ def save_to_supabase(current: dict, alerts: list[str]):
         {"key": "gsc_health", "data": payload, "updated_at": "now()"},
         on_conflict="key"
     ).execute()
-    print("  Salvo em seo_cache (key=gsc_health)")
+    
+    # Reporte de saúde
+    from datetime import datetime
+    now_iso = datetime.now().isoformat()
+    sb.table("seo_health").upsert(
+        {
+            "task": "health-check",
+            "last_run": now_iso,
+            "last_success": now_iso,
+            "status": "ok",
+            "last_error": None
+        },
+        on_conflict="task"
+    ).execute()
+    print("  Salvo em seo_cache (key=gsc_health) e seo_health")
 
 
 # ── Task Scheduler ────────────────────────────────────────────────────────────
