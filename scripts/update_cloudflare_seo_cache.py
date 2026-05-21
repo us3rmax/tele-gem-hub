@@ -55,7 +55,7 @@ def fetch_cf_data():
     try:
         # Fetch 1d stats
         resp1 = requests.post(url, headers=headers, json={"query": query_1d, "variables": {"zoneTag": ZONE_ID, "date": yesterday_date}})
-        stats_1d = resp1.json()["data"]["viewer"]["zones"][0]["httpRequests1dGroups"][0]["sum"]
+        zones = resp1.json().get("data", {}).get("viewer", {}).get("zones", []); print(f"Zones found: {len(zones)}"); stats_1d = zones[0] if zones else None["httpRequests1dGroups"][0]["sum"]
         requests_total = stats_1d["requests"]
         cached_total = stats_1d["cachedRequests"]
         cache_hit_rate = (cached_total / requests_total * 100) if requests_total > 0 else 0
@@ -74,6 +74,8 @@ def fetch_cf_data():
         }
     except Exception as e:
         print(f"Error fetching CF data: {e}")
+        if 'resp1' in locals(): print(f"Response 1: {resp1.text}")
+        if 'resp2' in locals(): print(f"Response 2: {resp2.text}")
         return None
 
 def update_supabase(data):
