@@ -755,12 +755,13 @@ const AdminDashboard = () => {
     // Lista todos os arquivos category_*.jpg no bucket de uma vez
     const { data: storageFiles } = await supabase.storage.from("thumbnails").list("gruposdotelegram", { limit: 200 });
     console.log("Storage Files:", storageFiles);
-    const coverSlugs = new Set(
-      (storageFiles || []).map((f) => {
-        const match = f.name.match(/([^/]+?)(?:\.[^./]*)?$/);
-        return match ? match[1] : null;
-      }).filter(Boolean) as string[],
-    );
+    const coverSlugs = new Set<string>();
+    GROUP_CATEGORIES.forEach(categorySlug => {
+      const found = (storageFiles || []).some(f => f.name.startsWith(`${categorySlug}.jpg`) || f.name.includes(`/${categorySlug}.jpg`));
+      if (found) {
+        coverSlugs.add(categorySlug);
+      }
+    });
     console.log("Cover Slugs:", coverSlugs);
 
     const results = await Promise.all(
