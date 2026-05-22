@@ -17,6 +17,11 @@ export function generateSlug(name: string): string {
  * Format: /group/{slug}
  */
 export function groupPath(grupo: { id: string; name: string; slug: string }): string {
+  // Fallback: se o slug não existir, usa o ID para evitar link 'undefined'
+  if (!grupo.slug) {
+    const compactId = grupo.id.replace(/-/g, "");
+    return `/group/${compactId}`;
+  }
   return `/group/${grupo.slug}`;
 }
 
