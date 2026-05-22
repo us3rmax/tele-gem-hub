@@ -158,16 +158,15 @@ def main():
         print("ERRO: Não foi possível obter dados do GSC.")
         return
 
-    # Contar URLs reais no sitemap.xml para manter o dashboard dinâmico
+    # Contar URLs reais no sitemap dinâmico da produção
     sitemap_count = 0
     try:
-        sitemap_path = "/home/ubuntu/tele-gem-hub/public/sitemap.xml"
-        if os.path.exists(sitemap_path):
-            with open(sitemap_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                sitemap_count = content.count("<loc>")
+        r = requests.get("https://www.canais18.com/sitemap.xml", timeout=10)
+        if r.status_code == 200:
+            sitemap_count = r.text.count("<loc>")
+            print(f"    [+] Sitemap dinâmico lido: {sitemap_count} URLs")
     except Exception as e:
-        print(f"    [!] Erro ao contar sitemap: {e}")
+        print(f"    [!] Erro ao ler sitemap dinâmico: {e}")
 
     final_cache = {
         "updated_at": datetime.utcnow().isoformat(),
