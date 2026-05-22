@@ -2,7 +2,7 @@ name: Master Health Check
 
 on:
   schedule:
-    - cron: '0 18 * * *'   # 18h UTC = 15h BRT (depois do seo_cache às 17h)
+    - cron: '15 10 * * *'   # 10:15 UTC = 07:15 BRT (depois do seo_cache às 07h)
   workflow_dispatch:
 
 jobs:

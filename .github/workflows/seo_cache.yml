@@ -2,7 +2,7 @@ name: SEO Cache Update
 
 on:
   schedule:
-    - cron: '0 17 * * *'   # 17h UTC = 14h BRT
+    - cron: '0 10 * * *'   # 10h UTC = 07h BRT (Brasília)
   workflow_dispatch:
 
 jobs:
