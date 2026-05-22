@@ -754,9 +754,11 @@ const AdminDashboard = () => {
 
     // Lista todos os arquivos category_*.jpg no bucket de uma vez
     const { data: storageFiles } = await supabase.storage.from("thumbnails").list("gruposdotelegram", { limit: 200 });
+    console.log("Storage Files:", storageFiles);
     const coverSlugs = new Set(
       (storageFiles || []).map((f) => f.name.match(/^(.+)\.jpg$/)?.[1]).filter(Boolean) as string[],
     );
+    console.log("Cover Slugs:", coverSlugs);
 
     const results = await Promise.all(
       GROUP_CATEGORIES.map(async (slug) => {
