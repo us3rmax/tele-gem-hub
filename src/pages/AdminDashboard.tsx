@@ -753,9 +753,9 @@ const AdminDashboard = () => {
     setCategoriesLoading(true);
 
     // Lista todos os arquivos category_*.jpg no bucket de uma vez
-    const { data: storageFiles } = await supabase.storage.from("thumbnails").list("", { limit: 200 });
+    const { data: storageFiles } = await supabase.storage.from("thumbnails").list("gruposdotelegram", { limit: 200 });
     const coverSlugs = new Set(
-      (storageFiles || []).map((f) => f.name.match(/^category_(.+)\.jpg$/)?.[1]).filter(Boolean) as string[],
+      (storageFiles || []).map((f) => f.name.match(/^(.+)\.jpg$/)?.[1]).filter(Boolean) as string[],
     );
 
     const results = await Promise.all(
