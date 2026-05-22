@@ -756,7 +756,10 @@ const AdminDashboard = () => {
     const { data: storageFiles } = await supabase.storage.from("thumbnails").list("gruposdotelegram", { limit: 200 });
     console.log("Storage Files:", storageFiles);
     const coverSlugs = new Set(
-      (storageFiles || []).map((f) => f.name.replace(/\.[^/.]+$/, "")).filter(Boolean) as string[],
+      (storageFiles || []).map((f) => {
+        const match = f.name.match(/([^/]+?)(?:\.[^./]*)?$/);
+        return match ? match[1] : null;
+      }).filter(Boolean) as string[],
     );
     console.log("Cover Slugs:", coverSlugs);
 
