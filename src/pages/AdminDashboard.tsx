@@ -764,6 +764,7 @@ const AdminDashboard = () => {
         const coverUrl = coverSlugs.has(slug)
           ? `${supabase.storage.from("thumbnails").getPublicUrl(`gruposdotelegram/${slug}.jpg`).data.publicUrl}?t=${new Date().getTime()}`
           : null;
+        console.log(`Category: ${slug}, Generated Cover URL: ${coverUrl}`);
 
         // Busca thumb do grupo com mais membros + contagem
         const [topGroup, countResult] = await Promise.all([
