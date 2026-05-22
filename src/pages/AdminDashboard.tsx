@@ -810,6 +810,7 @@ const AdminDashboard = () => {
       .upload(filePath, file, { contentType: file.type, upsert: true });
 
     if (error) {
+      console.error("Erro no upload da categoria:", error);
       toast({ title: "Erro ao fazer upload", description: error.message, variant: "destructive" });
     } else {
       toast({ title: `Cover de ${CATEGORY_LABELS[slug]} atualizado!` });
