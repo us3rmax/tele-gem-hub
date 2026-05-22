@@ -762,7 +762,7 @@ const AdminDashboard = () => {
       GROUP_CATEGORIES.map(async (slug) => {
         // Se existe no bucket, monta a URL pública
         const coverUrl = coverSlugs.has(slug)
-          ? supabase.storage.from("thumbnails").getPublicUrl(`category_${slug}.jpg`).data.publicUrl
+          ? `${supabase.storage.from("thumbnails").getPublicUrl(`gruposdotelegram/${slug}.jpg`).data.publicUrl}?t=${new Date().getTime()}`
           : null;
 
         // Busca thumb do grupo com mais membros + contagem
@@ -801,7 +801,7 @@ const AdminDashboard = () => {
       return;
     }
     setCategoryUploadingSlug(slug);
-    const filePath = `category_${slug}.jpg`;
+    const filePath = `gruposdotelegram/${slug}.jpg`;
     // Remove primeiro para evitar conflito de RLS no update
     await supabase.storage.from("thumbnails").remove([filePath]);
     const { error } = await supabase.storage
@@ -819,7 +819,7 @@ const AdminDashboard = () => {
 
   const handleCategoryPhotoRemove = async (slug: string) => {
     setCategoryUploadingSlug(slug);
-    const { error } = await supabase.storage.from("thumbnails").remove([`category_${slug}.jpg`]);
+    const { error } = await supabase.storage.from("thumbnails").remove([`gruposdotelegram/${slug}.jpg`]);
 
     if (error) {
       toast({ title: "Erro ao remover foto", description: error.message, variant: "destructive" });
