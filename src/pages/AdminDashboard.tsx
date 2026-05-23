@@ -757,7 +757,10 @@ const AdminDashboard = () => {
     console.log("Storage Files:", storageFiles);
     const coverSlugs = new Set<string>();
     GROUP_CATEGORIES.forEach(categorySlug => {
-      const found = (storageFiles || []).some(f => f.name.startsWith(`${categorySlug}.jpg`) || f.name.includes(`/${categorySlug}.jpg`));
+      const found = (storageFiles || []).some(f => {
+        const fileNameWithoutExtension = f.name.replace(/\.[^/.]+$/, "");
+        return fileNameWithoutExtension === categorySlug;
+      });
       if (found) {
         coverSlugs.add(categorySlug);
       }
