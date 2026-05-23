@@ -12,60 +12,6 @@ interface Group {
   thumbnail_url: string | null;
 }
 
-const SEO_TO_DB_MAP: Record<string, string> = {
-  "telegram-putaria": "putaria",
-  "grupos-putaria-telegram": "putaria",
-  "telegram-porno": "putaria",
-  "telegram-xxx": "putaria",
-  "xxx-telegram": "putaria",
-  "grupos-porno-telegram": "putaria",
-  "canal-de-putaria": "putaria",
-  "grupo-putaria-telegram": "putaria",
-  "canais-putaria-telegram": "putaria",
-  "putaria-brasileira": "putaria",
-  "putaria-brasileira-telegram": "putaria",
-  "grupos-de-putaria-telegram": "putaria",
-  "grupo-de-putaria-telegram": "putaria",
-  "xvideos-putaria": "putaria",
-  "video-porno-telegram": "putaria",
-  "porno-gratis-telegram": "putaria",
-  "xvideos-porno-telegram": "putaria",
-  "telegram-sexo": "putaria",
-  "sexo-telegram": "putaria",
-  "video-sexo-telegram": "putaria",
-  "videos-eroticos-telegram": "putaria",
-  "chat-sexo-telegram": "putaria",
-  "grupos-telegram-18": "geral",
-  "canais-telegram-18": "geral",
-  "telegram-adulto": "geral",
-  "grupos-telegram-geral": "geral",
-  "links-telegram": "geral",
-  "telegram-proibido": "geral",
-  "grupo-telegram-18": "geral",
-  "grupos-telegram-pode-tudo": "geral",
-  "grupos-telegram-secretos": "geral",
-  "grupos-18-telegram": "geral",
-  "grupo-telegram-proibido": "geral",
-  "novinhas-telegram": "novinhas",
-  "vazados-telegram": "vazados",
-  "gay-telegram": "gay",
-  "trans-telegram": "trans",
-  "onlyfans-telegram": "onlyfans",
-  "amadoras-telegram": "amadoras",
-  "fetiche-telegram": "fetiche",
-  "bdsm-telegram": "bdsm",
-  "casadas-telegram": "casadas",
-  "coroas-telegram": "coroas",
-  "celebridades-telegram": "celebridades",
-  "bbw-telegram": "bbw",
-  "latina-telegram": "latina",
-  "asiaticas-telegram": "asiaticas",
-  "hentai-telegram": "hentai",
-  "privacy-telegram": "privacy",
-  "cornos-telegram": "cornos",
-  "lesbicas-telegram": "lesbicas"
-};
-
 const SEO_DATA: Record<string, { h1: string, desc: string }> = {
   "telegram-putaria": { h1: "Putaria Telegram: +1.902 Grupos e Links Ativos", desc: "Acesse agora os melhores grupos de putaria no Telegram. Lista atualizada com links diretos e conteúdos +18 verificados." },
   "telegram-porno": { h1: "Telegram Porno: Canais e Grupos +18 Sem Censura", desc: "Os melhores canais de telegram porno reunidos em um só lugar. Acesse conteúdos exclusivos e grupos porno telegram." },
@@ -73,10 +19,42 @@ const SEO_DATA: Record<string, { h1: string, desc: string }> = {
   "gay-telegram": { h1: "Gay Telegram: Os Melhores Grupos e Canais LGBT", desc: "Explore a melhor seleção de grupos gay no Telegram. Conteúdo verificado, amadores e chats ativos." }
 };
 
-async function fetchCategoryGroups(category: string): Promise<Group[]> {
-  const sbUrl = Deno.env.get("SUPABASE_URL") || "";
-  const sbKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-  if (!sbUrl || !sbKey) return [];
+// Mapeamento dinâmico de SEO slugs para categorias do banco de dados
+// Este mapa é lido dinamicamente do banco de dados na primeira requisição
+let SEO_TO_DB_MAP: Record<string, string> | null = null;
+
+async function fetchSEOMapping(sbUrl: string, sbKey: string): Promise<Record<string, string>> {
+  if (SEO_TO_DB_MAP) return SEO_TO_DB_MAP;
+
+  try {
+    const r = await fetch(
+      `${sbUrl}/rest/v1/groups?select=category&distinct=true`,
+      { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` } }
+    );
+    if (!r.ok) return {};
+
+    const categories = await r.json();
+    const mapping: Record<string, string> = {};
+
+    // Gera slugs SEO a partir das categorias do banco
+    for (const cat of categories) {
+      const slug = cat.category.toLowerCase();
+      mapping[slug] = slug;
+      // Adiciona variações comuns de SEO
+      mapping[`${slug}-telegram`] = slug;
+      mapping[`grupos-${slug}-telegram`] = slug;
+      mapping[`canais-${slug}-telegram`] = slug;
+      mapping[`telegram-${slug}`] = slug;
+    }
+
+    SEO_TO_DB_MAP = mapping;
+    return mapping;
+  } catch {
+    return {};
+  }
+}
+
+async function fetchCategoryGroups(category: string, sbUrl: string, sbKey: string): Promise<Group[]> {
   try {
     const r = await fetch(
       `${sbUrl}/rest/v1/groups?category=eq.${category.toLowerCase()}&select=slug,name,telegram_link,description,member_count,thumbnail_url&order=member_count.desc&limit=24`,
@@ -89,7 +67,6 @@ async function fetchCategoryGroups(category: string): Promise<Group[]> {
 function renderGroups(groups: Group[], categoryName: string): string {
   if (!groups.length) return `<p style='text-align:center;padding:40px;color:#666;'>Nenhum grupo encontrado na categoria ${categoryName}.</p>`;
   
-  // Trava: Filtrar grupos que não têm nome ou link do telegram (mínimo necessário)
   const validGroups = groups.filter(g => g.name && g.telegram_link);
   
   if (!validGroups.length) return `<p style='text-align:center;padding:40px;color:#666;'>Nenhum conteúdo válido disponível no momento.</p>`;
@@ -115,19 +92,28 @@ function renderGroups(groups: Group[], categoryName: string): string {
 }
 
 serve(async (req) => {
+  const sbUrl = Deno.env.get("SUPABASE_URL") || "";
+  const sbKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  if (!sbUrl || !sbKey) {
+    return new Response("Configuração inválida", { status: 500 });
+  }
+
   const url = new URL(req.url);
   const pathPart = url.pathname.split("/").filter(p => p && !["functions", "v1", "landing-pages"].includes(p)).pop();
-  const pageSlug = url.searchParams.get("page") || pathPart || "telegram-putaria";
+  const pageSlug = url.searchParams.get("page") || pathPart || "geral";
   
-  // Se o slug não existir no mapeamento, retornamos 404 para evitar páginas vazias ou lixo
-  if (!SEO_TO_DB_MAP[pageSlug]) {
+  // Fetch SEO mapping dinamicamente
+  const seoMapping = await fetchSEOMapping(sbUrl, sbKey);
+  
+  // Se o slug não existir no mapeamento, retornamos 404
+  if (!seoMapping[pageSlug]) {
     return new Response("Página não encontrada", { status: 404 });
   }
 
-  const dbCategory = SEO_TO_DB_MAP[pageSlug];
-  const groups = await fetchCategoryGroups(dbCategory);
+  const dbCategory = seoMapping[pageSlug];
+  const groups = await fetchCategoryGroups(dbCategory, sbUrl, sbKey);
   
-  // Se a query retornar conteúdo vazio, podemos optar por não exibir a página ou mostrar erro
+  // Se a query retornar conteúdo vazio, retorna 404
   if (!groups || groups.length === 0) {
      return new Response("Conteúdo temporariamente indisponível", { status: 404 });
   }
@@ -136,6 +122,9 @@ serve(async (req) => {
     h1: `${pageSlug.replace(/-/g, " ").toUpperCase()}: Grupos Ativos`,
     desc: `Acesse os melhores grupos de ${pageSlug.replace(/-/g, " ")} no Telegram. Links verificados no canais18.com.`
   };
+
+  // Gera tag cloud com as primeiras 20 categorias
+  const tagCloudSlugs = Object.keys(seoMapping).filter(s => !s.includes("-telegram")).slice(0, 20);
 
   return new Response(`
   <!DOCTYPE html>
@@ -188,7 +177,7 @@ serve(async (req) => {
         ${renderGroups(groups, dbCategory)}
         <h2 class="section-title">🔗 Outras Categorias</h2>
         <div class="tag-cloud">
-          ${Object.keys(SEO_TO_DB_MAP).slice(0, 20).map(slug => `<a href="${BASE_URL}/${slug}" class="tag">${slug.replace(/-/g, " ")}</a>`).join("")}
+          ${tagCloudSlugs.map(slug => `<a href="${BASE_URL}/${slug}" class="tag">${slug.replace(/-/g, " ")}</a>`).join("")}
         </div>
       </main>
     </div>
