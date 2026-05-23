@@ -758,8 +758,14 @@ const AdminDashboard = () => {
     const coverSlugs = new Set<string>();
     GROUP_CATEGORIES.forEach(categorySlug => {
       const found = (storageFiles || []).some(f => {
-        const fileNameWithoutExtension = f.name.replace(/\.[^/.]+$/, "");
-        return fileNameWithoutExtension === categorySlug;
+        const fileNameWithoutExtension = f.name.replace(/\.[^/.]+$/, "").toLowerCase(); // Converter para minúsculas para comparação
+        console.log(`Checking file: ${f.name} (normalized: ${fileNameWithoutExtension}) against categorySlug: ${categorySlug.toLowerCase()}`); // Adicionar este log
+        return fileNameWithoutExtension.includes(categorySlug.toLowerCase()); // Verificar se inclui e comparar em minúsculas
+      });
+      if (found) {
+        coverSlugs.add(categorySlug);
+      }
+    });
       });
       if (found) {
         coverSlugs.add(categorySlug);
