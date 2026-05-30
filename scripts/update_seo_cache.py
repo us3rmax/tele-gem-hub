@@ -3,7 +3,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from dotenv import load_dotenv
 import os, json, requests
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from supabase import create_client

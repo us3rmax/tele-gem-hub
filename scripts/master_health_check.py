@@ -193,18 +193,26 @@ def check_sitemap():
 
     # Contagem de URLs
     url_count = xml.count("<loc>")
+    expected = 0
     try:
         rows = sb_get("seo_config", "?select=value&key=eq.sitemap_url_count")
-        
+        if rows and len(rows) > 0:
+            expected = int(rows[0]["value"])
     except Exception:
-          # aceita qualquer contagem > 0
+        pass
 
-    if url_count == expected:
-        ok("Sitemap contagem", f"{url_count} URLs (esperado {expected})")
-    elif abs(url_count - expected) <= 5:
-        warn("Sitemap contagem", f"{url_count} URLs (esperado {expected})")
+    if expected > 0:
+        if url_count == expected:
+            ok("Sitemap contagem", f"{url_count} URLs (esperado {expected})")
+        elif abs(url_count - expected) <= 5:
+            warn("Sitemap contagem", f"{url_count} URLs (esperado {expected})")
+        else:
+            fail("Sitemap contagem", f"{url_count} URLs (esperado {expected})", critical=False)
     else:
-        fail("Sitemap contagem", f"{url_count} URLs (esperado {expected})", critical=False)
+        if url_count > 0:
+            ok("Sitemap contagem", f"{url_count} URLs (dinâmico)")
+        else:
+            fail("Sitemap contagem", "Sitemap vazio", critical=True)
 
     # Todas as URLs devem ter www
     non_www = re.findall(r"<loc>https://canais18\.com[^<]*</loc>", xml)

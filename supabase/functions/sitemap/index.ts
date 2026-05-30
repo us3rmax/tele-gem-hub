@@ -90,7 +90,7 @@ ${groupUrls}
 </urlset>`;
 
     return new Response(xml, {
-      headers: { "Content-Type": "application/xml; charset=utf-8" },
+      headers: { "Content-Type": "application/xml; charset=utf-8", "X-Sitemap-Source": "edge-functions" },
     });
   } catch (e) {
     console.error("Sitemap generation failed:", e);

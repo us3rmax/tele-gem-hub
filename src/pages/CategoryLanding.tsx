@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
 import GroupCard from "@/components/GroupCard";
+import BannerAd from "@/components/BannerAd";
 import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
@@ -746,6 +747,8 @@ const CategoryLanding = () => {
             </p>
           </div>
         </section>
+
+        <BannerAd position="top" />
 
         <section className="space-y-4">
           <h2 className="text-2xl font-bold text-foreground">🔥 Canais em Destaque</h2>

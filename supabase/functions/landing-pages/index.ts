@@ -182,5 +182,5 @@ serve(async (req) => {
       </main>
     </div>
   </body>
-  </html>`, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+  </html>`, { headers: { "Content-Type": "text/html; charset=utf-8", "X-Landing-Source": "edge-functions" } });
 });
