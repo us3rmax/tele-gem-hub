@@ -61,7 +61,18 @@ const Index = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
-        <h1 className="sr-only">Canais Telegram Brasil</h1>
+        <section className="space-y-4">
+          <h1 className="text-3xl font-extrabold text-foreground sm:text-4xl">
+            Canais Telegram Brasil: Diretório de Grupos Verificados
+          </h1>
+          <p className="text-muted-foreground leading-relaxed max-w-3xl">
+            Bem-vindo ao <strong className="text-foreground">Canais18</strong>, o maior e mais confiável diretório de 
+            <strong className="text-foreground">canais do Telegram</strong> no Brasil. Nossa plataforma oferece uma 
+            seleção rigorosa de grupos e canais, organizados por categorias como novinhas, amadoras, vazados e muito mais. 
+            Todos os links são verificados diariamente para garantir que você tenha acesso imediato aos melhores conteúdos 
+            adultos e entretenimento do Telegram de forma totalmente gratuita e segura.
+          </p>
+        </section>
 
         <BannerAd position="top" />
 
