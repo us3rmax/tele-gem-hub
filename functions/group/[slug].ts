@@ -107,7 +107,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
       "@type": "BreadcrumbList",
       itemListElement: [
         { "@type": "ListItem", position: 1, name: "Canais18", item: "https://www.canais18.com" },
-        { "@type": "ListItem", position: 2, name: grupo.category, item: `https://www.canais18.com/?category=${encodeURIComponent(grupo.category)}` },
+        { "@type": "ListItem", position: 2, name: grupo.category, item: `https://www.canais18.com/categoria/${generateSlug(grupo.category)}` },
         { "@type": "ListItem", position: 3, name: grupo.name, item: canonicalUrl },
       ],
     },
