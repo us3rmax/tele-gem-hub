@@ -20,7 +20,6 @@ const SEO_DATA: Record<string, { h1: string, desc: string }> = {
 };
 
 // Mapeamento dinâmico de SEO slugs para categorias do banco de dados
-// Este mapa é lido dinamicamente do banco de dados na primeira requisição
 let SEO_TO_DB_MAP: Record<string, string> | null = null;
 
 async function fetchSEOMapping(sbUrl: string, sbKey: string): Promise<Record<string, string>> {
@@ -36,11 +35,9 @@ async function fetchSEOMapping(sbUrl: string, sbKey: string): Promise<Record<str
     const categories = await r.json();
     const mapping: Record<string, string> = {};
 
-    // Gera slugs SEO a partir das categorias do banco
     for (const cat of categories) {
       const slug = cat.category.toLowerCase();
       mapping[slug] = slug;
-      // Adiciona variações comuns de SEO
       mapping[`${slug}-telegram`] = slug;
       mapping[`grupos-${slug}-telegram`] = slug;
       mapping[`canais-${slug}-telegram`] = slug;
@@ -102,10 +99,8 @@ serve(async (req) => {
   const pathPart = url.pathname.split("/").filter(p => p && !["functions", "v1", "landing-pages"].includes(p)).pop();
   const pageSlug = url.searchParams.get("page") || pathPart || "geral";
   
-  // Fetch SEO mapping dinamicamente
   const seoMapping = await fetchSEOMapping(sbUrl, sbKey);
   
-  // Se o slug não existir no mapeamento, retornamos 404
   if (!seoMapping[pageSlug]) {
     return new Response("Página não encontrada", { status: 404 });
   }
@@ -113,7 +108,6 @@ serve(async (req) => {
   const dbCategory = seoMapping[pageSlug];
   const groups = await fetchCategoryGroups(dbCategory, sbUrl, sbKey);
   
-  // Se a query retornar conteúdo vazio, retorna 404
   if (!groups || groups.length === 0) {
      return new Response("Conteúdo temporariamente indisponível", { status: 404 });
   }
@@ -123,7 +117,6 @@ serve(async (req) => {
     desc: `Acesse os melhores grupos de ${pageSlug.replace(/-/g, " ")} no Telegram. Links verificados no canais18.com.`
   };
 
-  // Gera tag cloud com as primeiras 20 categorias
   const tagCloudSlugs = Object.keys(seoMapping).filter(s => !s.includes("-telegram")).slice(0, 20);
 
   return new Response(`
@@ -173,9 +166,16 @@ serve(async (req) => {
         <p>${seo.desc}</p>
       </header>
       <main>
-        <h2 class="section-title">📱 Grupos de ${dbCategory.toUpperCase()}</h2>
+        <section class="seo-intro" style="color: #888; font-size: 0.9rem; line-height: 1.6; margin: 20px 0; background: #111; padding: 20px; border-radius: 12px; border: 1px solid #222;">
+          <p>Bem-vindo ao maior diretório de <strong>grupos de ${dbCategory} no Telegram</strong>. Nossa equipe verifica links diariamente para garantir que você tenha acesso aos melhores <strong>canais de ${dbCategory}</strong> com segurança e privacidade. Explore a lista abaixo e entre nos grupos mais ativos do Brasil.</p>
+        </section>
+        <h2 class="section-title">📱 Grupos de ${dbCategory.toUpperCase()} em Destaque</h2>
         ${renderGroups(groups, dbCategory)}
-        <h2 class="section-title">🔗 Outras Categorias</h2>
+        <section class="seo-footer" style="color: #666; font-size: 0.85rem; line-height: 1.6; margin: 40px 0; border-top: 1px solid #222; padding-top: 20px;">
+          <h3>Como entrar nos grupos de ${dbCategory}?</h3>
+          <p>Para entrar em qualquer <strong>canal do Telegram</strong> listado, basta clicar no botão "Entrar". Você será redirecionado para o aplicativo oficial. Lembre-se que todos os grupos são de acesso gratuito e verificados pelo <strong>Canais18</strong>.</p>
+        </section>
+        <h2 class="section-title">🔗 Outras Categorias Populares</h2>
         <div class="tag-cloud">
           ${tagCloudSlugs.map(slug => `<a href="${BASE_URL}/${slug}" class="tag">${slug.replace(/-/g, " ")}</a>`).join("")}
         </div>
