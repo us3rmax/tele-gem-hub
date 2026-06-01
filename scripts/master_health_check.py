@@ -651,6 +651,24 @@ def check_index_coverage():
         ok("Index Coverage",
            f"{len(indexed)} indexadas · {len(unknown)} desconhecidas (novas) · 0 com problema")
 
+def check_gsc_auto_fixes():
+    print("\n[8.1] GSC Auto-Fixes")
+    try:
+        rows = sb_get("seo_cache", "?select=data&key=eq.gsc_auto_fixes")
+        if not rows:
+            warn("GSC Auto-Fixes", "Nenhum dado de auto-fix encontrado"); return
+        
+        data = rows[0]["data"]
+        checked = data.get("total_checked", 0)
+        fixed = data.get("fixes_requested", 0)
+        
+        if fixed > 0:
+            ok("GSC Auto-Fixes", f"{fixed} URLs enviadas para re-indexação automática (total verificado: {checked})")
+        else:
+            ok("GSC Auto-Fixes", f"Todas as {checked} URLs verificadas estão saudáveis")
+    except Exception as e:
+        warn("GSC Auto-Fixes", f"Erro ao ler cache: {e}")
+
 # ── 9. GitHub Actions — status dos últimos runs ──────────────────────────────
 
 def check_github_actions():
@@ -840,6 +858,7 @@ def main():
     check_canonicals()
     check_rpcs()
     check_index_coverage()
+    check_gsc_auto_fixes()
     check_github_actions()
     save_result()   # persiste no Supabase antes do email
     send_report()
