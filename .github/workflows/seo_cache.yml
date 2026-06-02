@@ -58,13 +58,6 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp_credentials.json
         run: python scripts/gsc_auto_fixer.py
 
-      - name: Run gsc_auto_fixer.py
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp_credentials.json
-        run: python scripts/gsc_auto_fixer.py
-
       - name: Cleanup credentials
         if: always()
         run: rm -f /tmp/gcp_credentials.json
