@@ -83,7 +83,9 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const grupo = rows?.[0];
 
   if (!grupo) {
-    return new Response("Not Found", { status: 404 });
+    // Redireciona para a página de grupos geral se o grupo específico não for encontrado
+    // Isso evita o erro 404 no Search Console e mantém o usuário no site
+    return Response.redirect("https://www.canais18.com/grupos-telegram", 301);
   }
 
   const indexRes = await ctx.env.ASSETS.fetch(new Request("https://dummy.com/index.html"));

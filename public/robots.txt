@@ -14,5 +14,10 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
+Disallow: /login
+Disallow: /dashboard
+Disallow: /auth/
+Disallow: /profile
+Disallow: /settings
 
 Sitemap: https://www.canais18.com/sitemap.xml
