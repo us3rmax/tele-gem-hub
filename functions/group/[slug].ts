@@ -92,14 +92,19 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const html = await indexRes.text();
 
   const canonicalUrl = `https://www.canais18.com${groupPath(grupo)}`;
+  // Garante que a descrição seja única adicionando o ID compacto se não houver descrição original
+  const compactId = grupo.id.replace(/-/g, "").slice(-6);
   const seoDescription = grupo.description
     ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? "..." : "")
-    : `Entre no canal ${escapeHtml(grupo.name)} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${escapeHtml(grupo.category)}. Conteúdo exclusivo 18+.`;
+    : `Acesse agora o canal ${escapeHtml(grupo.name)} no Telegram. No Canais18 você encontra os melhores grupos de ${escapeHtml(grupo.category)} com ${formatMembers(grupo.member_count)} membros ativos. Ref: ${compactId}.`;
+
+  // Título único para evitar duplicatas (usando o ID compacto)
+  const uniqueTitle = `${escapeHtml(grupo.name)} — Canal Telegram ${escapeHtml(grupo.category)} | Canais18 #${compactId}`;
 
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "ItemPage",
-    name: `${grupo.name} - Canal Telegram 18+`,
+    name: uniqueTitle,
     description: seoDescription,
     url: canonicalUrl,
     image: grupo.thumbnail_url || undefined,
@@ -116,10 +121,10 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   });
 
   const seoTags = `
-    <title>${escapeHtml(grupo.name)} — Grupo Telegram +18 | Canais18</title>
+    <title>${uniqueTitle}</title>
     <meta name="description" content="${escapeHtml(seoDescription)}" />
     <link rel="canonical" href="${canonicalUrl}" />
-    <meta property="og:title" content="${escapeHtml(grupo.name)} — Grupo Telegram +18 | Canais18" />
+    <meta property="og:title" content="${uniqueTitle}" />
     <meta property="og:description" content="${escapeHtml(seoDescription)}" />
     <meta property="og:url" content="${canonicalUrl}" />
     <meta property="og:type" content="article" />
@@ -127,12 +132,16 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     <meta name="robots" content="index, follow" />
     <script type="application/ld+json">${jsonLd}</script>`;
 
+  // Aumenta o word count para o Googlebot com texto estruturado e útil
   const googleBotContent = `
 <div id="ssg-content" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
   <h1>${escapeHtml(grupo.name)}</h1>
   <p>${escapeHtml(seoDescription)}</p>
-  <p>Categoria: ${escapeHtml(grupo.category)}</p>
-  <p>Membros: ${formatMembers(grupo.member_count)}</p>
+  <p>O canal <strong>${escapeHtml(grupo.name)}</strong> pertence à categoria <strong>${escapeHtml(grupo.category)}</strong> e possui atualmente mais de <strong>${formatMembers(grupo.member_count)}</strong> participantes ativos no Telegram.</p>
+  <p>No Canais18, verificamos links de grupos de putaria, novinhas e conteúdos adultos diariamente para garantir que você sempre encontre links funcionando. Este grupo foi adicionado em ${new Date(grupo.created_at).toLocaleDateString('pt-BR')}.</p>
+  <h2>Como entrar no grupo ${escapeHtml(grupo.name)}?</h2>
+  <p>Para entrar no canal, basta clicar no link oficial do Telegram fornecido em nossa plataforma. Recomendamos ter o aplicativo do Telegram instalado no seu celular ou computador para uma melhor experiência.</p>
+  <p>Explore também outros grupos de ${escapeHtml(grupo.category)} e conteúdos similares em nosso diretório atualizado.</p>
 </div>`;
 
   const injectedHtml = html
