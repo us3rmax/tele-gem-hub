@@ -65,7 +65,7 @@ const Index = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 text-sm text-muted-foreground mx-auto">
             <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
-            O Maior Site de Grupos de putaria no Telegram e Canais +18
+            A maior coleção de grupos de putaria do telegram
           </div>
 
           {/* H1 - Main Headline */}
@@ -79,18 +79,18 @@ const Index = () => {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col gap-3 justify-center pt-4 max-w-xl mx-auto">
-            {/* Top row buttons on desktop, stacked on mobile */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <a href="#grupos" className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg">
+          <div className="flex flex-col gap-3 justify-center pt-4 max-w-xl mx-auto w-full">
+            {/* Grid for buttons - same order on mobile and desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+              <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
                 <span>📱</span> Descubra Grupos
               </a>
-              <a href="#bots" className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg">
+              <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
                 <span>🔒</span> Descubra Bots
               </a>
             </div>
             {/* Full width bottom button */}
-            <a href="#privacy" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg">
+            <a href="#privacy" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
               Modelos Privacy +10k criadoras
             </a>
           </div>
