@@ -80,12 +80,12 @@ const Index = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col gap-3 justify-center pt-4 max-w-xl mx-auto w-full">
-            {/* Grid for buttons - same order on mobile and desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-              <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
+            {/* Grid for buttons - Force 2 columns even on mobile */}
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-2 py-4 rounded-xl transition shadow-lg text-[13px] sm:text-base">
                 <span>📱</span> Descubra Grupos
               </a>
-              <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
+              <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-2 py-4 rounded-xl transition shadow-lg text-[13px] sm:text-base">
                 <span>🔒</span> Descubra Bots
               </a>
             </div>
