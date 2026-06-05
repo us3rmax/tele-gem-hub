@@ -69,7 +69,7 @@ const Index = () => {
           </div>
 
           {/* H1 - Main Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-foreground leading-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[1.1]">
             Encontre os melhores grupos e canais do Telegram, além de modelos do <span className="text-primary">Privacy</span>
           </h1>
 
@@ -79,21 +79,23 @@ const Index = () => {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-            <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition">
-              <span>📱</span> Descobra Grupos
-            </a>
-            <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition">
-              <span>🔒</span> Descobra Bots
-            </a>
-            <a href="#privacy" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition">
+          <div className="flex flex-col gap-3 justify-center pt-4 max-w-xl mx-auto">
+            {/* Top row buttons on desktop, stacked on mobile */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <a href="#grupos" className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg">
+                <span>📱</span> Descubra Grupos
+              </a>
+              <a href="#bots" className="flex-1 inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg">
+                <span>🔒</span> Descubra Bots
+              </a>
+            </div>
+            {/* Full width bottom button */}
+            <a href="#privacy" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg">
               Modelos Privacy +10k criadoras
             </a>
           </div>
         </section>
 
-        <BannerAd position="top" />
-        
         <hr className="border-border/30" />
 
         {!isLoading && <PremiumCarousel grupos={premiumGrupos} />}
