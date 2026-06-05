@@ -61,22 +61,44 @@ const Index = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
-        <section className="space-y-4">
-          <h1 className="text-3xl font-extrabold text-foreground sm:text-4xl">
-            Canais Telegram Brasil: Diretório de Grupos Verificados
+        <section className="space-y-6 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 text-sm text-muted-foreground mx-auto">
+            <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+            O Maior Site de Grupos de putaria no Telegram e Canais +18
+          </div>
+
+          {/* H1 - Main Headline */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-foreground leading-tight">
+            Encontre os melhores grupos e canais do Telegram, além de modelos do <span className="text-primary">Privacy</span>
           </h1>
-          <p className="text-muted-foreground leading-relaxed max-w-3xl">
-            Bem-vindo ao <strong className="text-foreground">Canais18</strong>, o maior e mais confiável diretório de 
-            <strong className="text-foreground">canais do Telegram</strong> no Brasil. Nossa plataforma oferece uma 
-            seleção rigorosa de grupos e canais, organizados por categorias como novinhas, amadoras, vazados e muito mais. 
-            Todos os links são verificados diariamente para garantir que você tenha acesso imediato aos melhores conteúdos 
-            adultos e entretenimento do Telegram de forma totalmente gratuita e segura.
+
+          {/* Description */}
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            O seu site favorito para encontrar links de grupos +18, canais do Telegram e milhares de modelos do Privacy. Entre nos grupos ativos e salve os seus favoritos.
           </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+            <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition">
+              <span>📱</span> Descobra Grupos
+            </a>
+            <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition">
+              <span>🔒</span> Descobra Bots
+            </a>
+            <a href="#privacy" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-6 py-3 rounded-lg transition">
+              Modelos Privacy +10k criadoras
+            </a>
+          </div>
         </section>
 
         <BannerAd position="top" />
+        
+        <hr className="border-border/30" />
 
         {!isLoading && <PremiumCarousel grupos={premiumGrupos} />}
+        
+        <div id="grupos"></div>
 
         {searchTerm ? (
           <section className="space-y-3">
