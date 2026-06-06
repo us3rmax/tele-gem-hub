@@ -99,7 +99,7 @@ const Index = () => {
         <hr className="border-border/30" />
 
         <div id="grupos"></div>
-102	        {!isLoading && <PremiumCarousel grupos={premiumGrupos} />}
+{!isLoading && <PremiumCarousel grupos={premiumGrupos} />}
 
         {searchTerm ? (
           <section className="space-y-3">
