@@ -110,7 +110,7 @@ const Index = () => {
           </section>
         ) : (
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-foreground">Canais e Grupos</h2>
+            <h2 className="text-lg font-bold text-foreground">⭐ Grupos em destaque</h2>
             <SortTabs active={sort} onChange={setSort} />
           </section>
         )}
