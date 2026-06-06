@@ -98,7 +98,7 @@ const Index = () => {
 
         <hr className="border-border/30" />
 
-        <div id="grupos"></div>
+        <div id="grupos" className="scroll-mt-20"></div>
 {!isLoading && <PremiumCarousel grupos={premiumGrupos} />}
 
         {searchTerm ? (
