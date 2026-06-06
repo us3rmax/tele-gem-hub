@@ -83,22 +83,22 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const grupo = rows?.[0];
 
   if (!grupo) {
-    // Redireciona para a página de grupos geral se o grupo específico não for encontrado
-    // Isso evita o erro 404 no Search Console e mantém o usuário no site
     return Response.redirect("https://www.canais18.com/grupos-telegram", 301);
   }
 
-  const indexRes = await ctx.env.ASSETS.fetch(new Request("https://dummy.com/index.html"));
-  const html = await indexRes.text();
+  const indexRes = await ctx.env.ASSETS.fetch(new Request("https://www.canais18.com/index.html"));
+  let html = await indexRes.text();
+
+  // LIMPEZA CRÍTICA: Remove o H1 e o conteúdo da Home que injetamos no index.html
+  // Isso evita que a página do grupo tenha o H1 da Home + o H1 do Grupo (duplicidade)
+  html = html.replace(/<div id="ssg-hero-content"[\s\S]*?<\/div>/i, "");
 
   const canonicalUrl = `https://www.canais18.com${groupPath(grupo)}`;
-  // Garante que a descrição seja única adicionando o ID compacto se não houver descrição original
   const compactId = grupo.id.replace(/-/g, "").slice(-6);
   const seoDescription = grupo.description
     ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? "..." : "")
     : `Acesse agora o canal ${escapeHtml(grupo.name)} no Telegram. No Canais18 você encontra os melhores grupos de ${escapeHtml(grupo.category)} com ${formatMembers(grupo.member_count)} membros ativos. Ref: ${compactId}.`;
 
-  // Título único para evitar duplicatas (usando o ID compacto)
   const uniqueTitle = `${escapeHtml(grupo.name)} — Canal Telegram ${escapeHtml(grupo.category)} | Canais18 #${compactId}`;
 
   const jsonLd = JSON.stringify({
@@ -132,9 +132,8 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     <meta name="robots" content="index, follow" />
     <script type="application/ld+json">${jsonLd}</script>`;
 
-  // Aumenta o word count para o Googlebot com texto estruturado e útil
   const googleBotContent = `
-<div id="ssg-content" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
+<div id="ssg-group-content" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">
   <h1>${escapeHtml(grupo.name)}</h1>
   <p>${escapeHtml(seoDescription)}</p>
   <p>O canal <strong>${escapeHtml(grupo.name)}</strong> pertence à categoria <strong>${escapeHtml(grupo.category)}</strong> e possui atualmente mais de <strong>${formatMembers(grupo.member_count)}</strong> participantes ativos no Telegram.</p>
