@@ -90,7 +90,7 @@ const Index = () => {
               </a>
             </div>
             {/* Full width bottom button */}
-            <a href="#privacy" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
+            <a href="/modelos" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
               Modelos Privacy +10k criadoras
             </a>
           </div>
