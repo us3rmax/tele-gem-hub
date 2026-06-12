@@ -26,7 +26,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+
 import {
+  CheckCircle,
   CheckCircle,
   XCircle,
   Clock,
@@ -49,6 +51,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
+
+const CLOUDFLARE_ZONE_ID = "bb4b94d6f93ea90dd6151cb209edfba6"; // Provided by user
 
 const GROUP_CATEGORIES = [
   "geral",
@@ -319,6 +323,27 @@ const AdminDashboard = () => {
   }, [user, isAdmin, authLoading, navigate]);
 
   // --- Submissions logic ---
+
+  const purgeCloudflareCache = async (urls: string[]) => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "purge-cloudflare-cache",
+        {
+          body: JSON.stringify({ urls }),
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      if (error) {
+        console.error("Erro ao purgar cache do Cloudflare:", error);
+        toast({ title: "Erro ao purgar cache do Cloudflare", description: error.message, variant: "destructive" });
+      } else {
+        console.log("Cache do Cloudflare purgado com sucesso:", data);
+      }
+    } catch (error: any) {
+      console.error("Erro ao chamar Edge Function de purga de cache:", error);
+      toast({ title: "Erro ao chamar Edge Function de purga de cache", description: error.message, variant: "destructive" });
+    }
+  };
 
   const fetchSubmissions = useCallback(async (status: string) => {
     setLoading(true);
@@ -753,7 +778,7 @@ const AdminDashboard = () => {
     setCategoriesLoading(true);
 
     // Lista todos os arquivos category_*.jpg no bucket de uma vez
-    const { data: storageFiles } = await supabase.storage.from("thumbnails").list("gruposdotelegram", { limit: 200 });
+    const { data: storageFiles } = await supabase.storage.from("thumbnails").list("gruposdotelegram", { limit: 1000 }); // Increased limit to ensure all files are fetched
     console.log("Storage Files:", storageFiles);
     const coverSlugs = new Set<string>();
     GROUP_CATEGORIES.forEach(categorySlug => {
@@ -837,6 +862,7 @@ const AdminDashboard = () => {
     } else {
       toast({ title: `Cover de ${CATEGORY_LABELS[slug]} atualizado!` });
       await fetchCategories();
+      await purgeCloudflareCache([coverUrl]); // Purge specific URL
     }
     setCategoryUploadingSlug(null);
   };
@@ -850,6 +876,7 @@ const AdminDashboard = () => {
     } else {
       toast({ title: `Cover removido — voltando ao automático` });
       await fetchCategories();
+      await purgeCloudflareCache([`https://lymjjozpdsdoloahsyey.supabase.co/storage/v1/object/public/thumbnails/gruposdotelegram/${slug}.jpg`, `https://lymjjozpdsdoloahsyey.supabase.co/storage/v1/object/public/thumbnails/gruposdotelegram/${slug}.webp`]); // Purge both possible URLs
     }
     setCategoryUploadingSlug(null);
   };
