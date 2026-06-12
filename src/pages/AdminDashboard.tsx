@@ -1997,7 +1997,7 @@ const AdminDashboard = () => {
                           )}
                           {cat.coverUrl ? "Trocar foto" : "Definir foto"}
                         </Button>
-                        {cat.coverUrl {isCustom && ({isCustom && ( (
+                        {cat.coverUrl {cat.coverUrl {isCustom && ({isCustom && ( ({cat.coverUrl {isCustom && ({isCustom && ( ( (
                           <Button
                             size="sm"
                             variant="destructive"
