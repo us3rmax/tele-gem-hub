@@ -308,7 +308,6 @@ const AdminDashboard = () => {
     slug: string;
     label: string;
     coverUrl: string | null;
-    topGroupThumb: string | null;
     count: number;
   }
   const [categoriesData, setCategoriesData] = useState<CategoryCover[]>([]);
@@ -1946,8 +1945,8 @@ const AdminDashboard = () => {
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {categoriesData.map((cat) => {
-                  const displayThumb = cat.coverUrl || cat.topGroupThumb;
-                  const isCustom = !!cat.coverUrl;
+                  const displayThumb = cat.coverUrl;
+                  
                   return (
                     <div key={cat.slug} className="overflow-hidden rounded-xl border border-border bg-card">
                       {/* Preview */}
@@ -1996,9 +1995,9 @@ const AdminDashboard = () => {
                           ) : (
                             <Upload className="mr-1 h-3 w-3" />
                           )}
-                          {isCustom ? "Trocar foto" : "Definir foto"}
+                          {cat.coverUrl ? "Trocar foto" : "Definir foto"}
                         </Button>
-                        {isCustom && (
+                        {cat.coverUrl {isCustom && ({isCustom && ( (
                           <Button
                             size="sm"
                             variant="destructive"
