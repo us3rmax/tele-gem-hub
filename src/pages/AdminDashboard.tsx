@@ -762,7 +762,10 @@ const AdminDashboard = () => {
         const fileNameWithoutExtension = f.name.replace(/\.[^/.]+$/, "").toLowerCase(); // Converter para minúsculas para comparação
         console.log(`Normalized file name: ${fileNameWithoutExtension}, comparing with categorySlug: ${categorySlug.toLowerCase()}`); // Adicionar este log
 
-        return fileNameWithoutExtension.includes(categorySlug.toLowerCase()); // Verificar se inclui e comparar em minúsculas
+        // Check for exact matches of {slug}.jpg or {slug}.webp
+        const expectedJpg = `${categorySlug.toLowerCase()}.jpg`;
+        const expectedWebp = `${categorySlug.toLowerCase()}.webp`;
+        return f.name.toLowerCase() === expectedJpg || f.name.toLowerCase() === expectedWebp;
       });
       if (found) {
         coverSlugs.add(categorySlug);
@@ -773,9 +776,13 @@ const AdminDashboard = () => {
     const results = await Promise.all(
       GROUP_CATEGORIES.map(async (slug) => {
         // Se existe no bucket, monta a URL pública
-        const coverUrl = coverSlugs.has(slug)
-          ? `${supabase.storage.from("thumbnails").getPublicUrl(`gruposdotelegram/${slug}.jpg`).data.publicUrl}?t=${new Date().getTime()}`
-          : null;
+        let coverUrl = null;
+        if (coverSlugs.has(slug)) {
+          // Prioritize .webp if it exists, otherwise use .jpg
+          const webpExists = (storageFiles || []).some(f => f.name.toLowerCase() === `${slug.toLowerCase()}.webp`);
+          const fileExtension = webpExists ? 'webp' : 'jpg';
+          coverUrl = `${supabase.storage.from("thumbnails").getPublicUrl(`gruposdotelegram/${slug}.${fileExtension}`).data.publicUrl}?t=${new Date().getTime()}`;
+        }
         console.log(`Category: ${slug}, Generated Cover URL: ${coverUrl}`);
 
         // Busca thumb do grupo com mais membros + contagem
