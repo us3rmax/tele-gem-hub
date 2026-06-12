@@ -1928,13 +1928,13 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
+          {/* Banners tab */}
           {/* Categorias tab */}
           <TabsContent value="categorias" className="mt-4 space-y-4">
             <div>
               <h2 className="text-lg font-bold text-foreground">Fotos dos Cards de Categorias</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Se nenhuma foto for definida, o sistema usa automaticamente a thumbnail do grupo com mais membros da
-                categoria.
+                Todas as capas são gerenciadas manualmente. Se nenhuma foto for definida, o sistema exibe um ícone padrão.
               </p>
             </div>
 
@@ -1961,11 +1961,6 @@ const AdminDashboard = () => {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                         <div className="absolute bottom-2 left-3 flex items-center gap-2">
                           <span className="text-sm font-bold text-white">{cat.label}</span>
-                          {isCustom ? (
-                            <Badge className="bg-green-600/80 text-white border-0 text-[10px]">✓ Personalizada</Badge>
-                          ) : (
-                            <Badge className="bg-black/60 text-white/80 border-0 text-[10px]">Automática</Badge>
-                          )}
                         </div>
                         <span className="absolute bottom-2 right-3 text-xs text-white/70">{cat.count} grupos</span>
                       </div>
@@ -1997,7 +1992,7 @@ const AdminDashboard = () => {
                           )}
                           {cat.coverUrl ? "Trocar foto" : "Definir foto"}
                         </Button>
-                        {cat.coverUrl {cat.coverUrl {isCustom && ({isCustom && ( ({cat.coverUrl {isCustom && ({isCustom && ( ( (
+                        {cat.coverUrl && (
                           <Button
                             size="sm"
                             variant="destructive"
@@ -2014,7 +2009,6 @@ const AdminDashboard = () => {
               </div>
             )}
           </TabsContent>
-          {/* Banners tab */}
           <TabsContent value="banners" className="mt-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-foreground">Gerenciar Banners</h2>
