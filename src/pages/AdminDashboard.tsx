@@ -821,9 +821,12 @@ const AdminDashboard = () => {
       return;
     }
     setCategoryUploadingSlug(slug);
-    const filePath = `gruposdotelegram/${slug}.jpg`;
-    // Remove primeiro para evitar conflito de RLS no update
-    await supabase.storage.from("thumbnails").remove([filePath]);
+    const fileExtension = file.type === 'image/webp' ? 'webp' : 'jpg';
+    const filePath = `gruposdotelegram/${slug}.${fileExtension}`;
+    
+    // Remove both .jpg and .webp versions to avoid conflicts and ensure clean update
+    await supabase.storage.from("thumbnails").remove([`gruposdotelegram/${slug}.jpg`, `gruposdotelegram/${slug}.webp`]);
+    
     const { error } = await supabase.storage
       .from("thumbnails")
       .upload(filePath, file, { contentType: file.type, upsert: true });
@@ -840,7 +843,7 @@ const AdminDashboard = () => {
 
   const handleCategoryPhotoRemove = async (slug: string) => {
     setCategoryUploadingSlug(slug);
-    const { error } = await supabase.storage.from("thumbnails").remove([`gruposdotelegram/${slug}.jpg`]);
+    const { error } = await supabase.storage.from("thumbnails").remove([`gruposdotelegram/${slug}.jpg`, `gruposdotelegram/${slug}.webp`]);
 
     if (error) {
       toast({ title: "Erro ao remover foto", description: error.message, variant: "destructive" });
