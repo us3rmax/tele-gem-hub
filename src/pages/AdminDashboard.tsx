@@ -544,13 +544,13 @@ const AdminDashboard = () => {
     setDeleteGroupId(null);
   };
 
-  const validateGroupForm = () => {
+  const validateGroupForm = (isAdmin: boolean) => {
     const errors: Record<string, string> = {};
     if (!groupForm.name.trim()) errors.name = "Nome é obrigatório";
     if (!groupForm.category) errors.category = "Categoria é obrigatória";
     if (!groupForm.telegram_link.trim()) {
       errors.telegram_link = "Link é obrigatório";
-    } else if (!groupForm.telegram_link.startsWith("https://t.me/")) {
+    } else if (!isAdmin && !groupForm.telegram_link.startsWith("https://t.me/")) {
       errors.telegram_link = "Link deve começar com https://t.me/";
     }
     if (!editingGroupData && !groupPhotoFile) errors.photo = "Foto é obrigatória";
@@ -559,7 +559,7 @@ const AdminDashboard = () => {
   };
 
   const handleGroupSave = async () => {
-    if (!validateGroupForm() || !user) return;
+    if (!validateGroupForm(isAdmin) || !user) return;
     setGroupSaving(true);
 
     let publicUrl = editingGroupData?.thumbnail_url || null;
