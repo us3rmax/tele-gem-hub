@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { generateSlug } from "@/lib/slug";
 
 import {
   CheckCircle,
@@ -387,12 +388,14 @@ const AdminDashboard = () => {
 
   const handleApprove = async (sub: Submission) => {
     setActionLoading(sub.id);
+    const uniqueSlug = `${generateSlug(sub.name)}-${sub.id.replace(/-/g, "").slice(0, 8)}`;
     const { error: insertError } = await supabase.from("groups").insert({
       name: sub.name,
       description: sub.description,
       category: sub.category,
       telegram_link: sub.telegram_link,
       thumbnail_url: sub.thumbnail_url,
+      slug: uniqueSlug,
       is_premium: false,
       is_verified: false,
       member_count: 0,
@@ -605,6 +608,7 @@ const AdminDashboard = () => {
     } else {
       const { error } = await supabase.from("groups").insert({
         ...payload,
+        slug: `${generateSlug(groupForm.name)}-${crypto.randomUUID().split("-")[0]}`,
         views: 0,
         source: "imported",
       });
