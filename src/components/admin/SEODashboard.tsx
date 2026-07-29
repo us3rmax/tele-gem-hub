@@ -343,8 +343,11 @@ export default function SEODashboard() {
               <p className="text-sm">Sem dados. Próxima atualização automática às 11h BRT.</p>
             </div>
           ) : (() => {
-            const p = data[period];
-            const daily = p.daily ?? [];
+            const periodData = data[period];
+            // BUG FIX: producer salva em totals.clicks, não em clicks diretamente
+            const totals = periodData.totals || periodData;
+            const p = totals;
+            const daily = periodData.daily ?? [];
             const queries = data["28d"].queries ?? [];
             const pages   = data["28d"].pages   ?? [];
 
@@ -364,10 +367,10 @@ export default function SEODashboard() {
 
                 {/* Stat cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <StatCard label="Visitas (Cliques)" value={num(p.clicks)}         icon={MousePointerClick} sub="via Google Search" />
-                  <StatCard label="Impressões"        value={num(p.impressions)}    icon={Eye}               sub="na busca do Google" />
-                  <StatCard label="CTR"               value={pct(p.ctr)}            icon={Target}            sub="cliques / impressões" />
-                  <StatCard label="Posição Média"     value={(p.position ?? 0).toFixed(1)} icon={BarChart2}         sub="ranking médio" />
+                  <StatCard label="Visitas (Cliques)" value={num(totals.clicks)}         icon={MousePointerClick} sub="via Google Search" />
+                  <StatCard label="Impressões"        value={num(totals.impressions)}    icon={Eye}               sub="na busca do Google" />
+                  <StatCard label="CTR"               value={pct(totals.ctr)}            icon={Target}            sub="cliques / impressões" />
+                  <StatCard label="Posição Média"     value={(totals.position ?? 0).toFixed(1)} icon={BarChart2}         sub="ranking médio" />
                 </div>
 
                 {/* Line chart */}
@@ -412,7 +415,8 @@ export default function SEODashboard() {
                   <h3 className="text-sm font-semibold text-zinc-300 mb-3">Comparativo de Períodos</h3>
                   <div className="grid grid-cols-3 gap-3">
                     {(["7d", "28d", "90d"] as Period[]).map(v => {
-                      const d = data[v];
+                      const raw = data[v];
+                      const d = raw.totals || raw;
                       const isActive = v === period;
                       return (
                         <div key={v} onClick={() => setPeriod(v)} className={`rounded-lg p-3 cursor-pointer border transition-colors ${isActive ? "border-pink-600 bg-pink-600/5" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"}`}>
