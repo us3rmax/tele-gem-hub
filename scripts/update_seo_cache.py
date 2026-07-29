@@ -102,6 +102,13 @@ def fetch_supabase_stats():
     recent = sb.table("groups").select("id", count="exact") \
         .gte("created_at", week_ago).execute().count
 
+    # Contagem de hidden vs visible
+    visible = sb.table("groups").select("id", count="exact").eq("hidden", False).execute().count
+    hidden = sb.table("groups").select("id", count="exact").eq("hidden", True).execute().count
+    # Prontos para liberar
+    ready_res = sb.table("groups").select("id").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).execute()
+    ready = sum(1 for g in (ready_res.data or []) if g.get("description") and 50 <= len(g.get("description", "")) <= 155)
+
     # Lê progresso de indexação da tabela indexing_progress no Supabase
     prog = sb.table("indexing_progress").select("project_id, date, sent_count").execute()
     sent_total = sum(r["sent_count"] for r in prog.data) if prog.data else 0
@@ -122,7 +129,11 @@ def fetch_supabase_stats():
 
     return {
         "total_groups": total,
+        "visible_groups": visible,
+        "hidden_groups": hidden,
+        "ready_to_release": ready,
         "new_last_7d":  recent,
+        "new_this_week": recent,  # Alias para consistência com dashboard
         "categories":   sorted(cat_count.items(), key=lambda x: -x[1])[:15],
         "indexing":     indexing,
     }

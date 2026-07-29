@@ -396,7 +396,7 @@ def main():
     print(f"   Rate: {rate}/dia")
     print(f"{'=' * 60}")
 
-    # Salvar log
+    # Salvar log local
     log = {
         "date": datetime.now().isoformat(),
         "rate": rate,
@@ -408,6 +408,76 @@ def main():
     }
     with open("/tmp/release_log.json", "w") as f:
         json.dump(log, f)
+
+    # ── Salvar métricas no Supabase para o dashboard ──────────────────────
+    now_iso = datetime.now().isoformat()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    # Salvar em seo_cache (key='auto_release') para o dashboard ler
+    cache_payload = {
+        "date": today_str,
+        "rate": rate,
+        "released_today": results["groups_released"],
+        "descriptions_fixed": results["descriptions_fixed"],
+        "broken_found": results["broken_found"],
+        "links_fixed": results["links_fixed"],
+        "thumbnails_missing": results["thumbnails_missing"],
+        "timestamp": now_iso,
+    }
+    try:
+        supabase.table("seo_cache").upsert(
+            {"key": "auto_release", "data": cache_payload, "updated_at": "now()"},
+            on_conflict="key"
+        ).execute()
+    except Exception as e:
+        print(f"⚠️ Erro ao salvar seo_cache auto_release: {e}")
+
+    # Salvar health em seo_health
+    health_status = "ok"
+    health_error = None
+    if results["broken_found"] > 10:
+        health_status = "warning"
+        health_error = f"{results['broken_found']} links quebrados encontrados"
+    if results["groups_released"] == 0 and rate > 0:
+        health_status = "warning"
+        health_error = "Nenhum grupo liberado (pode não haver prontos)"
+    try:
+        supabase.table("seo_health").upsert(
+            {
+                "task": "auto-release",
+                "last_run": now_iso,
+                "last_success": now_iso if health_status != "error" else None,
+                "status": health_status,
+                "last_error": health_error,
+            },
+            on_conflict="task"
+        ).execute()
+    except Exception as e:
+        print(f"⚠️ Erro ao salvar seo_health auto-release: {e}")
+
+    # Contar grupos visíveis/hidden para o dashboard
+    try:
+        total_res = supabase.table("groups").select("id", count="exact").execute()
+        total_groups = total_res.count
+        visible_res = supabase.table("groups").select("id", count="exact").eq("hidden", False).execute()
+        visible_groups = visible_res.count
+        hidden_res = supabase.table("groups").select("id", count="exact").eq("hidden", True).execute()
+        hidden_groups = hidden_res.count
+        # Prontos para liberar: hidden=true, description ok (50-155 chars), thumbnail ok
+        ready_res = supabase.table("groups").select("id").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).execute()
+        ready_groups = sum(1 for g in (ready_res.data or []) if g.get("description") and 50 <= len(g.get("description", "")) <= 155)
+
+        supabase.table("seo_config").upsert(
+            {"key": "group_counts", "value": {
+                "total": total_groups,
+                "visible": visible_groups,
+                "hidden": hidden_groups,
+                "ready_to_release": ready_groups,
+            }},
+            on_conflict="key"
+        ).execute()
+    except Exception as e:
+        print(f"⚠️ Erro ao contar grupos: {e}")
 
 
 if __name__ == "__main__":

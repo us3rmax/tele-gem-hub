@@ -131,14 +131,21 @@ const STATUS = {
 };
 
 const TASK_LABELS: Record<string, string> = {
-  "daily-tasks":  "Indexação + Cache SEO",
-  "health-check": "Health Check",
+  "daily-tasks":   "Indexação + Cache SEO",
+  "health-check":  "Health Check",
+  "auto-release":  "Auto Release (8/dia)",
+  "cloudflare-stats": "Stats Cloudflare",
 };
 
 // jobname → task key mapping
 const JOBNAME_TO_TASK: Record<string, string> = {
   "daily-tasks-11h":  "daily-tasks",
   "health-check-12h": "health-check",
+  "auto-release":     "auto-release",
+};
+
+const TASK_LABELS_EXTRA: Record<string, string> = {
+  "auto-release": "Auto Release (8/dia)",
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -236,7 +243,7 @@ export default function SEODashboard() {
   const [indexing,     setIndexing]     = useState<Indexing | null>(null);
   const [gscHealth,    setGscHealth]    = useState<GscHealth | null>(null);
   const [schedules,    setSchedules]    = useState<Record<string, string>>({});
-  const [sitemapCount, setSitemapCount] = useState<number>(33);
+  const [_sitemapCount, setSitemapCount] = useState<number>(33);
   const [botLogs,      setBotLogs]      = useState<BotLog[]>([]);
   const [hcResult,     setHcResult]     = useState<HealthCheckResult | null>(null);
   const [cfStats,      setCfStats]      = useState<CloudflareStats | null>(null);
@@ -290,6 +297,29 @@ export default function SEODashboard() {
         if (sitemapRes?.data?.value) {
           const v = sitemapRes.data.value as { count?: number };
           if (typeof v.count === "number") setSitemapCount(v.count);
+        }
+        // Ler release_rate e métricas do auto_release
+        const arCacheRes = await supabase.from("seo_cache").select("data").eq("key", "auto_release").single();
+        const groupCountsRes = await supabase.from("seo_config").select("value").eq("key", "group_counts").single();
+        const rateRes = await supabase.from("seo_config").select("value").eq("key", "release_rate").single();
+
+        // Mesclar dados de auto_release no supabase
+        if (data && arCacheRes?.data?.data) {
+          const arData = arCacheRes.data.data as any;
+          const releasedToday = arData.released_today ?? 0;
+          (data as any).supabase = { ...(data as any).supabase, released_today: releasedToday };
+        }
+        if (data && groupCountsRes?.data?.value) {
+          const gc = groupCountsRes.data.value as any;
+          if (typeof gc === "object") {
+            (data as any).supabase = { ...(data as any).supabase, ...gc };
+          }
+        }
+        if (data && rateRes?.data?.value) {
+          const rv = rateRes.data.value as any;
+          if (typeof rv === "object") {
+            (data as any).supabase = { ...(data as any).supabase, release_rate: rv.rate };
+          }
         }
         if (botRes?.data) setBotLogs(botRes.data as BotLog[]);
         if (hcRes?.data?.data) setHcResult(hcRes.data.data as unknown as HealthCheckResult);
@@ -563,67 +593,75 @@ export default function SEODashboard() {
             </div>
           </div>
 
-          {/* Indexing progress — baseado apenas na estratégia atual (33 URLs do sitemap) */}
+          {/* ── Auto Release Pipeline ─────────────────────────────────── */}
           {(() => {
-            const sentToday  = indexing?.sentToday ?? 0;
-            const total      = sitemapCount; // 33, de seo_config.sitemap_url_count
-            const pctV       = Math.min(100, total > 0 ? Math.round((sentToday / total) * 100) : 0);
-            const lastDate   = indexing?.lastDate ?? "";
-            // horário da última execução vem do seo_health (mais preciso que indexing_progress.date)
+            const arHealth = health.find(h => h.task === "auto-release");
+            const ranToday = arHealth?.last_success && arHealth.last_success.startsWith(new Date().toISOString().split("T")[0]);
+            const rate = data?.supabase?.release_rate ?? 8;
+            const releasedToday = data?.supabase?.released_today ?? 0;
+            const visible = data?.supabase?.visible_groups ?? 0;
+            const hidden = data?.supabase?.hidden_groups ?? 0;
+            const ready = data?.supabase?.ready_to_release ?? 0;
             const dailyHealth = health.find(h => h.task === "daily-tasks");
-            const lastRunIso  = dailyHealth?.last_success ?? null;
-            const ranToday    = lastDate === new Date().toISOString().split("T")[0];
+            const lastRunIso = dailyHealth?.last_success ?? null;
+
             return (
-              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">Indexação Google — Hoje</h3>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
-                    ranToday
-                      ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
-                      : "text-zinc-500 bg-zinc-800 border-zinc-700"
-                  }`}>
-                    {ranToday ? "Executado hoje" : lastDate ? `Último: ${lastDate}` : "Nunca"}
-                  </span>
-                </div>
+              <>
+                {/* Auto Release Status Card */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">Auto Release (8/dia)</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                      ranToday
+                        ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+                        : "text-zinc-500 bg-zinc-800 border-zinc-700"
+                    }`}>
+                      {ranToday ? `Liberados hoje: ${releasedToday}` : lastRunIso ? `Último: ${fmtRel(lastRunIso)}` : "Nunca"}
+                    </span>
+                  </div>
 
-                {/* Barra de progresso do dia */}
-                <div>
-                  <div className="flex items-end gap-2 mb-2">
-                    <span className="text-3xl font-bold text-white">{sentToday}</span>
-                    <span className="text-zinc-400 text-sm mb-1">/ {total} URLs enviadas hoje</span>
-                  </div>
-                  <div className="h-2.5 bg-zinc-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${sentToday >= total ? "bg-emerald-500" : "bg-gradient-to-r from-pink-600 to-pink-400"}`}
-                      style={{ width: `${pctV}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
-                    <span>0</span>
-                    <span>{total} URLs no sitemap</span>
-                  </div>
-                </div>
-
-                {/* Mini grid */}
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="bg-zinc-800 rounded p-2">
-                    <div className="text-zinc-500">Sitemap atual</div>
-                    <div className="text-white font-bold text-base">{total}</div>
-                  </div>
-                  <div className="bg-zinc-800 rounded p-2">
-                    <div className="text-zinc-500">Enviadas hoje</div>
-                    <div className={`font-bold text-base ${sentToday >= total ? "text-emerald-400" : "text-zinc-200"}`}>
-                      {sentToday}
+                  {/* Mini grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div className="bg-zinc-800 rounded p-2">
+                      <div className="text-zinc-500">Visíveis no site</div>
+                      <div className="text-emerald-400 font-bold text-base">{visible.toLocaleString("pt-BR")}</div>
+                    </div>
+                    <div className="bg-zinc-800 rounded p-2">
+                      <div className="text-zinc-500">Hidden (noindex)</div>
+                      <div className="text-yellow-400 font-bold text-base">{hidden.toLocaleString("pt-BR")}</div>
+                    </div>
+                    <div className="bg-zinc-800 rounded p-2">
+                      <div className="text-zinc-500">Prontos p/ liberar</div>
+                      <div className={`font-bold text-base ${ready > 0 ? "text-cyan-400" : "text-zinc-500"}`}>{ready}</div>
+                    </div>
+                    <div className="bg-zinc-800 rounded p-2">
+                      <div className="text-zinc-500">Rate atual</div>
+                      <div className="text-white font-bold text-base">{rate}/dia</div>
                     </div>
                   </div>
-                  <div className="bg-zinc-800 rounded p-2">
-                    <div className="text-zinc-500">Última execução</div>
-                    <div className="text-zinc-200 font-bold text-base leading-tight">
-                      {lastRunIso ? fmtRel(lastRunIso) : lastDate || "—"}
+
+                  {arHealth?.last_error && (
+                    <div className="bg-yellow-950/30 border border-yellow-900/30 rounded p-2 text-xs text-yellow-400">
+                      {arHealth.last_error}
                     </div>
-                  </div>
+                  )}
                 </div>
-              </div>
+
+                {/* Indexação Google (sitemap estático) */}
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">Indexação Google (Sitemap Estático)</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                      dailyHealth?.last_success && dailyHealth.last_success.startsWith(new Date().toISOString().split("T")[0])
+                        ? "text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
+                        : "text-zinc-500 bg-zinc-800 border-zinc-700"
+                    }`}>
+                      {dailyHealth?.last_success?.startsWith(new Date().toISOString().split("T")[0]) ? "Executado hoje" : dailyHealth?.last_success ? `Último: ${fmtRel(dailyHealth.last_success)}` : "Nunca"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500">33 URLs estáticas + categorias enviadas ao Google diariamente via pg_cron.</p>
+                </div>
+              </>
             );
           })()}
 
@@ -744,24 +782,40 @@ export default function SEODashboard() {
             )}
           </div>
 
-          {/* Supabase groups */}
-          {data && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-white">Grupos no Banco</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-zinc-800 rounded p-3">
-                  <div className="text-zinc-500 text-xs">Total</div>
-                  <div className="text-2xl font-bold text-white">{(data.supabase.total_groups ?? 0).toLocaleString("pt-BR")}</div>
-                </div>
-                <div className="bg-zinc-800 rounded p-3">
-                  <div className="text-zinc-500 text-xs flex items-center gap-1">
-                    <TrendingUp className="h-3 w-3 text-emerald-400" /> Esta semana
+          {/* Supabase groups — com contagem detalhada */}
+          {data && (() => {
+            const total = data.supabase.total_groups ?? 0;
+            const visible = data.supabase.visible_groups ?? 0;
+            const hidden = data.supabase.hidden_groups ?? (total - visible);
+            const ready = data.supabase.ready_to_release ?? 0;
+            const newGroups = data.supabase.new_this_week ?? data.supabase.new_last_7d ?? 0;
+            const days_running = data.supabase.release_rate ? Math.round((Date.now() - new Date("2026-07-30").getTime()) / 86400000) : 0;
+            return (
+              <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-semibold text-white">Grupos no Banco</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-zinc-800 rounded p-3">
+                    <div className="text-zinc-500 text-xs">Total</div>
+                    <div className="text-2xl font-bold text-white">{total.toLocaleString("pt-BR")}</div>
                   </div>
-                  <div className="text-2xl font-bold text-emerald-400">+{(data.supabase.new_this_week ?? data.supabase.new_last_7d ?? 0).toLocaleString("pt-BR")}</div>
+                  <div className="bg-zinc-800 rounded p-3">
+                    <div className="text-zinc-500 text-xs flex items-center gap-1">
+                      <TrendingUp className="h-3 w-3 text-emerald-400" /> Esta semana
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-400">+{newGroups.toLocaleString("pt-BR")}</div>
+                  </div>
+                  <div className="bg-zinc-800 rounded p-3">
+                    <div className="text-zinc-500 text-xs">Dias rodando</div>
+                    <div className="text-2xl font-bold text-white">{days_running || "—"}</div>
+                  </div>
+                  <div className="bg-zinc-800 rounded p-3">
+                    <div className="text-zinc-500 text-xs">Categorias</div>
+                    <div className="text-2xl font-bold text-white">{(data.supabase.categories ?? []).length}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
         </div>
       )}
