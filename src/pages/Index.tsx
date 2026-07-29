@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
@@ -12,6 +12,95 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGroups, usePremiumGroups } from "@/hooks/use-groups";
 const PER_PAGE = 20;
 
+// Meta descriptions únicas por categoria para evitar duplicidade quando filtrado por ?category=X
+const CATEGORY_SEO: Record<string, { title: string; description: string; keywords: string }> = {
+  putaria: {
+    title: "Grupos de Putaria Telegram | Canais18",
+    description: "Grupos de putaria no Telegram verificados e ativos. +1.900 canais com conteúdo adulto brasileiro. Acesse grátis em canais18.com.",
+    keywords: "grupos putaria telegram, canais putaria, putaria telegram 2026",
+  },
+  porno: {
+    title: "Canais Porno Telegram | Canais18",
+    description: "Canais de telegram porno com vídeos HD, amadoras e conteúdo profissional. Diretório verificado com +1.900 grupos ativos.",
+    keywords: "telegram porno, canais porno telegram, porno telegram 2026",
+  },
+  xxx: {
+    title: "Canais XXX Telegram | Canais18",
+    description: "Conteúdo XXX no Telegram sem censura. Amadoras, casadas e celebridades. +1.900 grupos verificados em canais18.com.",
+    keywords: "telegram xxx, canais xxx telegram, xxx telegram 2026",
+  },
+  novinhas: {
+    title: "Grupos de Novinhas Telegram | Canais18",
+    description: "Grupos de novinhas no Telegram: influencers, amadoras e criadoras de conteúdo. Previews e links diretos verificados.",
+    keywords: "novinhas telegram, grupos novinhas, novinhas telegram 2026",
+  },
+  amadoras: {
+    title: "Amadoras Telegram Brasileiras | Canais18",
+    description: "Amadoras brasileiras no Telegram com conteúdo real e autêntico. +1.900 grupos verificados. Acesse grátis em canais18.com.",
+    keywords: "amadoras telegram, amadoras brasileiras telegram, telegram amadoras 2026",
+  },
+  vazados: {
+    title: "Vazados Telegram | Canais18",
+    description: "Vazados fresquinhos no Telegram: conteúdo exclusivo atualizado diariamente. Links testados e funcionando. Canais18.com.",
+    keywords: "vazados telegram, vazados telegram 2026, telegram vazados",
+  },
+  onlyfans: {
+    title: "OnlyFans Telegram Grátis | Canais18",
+    description: "OnlyFans no Telegram grátis: conteúdo exclusivo de criadoras sem assinatura. +1.900 grupos verificados em canais18.com.",
+    keywords: "onlyfans telegram, onlyfans telegram grátis, telegram onlyfans 2026",
+  },
+  privacy: {
+    title: "Privacy Telegram | Canais18",
+    description: "Privacy telegram: packs e conteúdo exclusivo de modelos brasileiras. Links diretos e verificados. Canais18.com.",
+    keywords: "privacy telegram, privacy telegram grátis, telegram privacy 2026",
+  },
+  geral: {
+    title: "Grupos Telegram 18+ | Canais18",
+    description: "Grupos telegram 18+: catálogo completo de canais adultos verificados. Navegue por categoria e entre direto. Canais18.com.",
+    keywords: "grupos telegram 18, canais telegram adulto, telegram 18+ 2026",
+  },
+  celebridades: {
+    title: "Celebridades Telegram | Canais18",
+    description: "Celebridades no Telegram: famosos em conteúdo adulto. Vazamentos verificados e organizados por nome. Canais18.com.",
+    keywords: "celebridades telegram, famosos telegram, telegram celebridades 2026",
+  },
+  gay: {
+    title: "Grupos Gay Telegram | Canais18",
+    description: "Grupos gay telegram verificados: comunidade LGBT ativa e segura. Canais testados diariamente. Canais18.com.",
+    keywords: "gay telegram, grupos gay telegram, telegram gay 2026",
+  },
+  casadas: {
+    title: "Casadas Telegram | Canais18",
+    description: "Casadas no Telegram com conteúdo adulto real. Grupos verificados e ativos. Acesse grátis em canais18.com.",
+    keywords: "casadas telegram, grupos casadas telegram, telegram casadas 2026",
+  },
+  fetiche: {
+    title: "Fetiche Telegram | Canais18",
+    description: "Fetiche telegram: grupos especializados para cada preferência. Comunidade sem julgamento e verificada. Canais18.com.",
+    keywords: "fetiche telegram, grupos fetiche telegram, telegram fetiche 2026",
+  },
+  asiaticas: {
+    title: "Asiáticas Telegram | Canais18",
+    description: "Asiáticas no Telegram: conteúdo de criadoras asiáticas. Grupos verificados com acesso direto. Canais18.com.",
+    keywords: "asiáticas telegram, grupos asiáticas telegram, telegram asiáticas 2026",
+  },
+  bdsm: {
+    title: "BDSM Telegram | Canais18",
+    description: "BDSM telegram: comunidades especializadas para amantes do gênero. Links verificados e seguros. Canais18.com.",
+    keywords: "bdsm telegram, grupos bdsm telegram, telegram bdsm 2026",
+  },
+  bbw: {
+    title: "BBW Telegram | Canais18",
+    description: "BBW no Telegram: conteúdo de criadoras plus size. Grupos verificados e com previews. Canais18.com.",
+    keywords: "bbw telegram, grupos bbw telegram, telegram bbw 2026",
+  },
+  coroas: {
+    title: "Coroas Telegram | Canais18",
+    description: "Coroas no Telegram: conteúdo de mulheres maduras. Grupos verificados e com membros ativos. Canais18.com.",
+    keywords: "coroas telegram, grupos coroas telegram, telegram coroas 2026",
+  },
+};
+
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -19,6 +108,7 @@ const Index = () => {
 
   const page = Number(searchParams.get("page") || "1");
   const searchTerm = searchParams.get("search") || "";
+  const categoryFilter = searchParams.get("category") || "";
 
   const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 20 });
   const { data: premiumGrupos = [] } = usePremiumGroups();
@@ -27,18 +117,37 @@ const Index = () => {
   const totalCount = data?.totalCount ?? 0;
   const totalPages = Math.ceil(totalCount / PER_PAGE);
 
+  // SEO dinâmico baseado na categoria filtrada
+  const seo = useMemo(() => {
+    if (categoryFilter && CATEGORY_SEO[categoryFilter.toLowerCase()]) {
+      const cat = CATEGORY_SEO[categoryFilter.toLowerCase()];
+      return {
+        title: cat.title,
+        description: cat.description,
+        keywords: cat.keywords,
+        canonicalUrl: `https://www.canais18.com/?category=${encodeURIComponent(categoryFilter)}`,
+      };
+    }
+    return {
+      title: "Canais Telegram 18+ | Canais18 - Putaria, Porno, Grupos Adultos",
+      description: "Encontre os melhores canais telegram 18+. Putaria, porno, novinhas, amadoras, vazados e mais. 151+ canais verificados e atualizados diariamente. Entre agora!",
+      keywords: "canais 18, canais telegram 18, telegram adulto, canais putaria telegram, canais porno telegram, telegram 18+",
+      canonicalUrl: "https://www.canais18.com/",
+    };
+  }, [categoryFilter]);
+
   const handlePageChange = (p: number) => {
-    setSearchParams({ page: String(p) });
+    setSearchParams({ page: String(p), ...(categoryFilter ? { category: categoryFilter } : {}) });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Canais Telegram 18+ | Canais18 - Putaria, Porno, Grupos Adultos"
-        description="Encontre os melhores canais telegram 18+. Putaria, porno, novinhas, amadoras, vazados e mais. 151+ canais verificados e atualizados diariamente. Entre agora!"
-        keywords="canais 18, canais telegram 18, telegram adulto, canais putaria telegram, canais porno telegram, telegram 18+"
-        canonicalUrl="https://www.canais18.com/"
+        title={seo.title}
+        description={seo.description}
+        keywords={seo.keywords}
+        canonicalUrl={seo.canonicalUrl}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebSite",
@@ -50,9 +159,9 @@ const Index = () => {
           potentialAction: {
             "@type": "SearchAction",
             target: {
-  "@type": "EntryPoint",
-  urlTemplate: "https://www.canais18.com/?search={search_term_string}",
-},
+              "@type": "EntryPoint",
+              urlTemplate: "https://www.canais18.com/?search={search_term_string}",
+            },
             "query-input": "required name=search_term_string",
           },
         }}
