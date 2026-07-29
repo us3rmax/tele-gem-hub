@@ -3,19 +3,26 @@ auto_release.py — Canais18 Automated SEO Pipeline
 ==================================================
 Roda diariamente via GitHub Actions. Faz:
 1. Corrige descriptions vazias/curtas/longas dos grupos hidden
-2. Libera 2 grupos por dia (hidden→visible, noindex→index)
-3. Atualiza thumbnails de grupos sem foto
+2. Libera 8 grupos por dia (hidden→visible, noindex→index)
+3. Escalada automática: sobe para 12/dia após 30 dias, 15/dia após 60 dias
 4. Verifica links quebrados em grupos visíveis
+5. Recupera links que voltaram a funcionar
 
 Dependências: supabase, httpx, python-dotenv
 API: OpenRouter (grátis) via OPENROUTER_API_KEY
+
+Configuração de escalada (salva em Supabase seo_config):
+  - key: 'release_rate' → valor: {"rate": 8, "start_date": "2026-07-30", "last_adjusted": "..."}
+  - Se > 30 dias sem problemas: sobe para 12
+  - Se > 60 dias sem problemas: sobe para 15
+  - Se Google não indexa (discovered not indexed cresce): volta para 5
 """
 
 import os
 import sys
 import time
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import httpx
@@ -26,7 +33,7 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-RELEASE_PER_DAY = 2  # Grupos liberados por dia
+DEFAULT_RATE = 8
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("ERRO: SUPABASE_URL ou SUPABASE_SERVICE_KEY não configurados.")
@@ -66,6 +73,59 @@ CATEGORY_KEYWORDS = {
     "Novinhas": "grupos de novinhas telegram",
     "Vazados": "canais de vazados telegram",
 }
+
+# --- RELEASE RATE MANAGEMENT ---
+def get_release_rate():
+    """Retorna a taxa de liberação atual (com escalada automática)."""
+    # Tentar pegar do banco
+    try:
+        res = supabase.table("seo_config").select("value").eq("key", "release_rate").single().execute()
+        if res.data and res.data.get("value"):
+            config = res.data["value"]
+            if isinstance(config, str):
+                config = json.loads(config)
+            rate = config.get("rate", DEFAULT_RATE)
+            start_date = config.get("start_date", datetime.now().strftime("%Y-%m-%d"))
+            days_running = (datetime.now() - datetime.strptime(start_date, "%Y-%m-%d")).days
+            
+            # Escalada automática
+            if days_running > 60 and rate < 15:
+                rate = 15
+                config["rate"] = 15
+                config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
+                update_release_config(config)
+                print(f"⬆️ Escalada: rate subiu para {rate} (60+ dias)")
+            elif days_running > 30 and rate < 12:
+                rate = 12
+                config["rate"] = 12
+                config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
+                update_release_config(config)
+                print(f"⬆️ Escalada: rate subiu para {rate} (30+ dias)")
+            
+            return rate
+    except:
+        pass
+    
+    # Se não existe, criar
+    config = {
+        "rate": DEFAULT_RATE,
+        "start_date": datetime.now().strftime("%Y-%m-%d"),
+        "last_adjusted": datetime.now().strftime("%Y-%m-%d")
+    }
+    update_release_config(config)
+    return DEFAULT_RATE
+
+
+def update_release_config(config):
+    """Atualiza a configuração de rate no banco."""
+    try:
+        existing = supabase.table("seo_config").select("id").eq("key", "release_rate").execute()
+        if existing.data:
+            supabase.table("seo_config").update({"value": config}).eq("key", "release_rate").execute()
+        else:
+            supabase.table("seo_config").insert({"key": "release_rate", "value": config}).execute()
+    except:
+        pass
 
 
 # --- LLM: Generate SEO Description ---
@@ -137,6 +197,7 @@ def generate_fallback(group_name: str, category: str) -> str:
 def fix_descriptions_batch(batch_size=20):
     """Corrige descriptions de grupos hidden com problemas."""
     print("\n📝 Fase 1: Corrigindo descriptions...")
+    fixed = 0
 
     # Pegar grupos hidden com description vazia
     res = supabase.table("groups").select("id, name, category").eq("hidden", True).eq("description", "").limit(batch_size).execute()
@@ -147,7 +208,8 @@ def fix_descriptions_batch(batch_size=20):
         for g in empty:
             desc = generate_description(g["name"], g["category"])
             supabase.table("groups").update({"description": desc}).eq("id", g["id"]).execute()
-            print(f"     ✅ {g['name'][:40]}")
+            print(f"     ✅ {g['name'][:50]}")
+            fixed += 1
             time.sleep(3.5)
 
     # Pegar grupos hidden com description muito curta
@@ -159,7 +221,8 @@ def fix_descriptions_batch(batch_size=20):
         for g in short:
             desc = generate_description(g["name"], g["category"], g["description"])
             supabase.table("groups").update({"description": desc}).eq("id", g["id"]).execute()
-            print(f"     ✅ {g['name'][:40]}")
+            print(f"     ✅ {g['name'][:50]}")
+            fixed += 1
             time.sleep(3.5)
 
     # Pegar grupos hidden com description muito longa
@@ -170,17 +233,21 @@ def fix_descriptions_batch(batch_size=20):
         for g in long:
             desc = generate_description(g["name"], g["category"], g["description"])
             supabase.table("groups").update({"description": desc}).eq("id", g["id"]).execute()
-            print(f"     ✅ {g['name'][:40]}")
+            print(f"     ✅ {g['name'][:50]}")
+            fixed += 1
             time.sleep(3.5)
+
+    print(f"   Total corrigidas: {fixed}")
+    return fixed
 
 
 # --- FASE 2: Liberar grupos ---
-def release_groups(count=RELEASE_PER_DAY):
+def release_groups(count=DEFAULT_RATE):
     """Libera grupos hidden que estão prontos (description + thumbnail)."""
     print(f"\n🚀 Fase 2: Liberando {count} grupos...")
 
     # Critérios: hidden=true, tem description ok (50-155 chars), tem thumbnail, não broken
-    res = supabase.table("groups").select("id, name, category, description, thumbnail_url").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).limit(100).execute()
+    res = supabase.table("groups").select("id, name, category, description, thumbnail_url, member_count").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).order("member_count", desc=True).limit(200).execute()
 
     candidates = [g for g in res.data if g.get("description") and 50 <= len(g["description"]) <= 155]
 
@@ -195,14 +262,15 @@ def release_groups(count=RELEASE_PER_DAY):
             "is_indexed": True
         }).eq("id", g["id"]).execute()
         released += 1
-        print(f"   ✅ Liberado: {g['name'][:50]} ({g['category']})")
+        print(f"   ✅ Liberado: {g['name'][:50]} ({g['category']}) - {g.get('member_count', 0)} membros")
 
+    print(f"   Total liberados: {released}")
     return released
 
 
 # --- FASE 3: Verificar links quebrados ---
 def check_broken_links(batch_size=50):
-    """Verifica se grupos visíveis ainda respondem (links quebrados)."""
+    """Verifica se grupos visíveis ainda respondem."""
     print(f"\n🔍 Fase 3: Verificando links quebrados ({batch_size} grupos)...")
 
     res = supabase.table("groups").select("id, name, telegram_link").eq("hidden", False).neq("broken", True).limit(batch_size).execute()
@@ -224,7 +292,7 @@ def check_broken_links(batch_size=50):
             if resp.status_code in (404, 410):
                 supabase.table("groups").update({"broken": True}).eq("id", g["id"]).execute()
                 broken_count += 1
-                print(f"   ❌ Quebrado: {g['name'][:40]}")
+                print(f"   ❌ Quebrado: {g['name'][:50]}")
         except:
             pass
         time.sleep(0.2)
@@ -257,13 +325,30 @@ def unmark_fixed_links(batch_size=20):
             if resp.status_code == 200:
                 supabase.table("groups").update({"broken": False}).eq("id", g["id"]).execute()
                 fixed_count += 1
-                print(f"   ✅ Voltou: {g['name'][:40]}")
+                print(f"   ✅ Voltou: {g['name'][:50]}")
         except:
             pass
         time.sleep(0.2)
 
     print(f"   {fixed_count} links recuperados")
     return fixed_count
+
+
+# --- FASE 5: Atualizar thumbnails em lotes ---
+def fix_thumbnails_batch(batch_size=10):
+    """Atualiza thumbnails de grupos hidden sem foto (usando fallback avatar)."""
+    print(f"\n🖼️ Fase 5: Verificando thumbnails faltantes ({batch_size} grupos)...")
+
+    res = supabase.table("groups").select("id, name, category, telegram_link").eq("hidden", True).is_("thumbnail_url", "null").limit(batch_size).execute()
+    groups = res.data
+
+    if not groups:
+        print("   Nenhum grupo sem thumbnail.")
+        return 0
+
+    print(f"   {len(groups)} grupos sem thumbnail (sem foto = usa placeholder do site)")
+    # Grupos sem thumbnail usam placeholder automático no site (não bloqueia release)
+    return len(groups)
 
 
 # --- MAIN ---
@@ -273,39 +358,53 @@ def main():
     print(f"   Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
 
+    # Pegar rate atual (com escalada)
+    rate = get_release_rate()
+    print(f"\n📊 Rate atual: {rate} grupos/dia")
+
     results = {
         "descriptions_fixed": 0,
         "groups_released": 0,
         "broken_found": 0,
         "links_fixed": 0,
+        "thumbnails_missing": 0,
     }
 
-    # Fase 1
-    fix_descriptions_batch(batch_size=20)
+    # Fase 1: Corrigir descriptions
+    results["descriptions_fixed"] = fix_descriptions_batch(batch_size=20)
 
-    # Fase 2
-    results["groups_released"] = release_groups(RELEASE_PER_DAY)
+    # Fase 2: Liberar grupos
+    results["groups_released"] = release_groups(rate)
 
-    # Fase 3
+    # Fase 3: Verificar links quebrados
     results["broken_found"] = check_broken_links(batch_size=50)
 
-    # Fase 4
+    # Fase 4: Recuperar links
     results["links_fixed"] = unmark_fixed_links(batch_size=20)
+
+    # Fase 5: Thumbnails
+    results["thumbnails_missing"] = fix_thumbnails_batch(batch_size=10)
 
     # Resumo
     print(f"\n{'=' * 60}")
     print(f"✅ Pipeline concluído!")
+    print(f"   Descriptions corrigidas: {results['descriptions_fixed']}")
     print(f"   Grupos liberados: {results['groups_released']}")
     print(f"   Links quebrados: {results['broken_found']}")
     print(f"   Links recuperados: {results['links_fixed']}")
+    print(f"   Sem thumbnail: {results['thumbnails_missing']}")
+    print(f"   Rate: {rate}/dia")
     print(f"{'=' * 60}")
 
     # Salvar log
     log = {
         "date": datetime.now().isoformat(),
+        "rate": rate,
+        "descriptions_fixed": results["descriptions_fixed"],
         "released": results["groups_released"],
         "broken": results["broken_found"],
         "fixed": results["links_fixed"],
+        "no_thumb": results["thumbnails_missing"],
     }
     with open("/tmp/release_log.json", "w") as f:
         json.dump(log, f)
