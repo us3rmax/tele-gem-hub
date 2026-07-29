@@ -1,0 +1,39 @@
+name: Auto Release SEO Pipeline
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 9h UTC = 06h BRT (Brasília) — todo dia de manhã
+  workflow_dispatch:        # Permitir trigger manual
+
+jobs:
+  auto-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt httpx
+
+      - name: Run auto_release pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python scripts/auto_release.py
+
+      - name: Upload release log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-log-${{ github.run_id }}
+          path: /tmp/release_log.json
