@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
-import Footer from "@/components/Footer";
 import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import SortTabs from "@/components/SortTabs";
@@ -297,8 +296,6 @@ const Modelos = () => {
         <BannerAd position="bottom" />
       </main>
 
-      {/* Shared Footer */}
-      <Footer />
     </div>
   );
 };
