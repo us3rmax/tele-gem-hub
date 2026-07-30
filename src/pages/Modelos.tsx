@@ -206,11 +206,11 @@ const Modelos = () => {
           </div>
 
           {/* Todos / Gratuitos tabs */}
-          <div className="mb-5 flex items-center gap-2">
-            <div className="flex w-full max-w-sm rounded-xl border border-border bg-secondary/50 p-1">
+          <div className="mb-5 flex items-center justify-center">
+            <div className="flex w-full max-w-md rounded-full border border-border bg-secondary/50 p-1">
               <button
                 onClick={() => setFilterTab("todos")}
-                className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                className={`flex-1 rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
                   filterTab === "todos"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground"
@@ -220,7 +220,7 @@ const Modelos = () => {
               </button>
               <button
                 onClick={() => setFilterTab("gratuitos")}
-                className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                className={`flex-1 rounded-full px-6 py-2.5 text-sm font-semibold transition-all ${
                   filterTab === "gratuitos"
                     ? "bg-primary text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground"
