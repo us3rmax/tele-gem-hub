@@ -7,6 +7,7 @@ import BannerAd from "@/components/BannerAd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGroups, useFeaturedGroups } from "@/hooks/use-groups";
 import { useFeaturedPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
+import { useFreePrivacyModels, type FreePrivacyModelWithProxy } from "@/hooks/use-free-models";
 import { groupPath } from "@/lib/slug";
 import { Search, CheckCircle, Bookmark, ExternalLink } from "lucide-react";
 import type { Grupo } from "@/data/mock";
@@ -168,18 +169,89 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
   );
 }
 
+// Free Privacy Model Card — same style but with "Grátis" badge and ranking number
+function FreeModelCard({ model }: { model: FreePrivacyModelWithProxy }) {
+  const hasThumb = !!model.proxied_avatar;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border/30 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+      {/* Photo section — external link to Privacy */}
+      <a
+        href={model.privacy_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative block aspect-[3/4] overflow-hidden"
+      >
+        {hasThumb ? (
+          <img
+            src={model.proxied_avatar}
+            alt={`${model.name} - Perfil gratuito Privacy | Canais18`}
+            className="h-full w-full object-cover object-top transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+            width={400}
+            height={533}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-500/20 to-emerald-500/5">
+            <span className="text-5xl font-bold text-green-400/30">{model.name.charAt(0)}</span>
+          </div>
+        )}
+
+        {/* Ranking badge top-right */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <span className="rounded-full bg-green-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
+            {model.ranking}º
+          </span>
+          {model.is_verified && (
+            <span className="flex items-center gap-1 rounded-full bg-blue-500 px-2 py-1 text-xs font-bold text-white shadow-md">
+              <CheckCircle className="h-3 w-3" />
+            </span>
+          )}
+        </div>
+      </a>
+
+      {/* Info section — white background */}
+      <div className="px-4 pt-3 pb-3">
+        <div className="mb-1 flex items-center gap-1.5">
+          <h3 className="line-clamp-1 text-base font-bold text-gray-900">{model.name}</h3>
+          {model.is_verified && (
+            <CheckCircle className="h-4 w-4 shrink-0 text-blue-500" />
+          )}
+        </div>
+
+        <p className="mb-3 text-sm font-medium text-primary">@{model.profile_name}</p>
+
+        {/* View on Privacy button */}
+        <a
+          href={model.privacy_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 py-2.5 text-center text-sm font-bold text-white shadow-md transition-all duration-200 hover:shadow-lg active:scale-[0.98]"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Ver no Privacy
+        </a>
+      </div>
+    </div>
+  );
+}
+
 const Modelos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filterTab, setFilterTab] = useState<"todos" | "gratuitos">("todos");
 
-  // Featured models (from admin dashboard - featured=true)
+  // Section 1: Featured models (from admin dashboard - groups with featured=true)
   const { data: featuredData, isLoading: featuredLoading } = useFeaturedGroups();
   const featuredModels = useMemo(() => featuredData || [], [featuredData]);
 
-  // Featured Privacy models
+  // Section 2: Top Creators (featured Privacy models — the 16 we imported)
   const { data: featuredPrivacyData, isLoading: featuredPrivacyLoading } = useFeaturedPrivacyModels();
   const featuredPrivacyModels = useMemo(() => featuredPrivacyData || [], [featuredPrivacyData]);
+
+  // Section 3: Free Privacy profiles
+  const { data: freeModels, isLoading: freeLoading } = useFreePrivacyModels();
+  const freePrivacyModels = useMemo(() => freeModels || [], [freeModels]);
 
   // Main query — filter by gratuitos if tab is active
   const { data, isLoading, isError } = useGroups({
@@ -235,15 +307,48 @@ const Modelos = () => {
 
       {/* Main Content */}
       <main className="mx-auto max-w-7xl space-y-12 px-4 py-8">
-        {/* Section 1: Privacy Models em Destaque (direct link to Privacy) */}
+
+        {/* Section 1: Criadoras em Destaque (from admin - groups) */}
+        {featuredModels.length > 0 && (
+          <section>
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <span className="text-lg">⭐</span>
+                Criadoras em <span className="text-primary">Destaque</span>
+              </h2>
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {featuredModels.length} criadoras
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {featuredLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
+                      <Skeleton className="aspect-[3/4] w-full" />
+                      <div className="space-y-2 p-4">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-8 w-full rounded-xl" />
+                      </div>
+                    </div>
+                  ))
+                : featuredModels.map((grupo) => (
+                    <ModelCard key={grupo.id} grupo={grupo} />
+                  ))}
+            </div>
+          </section>
+        )}
+
+        {/* Section 2: Top Creators (featured Privacy models) */}
         {featuredPrivacyModels.length > 0 && (
           <section>
             <div className="mb-5 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
                 <span className="text-lg">👑</span>
-                Modelos <span className="text-primary">Privacy</span> em Destaque
+                <span className="text-primary">Top Creators</span>
               </h2>
-              <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-medium text-pink-600">
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
                 {featuredPrivacyModels.length} criadoras
               </span>
             </div>
@@ -267,16 +372,21 @@ const Modelos = () => {
           </section>
         )}
 
-        {/* Section 2: Criadoras em Destaque (from admin - groups) */}
-        {featuredModels.length > 0 && (
+        {/* Section 3: Perfis gratuitos */}
+        {freePrivacyModels.length > 0 && (
           <section>
-            <h2 className="mb-5 flex items-center gap-2 text-lg font-bold text-foreground">
-              <span className="text-lg">⭐</span>
-              Criadoras em <span className="text-primary">Destaque</span>
-            </h2>
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <span className="text-lg">🆓</span>
+                Perfis <span className="text-green-500">gratuitos</span>
+              </h2>
+              <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">
+                {freePrivacyModels.length} perfis
+              </span>
+            </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {featuredLoading
+              {freeLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
                       <Skeleton className="aspect-[3/4] w-full" />
@@ -287,14 +397,14 @@ const Modelos = () => {
                       </div>
                     </div>
                   ))
-                : featuredModels.map((grupo) => (
-                    <ModelCard key={grupo.id} grupo={grupo} />
+                : freePrivacyModels.map((model) => (
+                    <FreeModelCard key={model.id} model={model} />
                   ))}
             </div>
           </section>
         )}
 
-        {/* Section 3: Todos os Modelos Privacy */}
+        {/* Section 4: Mais Buscadas (all groups with tabs) */}
         <section>
           <div className="mb-5 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
