@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,17 +195,19 @@ const AdminDashboard = () => {
   };
 
   const mainSection = (
-    mainTab === "categorias" ? "categorias"    :
-    mainTab === "banners"    ? "banners"       :
-    mainTab === "seo"        ? "seo"           :
+    mainTab === "categorias"     ? "categorias"    :
+    mainTab === "banners"        ? "banners"       :
+    mainTab === "seo"            ? "seo"           :
+    mainTab === "privacy_models" ? "privacy_models":
     "grupos_section"
-  ) as "grupos_section" | "categorias" | "banners" | "seo";
+  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models";
 
   const activeTab =
-    mainTab === "grupos"     ? (_subToTab[subTab ?? ""] ?? "pending") :
-    mainTab === "banners"    ? "banners"    :
-    mainTab === "categorias" ? "categorias" :
-    mainTab === "seo"        ? "seo"        :
+    mainTab === "grupos"         ? (_subToTab[subTab ?? ""] ?? "pending") :
+    mainTab === "banners"        ? "banners"    :
+    mainTab === "categorias"     ? "categorias" :
+    mainTab === "seo"            ? "seo"        :
+    mainTab === "privacy_models" ? "privacy_models" :
     "pending";
 
   // Submissions state
@@ -383,6 +385,8 @@ const AdminDashboard = () => {
       fetchBrokenGroups();
     } else if (activeTab === "categorias") {
       fetchCategories();
+    } else if (activeTab === "privacy_models") {
+      fetchPrivacyModels();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -1219,6 +1223,67 @@ const AdminDashboard = () => {
     );
   }
 
+  // Privacy Models state
+  const [privacyModels, setPrivacyModels] = useState<any[]>([]);
+  const [privacyLoading, setPrivacyLoading] = useState(false);
+  const [privacySearch, setPrivacySearch] = useState("");
+
+  const fetchPrivacyModels = async (search = "") => {
+    setPrivacyLoading(true);
+    let query = supabase
+      .from("privacy_models")
+      .select("*")
+      .eq("is_active", true)
+      .order("ranking", { ascending: true })
+      .limit(500);
+    if (search.trim()) {
+      query = query.or(`name.ilike.%${search.trim()}%,profile_name.ilike.%${search.trim()}%`);
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error fetching privacy models:", error);
+      setPrivacyModels([]);
+    } else {
+      setPrivacyModels((data as any[]) || []);
+    }
+    setPrivacyLoading(false);
+  };
+
+  const togglePrivacyFeatured = async (model: any) => {
+    const newVal = !model.featured;
+    const { error } = await supabase
+      .from("privacy_models")
+      .update({ featured: newVal })
+      .eq("id", model.id);
+    if (!error) {
+      setPrivacyModels((prev) =>
+        prev.map((m) => (m.id === model.id ? { ...m, featured: newVal } : m))
+      );
+      toast({ title: newVal ? "Destacado!" : "Destaque removido", duration: 1500 });
+    }
+  };
+
+  const togglePrivacyActive = async (model: any) => {
+    const { error } = await supabase
+      .from("privacy_models")
+      .update({ is_active: false })
+      .eq("id", model.id);
+    if (!error) {
+      setPrivacyModels((prev) => prev.filter((m) => m.id !== model.id));
+      toast({ title: "Modelo removido do site", duration: 1500 });
+    }
+  };
+
+  const filteredPrivacyModels = useMemo(() => {
+    if (!privacySearch.trim()) return privacyModels;
+    const q = privacySearch.toLowerCase();
+    return privacyModels.filter(
+      (m) =>
+        m.name?.toLowerCase().includes(q) ||
+        m.profile_name?.toLowerCase().includes(q)
+    );
+  }, [privacyModels, privacySearch]);
+
   if (!user || !isAdmin) return null;
 
   const pendingCount = activeTab === "pending" ? submissions.length : null;
@@ -1243,11 +1308,15 @@ const AdminDashboard = () => {
               else if (v === "categorias") navigate("/admin/categorias");
               else if (v === "banners")    navigate("/admin/banners");
               else if (v === "seo")        navigate("/admin/seo/analytics");
-            }}>
-          <TabsList className="w-full">
+              else if (v === "privacy_models") navigate("/admin/privacy_models");
+            }}>          <TabsList className="w-full">
             <TabsTrigger value="grupos_section" className="flex-1 gap-2">
               <Search className="h-4 w-4" />
               Grupos
+            </TabsTrigger>
+            <TabsTrigger value="privacy_models" className="flex-1 gap-2">
+              <ExternalLink className="h-4 w-4" />
+              Privacy
             </TabsTrigger>
             <TabsTrigger value="categorias" className="flex-1 gap-2">
               <ImageIcon className="h-4 w-4" />
@@ -2192,6 +2261,116 @@ const AdminDashboard = () => {
 
           <TabsContent value="seo" className="mt-4">
             <SEODashboard />
+          </TabsContent>
+
+          {/* Privacy Models tab */}
+          <TabsContent value="privacy_models" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Gerenciar Modelos Privacy</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Controle os perfis do Privacy exibidos na página /modelos. Marque como destaque ou remova do site.
+                </p>
+              </div>
+              <Badge variant="secondary" className="text-sm">
+                {privacyModels.length} modelos
+              </Badge>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome ou @perfil..."
+                value={privacySearch}
+                onChange={(e) => setPrivacySearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {privacyLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : filteredPrivacyModels.length === 0 ? (
+              <p className="py-12 text-center text-muted-foreground">Nenhum modelo encontrado.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {filteredPrivacyModels.map((model) => (
+                  <div
+                    key={model.id}
+                    className={`flex items-center gap-3 overflow-hidden rounded-xl border p-3 transition-colors ${
+                      model.featured
+                        ? "border-yellow-500/30 bg-card"
+                        : "border-border bg-card"
+                    }`}
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                      <img
+                        src={model.avatar_url}
+                        alt={model.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{model.name}</h3>
+                        {model.featured && (
+                          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">
+                            Destaque
+                          </Badge>
+                        )}
+                        {model.is_verified && (
+                          <CheckCircle className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">@{model.profile_name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <a
+                          href={model.privacy_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="h-2.5 w-2.5" />
+                          Privacy
+                        </a>
+                        <span className="text-[10px] text-muted-foreground">Ranking #{model.ranking}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={`h-8 px-2 ${
+                          model.featured
+                            ? "border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                            : "hover:border-yellow-500 hover:text-yellow-500"
+                        }`}
+                        onClick={() => togglePrivacyFeatured(model)}
+                      >
+                        <Star className={`h-3 w-3 ${model.featured ? "fill-yellow-500" : ""}`} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 border-red-300 text-red-400 hover:bg-red-500/10 hover:border-red-500 hover:text-red-500"
+                        onClick={() => togglePrivacyActive(model)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!privacyLoading && filteredPrivacyModels.length > 0 && (
+              <p className="text-xs text-center text-muted-foreground">
+                Mostrando {filteredPrivacyModels.length} de {privacyModels.length} modelos.
+              </p>
+            )}
           </TabsContent>
         </Tabs>
       </main>
