@@ -12,7 +12,6 @@ import type { Grupo } from "@/data/mock";
 
 const CATEGORIES = [
   { slug: "putaria", label: "Putaria" },
-  { slug: "onlyfans", label: "OnlyFans" },
   { slug: "privacy", label: "Privacy" },
   { slug: "amadoras", label: "Amadoras" },
   { slug: "gay", label: "Gay" },

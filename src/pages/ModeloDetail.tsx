@@ -20,17 +20,17 @@ interface Group {
 
 // Map platform to database category for fallback
 const PLATFORM_CATEGORY: Record<string, string> = {
-  "OnlyFans": "onlyfans",
   "Privacy": "privacy",
+  "OnlyFans": "privacy",
   "Erome": "celebridades",
   "Erome/Privacy": "privacy",
 };
 
 const MODELS: Record<string, { displayName: string; platform: string; description: string }> = {
-  "nayzinha": { displayName: "Nayzinha", platform: "OnlyFans", description: "Nayzinha — conteúdo exclusivo vazado do OnlyFans no Telegram. Grupos verificados com material da criadora." },
+  "nayzinha": { displayName: "Nayzinha", platform: "Privacy", description: "Nayzinha — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados com material da criadora." },
   "dra-sophia": { displayName: "Dra. Sophia", platform: "Privacy", description: "Dra. Sophia — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados com material da criadora." },
   "bia-albina": { displayName: "Bia Albina", platform: "Privacy", description: "Bia Albina — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados com material da criadora." },
-  "michele-umezu": { displayName: "Michele Umezu", platform: "OnlyFans", description: "Michele Umezu — conteúdo exclusivo vazado do OnlyFans no Telegram. Grupos verificados." },
+  "michele-umezu": { displayName: "Michele Umezu", platform: "Privacy", description: "Michele Umezu — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados." },
   "cosvickye": { displayName: "Cosvickye", platform: "Erome", description: "Cosvickye — conteúdo do Erome disponível no Telegram. Grupos verificados." },
   "privacy-bad-mi": { displayName: "Bad Mi", platform: "Privacy", description: "Bad Mi — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados." },
   "erome-nicole-rodrigues": { displayName: "Nicole Rodrigues", platform: "Erome", description: "Nicole Rodrigues — conteúdo do Erome disponível no Telegram. Grupos verificados." },

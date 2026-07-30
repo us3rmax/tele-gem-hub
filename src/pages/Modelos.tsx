@@ -41,7 +41,7 @@ const Modelos = () => {
     <div className="min-h-screen bg-background">
       <SEO
         title="Modelos Privacy +10k Criadoras | Canais18 - Prévias e Grupos Exclusivos"
-        description="Acesse as melhores prévias de modelos do Privacy e Onlyfans no Telegram. Mais de 10 mil criadoras com grupos verificados e atualizados diariamente."
+        description="Acesse as melhores prévias de modelos do Privacy no Telegram. Mais de 10 mil criadoras com grupos verificados e atualizados diariamente."
         keywords="modelos privacy, previas privacy, grupos privacy telegram, packs privacy, criadoras privacy"
         canonicalUrl="https://www.canais18.com/modelos"
       />
@@ -60,7 +60,7 @@ const Modelos = () => {
           </h1>
 
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-            Explore nossa seleção exclusiva de grupos de prévias das modelos mais famosas do Privacy e Onlyfans. Conteúdo atualizado e verificado para você não perder nada.
+            Explore nossa seleção exclusiva de grupos de prévias das modelos mais famosas do Privacy. Conteúdo atualizado e verificado para você não perder nada.
           </p>
         </section>
 

@@ -267,7 +267,7 @@ const GroupDetail = () => {
             <Link to="/?category=Novinhas" className="text-primary hover:underline">Novinhas</Link>{', '}
             <Link to="/?category=Amadoras" className="text-primary hover:underline">Amadoras</Link>{', '}
             <Link to="/?category=Vazados" className="text-primary hover:underline">Vazados</Link>{', '}
-            <Link to="/?category=Onlyfans" className="text-primary hover:underline">OnlyFans</Link>{', '}
+            <Link to="/?category=Privacy" className="text-primary hover:underline">Privacy</Link>{', '}
             <Link to="/telegram-putaria" className="text-primary hover:underline">Grupos Telegram</Link>
           </p>
         </section>
