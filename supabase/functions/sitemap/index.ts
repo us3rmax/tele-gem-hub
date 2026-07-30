@@ -159,9 +159,19 @@ Deno.serve(async () => {
       buildUrlBlock(`/${slug}`, today, "weekly", "0.9")
     ).join("\n");
 
-    // ── Model pages (dynamic, medium-high priority) ──
-    const modelUrls = modelPages.map((model) =>
-      buildUrlBlock(`/modelo/${model.slug}`, today, "weekly", "0.8")
+    // ── Model pages (dynamic from DB + hardcoded from MODEL_SEO) ──
+    // Known model slugs from the MODEL_SEO map in the edge function
+    const KNOWN_MODELS = [
+      "nayzinha", "dra-sophia", "bia-albina", "michele-umezu", "cosvickye",
+      "privacy-bad-mi", "erome-nicole-rodrigues", "nyvi-estephan", "jenifer-novaki",
+      "camila-prado", "mae-e-filha", "erome-juliana-silva", "erome-gostosa",
+      "erome-privacy", "nayara", "privacy-display-apk",
+    ];
+    const allModelSlugs = new Set<string>();
+    for (const m of modelPages) allModelSlugs.add(m.slug);
+    for (const s of KNOWN_MODELS) allModelSlugs.add(s);
+    const modelUrls = Array.from(allModelSlugs).map((slug) =>
+      buildUrlBlock(`/modelo/${slug}`, today, "weekly", "0.8")
     ).join("\n");
 
     // ── Group pages (only visible ones, with proper changefreq) ──
