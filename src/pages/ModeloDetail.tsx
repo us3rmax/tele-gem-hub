@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
-import { Navbar } from "@/components/Navbar";
-import { GroupCard } from "@/components/GroupCard";
+import Navbar from "@/components/Navbar";
+import SEO from "@/components/SEO";
+import GroupCard from "@/components/GroupCard";
+import MobileSidebar from "@/components/MobileSidebar";
 import { supabase } from "@/integrations/supabase/client";
-import { generateSlug } from "@/lib/slug";
 import { useToast } from "@/hooks/use-toast";
 
 interface Group {
@@ -38,12 +38,18 @@ const MODELS: Record<string, { displayName: string; platform: string; descriptio
   "jenifer-novaki": { displayName: "Jenifer Novaki", platform: "Privacy", description: "Jenifer Novaki — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados." },
   "camila-prado": { displayName: "Camila Prado", platform: "Privacy", description: "Camila Prado — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados." },
   "mae-e-filha": { displayName: "Mãe e Filha", platform: "Erome", description: "Mãe e Filha — conteúdo do Erome disponível no Telegram. Grupos verificados." },
+  "erome-juliana-silva": { displayName: "Juliana Silva", platform: "Erome", description: "Juliana Silva — conteúdo do Erome disponível no Telegram. Grupos verificados." },
+  "erome-gostosa": { displayName: "Gostosa", platform: "Erome", description: "Gostosa — conteúdo do Erome disponível no Telegram. Grupos verificados." },
+  "erome-privacy": { displayName: "Privacy Erome", platform: "Erome", description: "Privacy Erome — conteúdo disponível no Telegram. Grupos verificados." },
+  "nayara": { displayName: "Nayara", platform: "Erome", description: "Nayara — conteúdo do Erome disponível no Telegram. Grupos verificados." },
+  "privacy-display-apk": { displayName: "Display APK", platform: "Privacy", description: "Display APK — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados." },
 };
 
 export default function ModeloDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
 
   const model = useMemo(() => {
@@ -96,8 +102,8 @@ export default function ModeloDetail() {
         }
 
         // FALLBACK: buscar grupos da categoria da plataforma (OnlyFans, Privacy, etc.)
-        const model = MODELS[slug] || { platform: "Telegram" };
-        const fallbackCategory = PLATFORM_CATEGORY[model.platform] || "onlyfans";
+        const m = MODELS[slug] || { platform: "Telegram" };
+        const fallbackCategory = PLATFORM_CATEGORY[m.platform] || "onlyfans";
         const { data: data3, error: err3 } = await supabase
           .from("groups")
           .select("id, slug, name, telegram_link, description, member_count, thumbnail_url, category")
@@ -175,7 +181,7 @@ export default function ModeloDetail() {
           "@type": "ListItem",
           "position": i + 1,
           "name": g.name,
-          "url": `https://www.canais18.com/group/${g.slug || generateSlug(g.name)}`
+          "url": `https://www.canais18.com/group/${g.slug || g.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
         }))
       },
       {
@@ -232,19 +238,16 @@ export default function ModeloDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Helmet>
-        <title>{h1} | Canais18</title>
-        <meta name="description" content={model.description} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={h1} />
-        <meta property="og:description" content={model.description} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
-        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
-      </Helmet>
+      <SEO
+        title={`${h1} | Canais18`}
+        description={model.description}
+        canonicalUrl={canonicalUrl}
+        jsonLd={jsonLd}
+        faqJsonLd={faqJsonLd}
+      />
 
-      <Navbar />
+      <Navbar onMenuClick={() => setSidebarOpen(true)} />
+      <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="max-w-[1100px] mx-auto px-3 pt-16">
         {/* Hero */}
@@ -295,9 +298,9 @@ export default function ModeloDetail() {
             <p className="text-sm mt-2">Tente novamente mais tarde.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mt-3">
-            {groups.map((group) => (
-              <GroupCard key={group.id} group={group} />
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 mt-3">
+            {groups.map((grupo) => (
+              <GroupCard key={grupo.id} grupo={grupo as any} hideBadges />
             ))}
           </div>
         )}
@@ -334,37 +337,28 @@ export default function ModeloDetail() {
               </summary>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                 Sim, todos os grupos de {model.displayName} listados no Canais18 são de acesso gratuito. 
-                Basta clicar no botão "Entrar" para ser redirecionado ao canal no Telegram.
+                Basta clicar em "Entrar" para ser redirecionado ao canal ou grupo no Telegram.
               </p>
             </details>
             <details>
               <summary className="cursor-pointer font-bold text-foreground py-2">
-                O conteúdo é do {model.platform}?
+                Os links dos grupos de {model.displayName} estão atualizados?
               </summary>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                Sim. Os grupos listados contêm conteúdo exclusivo de {model.displayName} que originalmente 
-                está no {model.platform}, disponível gratuitamente no Telegram.
-              </p>
-            </details>
-            <details>
-              <summary className="cursor-pointer font-bold text-foreground py-2">
-                Os links estão funcionando?
-              </summary>
-              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                Sim. Nossa equipe verifica diariamente cada link dos grupos de {model.displayName}. 
-                Se um link estiver quebrado, ele é removido automaticamente.
+                Sim. Nossa equipe verifica diariamente cada link para garantir que estão ativos. 
+                Se algum link estiver fora do ar, ele é removido automaticamente.
               </p>
             </details>
           </div>
         </section>
 
-        {/* Internal links to other models */}
+        {/* Other models */}
         <section className="my-10">
           <h2 className="text-lg font-extrabold flex items-center gap-2 mb-4">
             <span className="w-1 h-5 bg-primary rounded-full inline-block"></span>
             Outros Modelos Populares
           </h2>
-          <div className="flex flex-wrap gap-2 mb-8">
+          <div className="flex flex-wrap gap-2">
             {Object.entries(MODELS)
               .filter(([s]) => s !== slug)
               .slice(0, 15)
@@ -372,14 +366,14 @@ export default function ModeloDetail() {
                 <Link
                   key={s}
                   to={`/modelo/${s}`}
-                  className="bg-card text-muted-foreground px-4 py-2 rounded-full text-xs no-underline border border-border hover:border-primary hover:text-primary transition-colors"
+                  className="bg-muted/30 hover:bg-muted px-4 py-2 rounded-full text-sm text-muted-foreground transition-colors border border-border"
                 >
                   {m.displayName}
                 </Link>
               ))}
             <Link
               to="/modelos"
-              className="bg-primary text-white px-4 py-2 rounded-full text-xs no-underline hover:opacity-90 transition-opacity"
+              className="bg-primary hover:bg-primary/90 px-4 py-2 rounded-full text-sm text-primary-foreground transition-colors"
             >
               Ver todos
             </Link>
