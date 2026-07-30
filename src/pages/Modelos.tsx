@@ -7,97 +7,94 @@ import BannerAd from "@/components/BannerAd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGroups, useFeaturedGroups } from "@/hooks/use-groups";
 import { groupPath } from "@/lib/slug";
-import { Search, ExternalLink, CheckCircle } from "lucide-react";
+import { Search, CheckCircle, Bookmark } from "lucide-react";
 import type { Grupo } from "@/data/mock";
 
 const PER_PAGE = 20;
 
 function formatLikes(n: number) {
-  if (n >= 1000) return `${(n / 1000).toFixed(0)}k`;
+  if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
   return n.toString();
 }
 
-// Featured model card (destaque) — compact with photo + name + handle style
-function FeaturedModelCard({ grupo }: { grupo: Grupo }) {
+// Model card — Erogram OFsearch style (white card, large photo, price badge, view profile button)
+function ModelCard({ grupo }: { grupo: Grupo }) {
   const hasThumb = !!grupo.thumbnail_url;
+  const handle = grupo.name.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 25);
 
   return (
-    <Link
-      to={groupPath(grupo)}
-      className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10"
-    >
-      {/* Large photo background */}
-      <div className="relative h-48 sm:h-56 overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-border/30 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+      {/* Photo section */}
+      <Link to={groupPath(grupo)} className="relative block aspect-[3/4] overflow-hidden">
         {hasThumb ? (
           <img
             src={grupo.thumbnail_url!}
             alt={`${grupo.name} - Modelo Privacy | Canais18`}
-            width={400}
-            height={224}
-            className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover object-top transition-transform duration-500 hover:scale-105"
             loading="lazy"
+            width={400}
+            height={533}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-            <span className="text-4xl font-bold text-primary/30">{grupo.name.charAt(0)}</span>
+            <span className="text-5xl font-bold text-primary/30">{grupo.name.charAt(0)}</span>
           </div>
         )}
 
-        {/* Avatar circle overlay */}
-        {hasThumb && (
-          <div className="absolute bottom-[-20px] left-4 h-14 w-14 overflow-hidden rounded-full border-3 border-card bg-card shadow-lg">
-            <img
-              src={grupo.thumbnail_url!}
-              alt={grupo.name}
-              className="h-full w-full object-cover"
-            />
-          </div>
-        )}
-      </div>
+        {/* Price badge top-right */}
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-bold shadow-md ${
+              !grupo.is_premium
+                ? "bg-green-500 text-white"
+                : "bg-primary text-primary-foreground"
+            }`}
+          >
+            {!grupo.is_premium ? "Grátis" : "$10"}
+          </span>
+        </div>
 
-      {/* Info below image */}
-      <div className="relative px-4 pb-4 pt-3">
-        <div className="flex items-center gap-2">
-          <h3 className="line-clamp-1 text-base font-bold text-card-foreground">{grupo.name}</h3>
+        {/* Bookmark button */}
+        <button
+          className="absolute top-3 left-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+          onClick={(e) => e.preventDefault()}
+        >
+          <Bookmark className="h-4 w-4" />
+        </button>
+
+        {/* Photo dots (carousel indicator) */}
+        <div className="absolute bottom-3 left-3 flex gap-1">
+          <div className="h-2 w-2 rounded-full bg-white/90 shadow-sm" />
+          <div className="h-2 w-2 rounded-full bg-white/50" />
+        </div>
+      </Link>
+
+      {/* Info section — white background */}
+      <div className="px-4 pt-3 pb-3">
+        <div className="mb-1 flex items-center gap-1.5">
+          <h3 className="line-clamp-1 text-base font-bold text-gray-900">{grupo.name}</h3>
           {grupo.is_verified && (
             <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
           )}
         </div>
 
-        {/* Handle-like text */}
-        <p className="text-xs text-primary/70">
-          @{grupo.name.toLowerCase().replace(/\s+/g, "").substring(0, 20)}
-        </p>
+        <p className="mb-1.5 text-sm font-medium text-primary">@{handle}</p>
 
-        <div className="mt-2 flex items-center gap-2">
-          <span
-            className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-              !grupo.is_premium
-                ? "bg-green-500/20 text-green-400"
-                : "bg-red-500/20 text-red-400"
-            }`}
-          >
-            {!grupo.is_premium ? "Grátis" : "Premium"}
-          </span>
-          {grupo.member_count ? (
-            <span className="text-[11px] text-muted-foreground">
-              {formatLikes(grupo.member_count)} likes
-            </span>
-          ) : null}
-        </div>
+        {grupo.member_count ? (
+          <p className="mb-3 text-xs text-gray-400">{formatLikes(grupo.member_count)} likes</p>
+        ) : (
+          <div className="mb-3 h-3" />
+        )}
 
-        {/* External link */}
-        <a
-          href={grupo.telegram_link}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/70 hover:text-white"
+        {/* View Profile button */}
+        <Link
+          to={groupPath(grupo)}
+          className="block w-full rounded-xl bg-primary py-2.5 text-center text-sm font-bold text-primary-foreground shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-[0.98]"
         >
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+          Ver perfil
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -175,16 +172,17 @@ const Modelos = () => {
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {featuredLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
-                      <Skeleton className="h-48 w-full sm:h-56" />
+                    <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
+                      <Skeleton className="aspect-[3/4] w-full" />
                       <div className="space-y-2 p-4">
                         <Skeleton className="h-4 w-3/4" />
                         <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-8 w-full rounded-xl" />
                       </div>
                     </div>
                   ))
                 : featuredModels.map((grupo) => (
-                    <FeaturedModelCard key={grupo.id} grupo={grupo} />
+                    <ModelCard key={grupo.id} grupo={grupo} />
                   ))}
             </div>
           </section>
@@ -240,11 +238,12 @@ const Modelos = () => {
           {isLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
-                  <Skeleton className="h-48 w-full sm:h-56" />
+                <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
+                  <Skeleton className="aspect-[3/4] w-full" />
                   <div className="space-y-2 p-4">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-8 w-full rounded-xl" />
                   </div>
                 </div>
               ))}
@@ -254,7 +253,7 @@ const Modelos = () => {
               {grupos.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {grupos.map((grupo) => (
-                    <FeaturedModelCard key={grupo.id} grupo={grupo} />
+                    <ModelCard key={grupo.id} grupo={grupo} />
                   ))}
                 </div>
               )}
@@ -264,7 +263,7 @@ const Modelos = () => {
               {grupos.length > 16 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {grupos.slice(16).map((grupo) => (
-                    <FeaturedModelCard key={grupo.id} grupo={grupo} />
+                    <ModelCard key={grupo.id} grupo={grupo} />
                   ))}
                 </div>
               )}
