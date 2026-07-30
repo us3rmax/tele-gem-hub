@@ -84,7 +84,7 @@ const Login = () => {
       {/* Left panel - decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/20 via-background to-primary/10">
         <div className="absolute inset-0 flex flex-col items-center justify-center p-12">
-          <img src={logo} alt="Canais18" className="w-48 h-auto mb-8 opacity-90" />
+          <img src={logo} alt="Canais18" className="max-w-[240px] w-full h-auto mb-8 opacity-90 object-contain" />
           <h2 className="text-3xl font-bold text-foreground text-center mb-4">
             Bem-vindo ao Canais18
           </h2>
@@ -112,7 +112,7 @@ const Login = () => {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="lg:hidden text-center">
-            <img src={logo} alt="Canais18" className="w-20 h-auto mx-auto mb-4" />
+            <img src={logo} alt="Canais18" className="max-w-[160px] w-full h-auto mx-auto mb-4 object-contain" />
           </div>
 
           <div className="space-y-2">
