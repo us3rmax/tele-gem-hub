@@ -176,6 +176,18 @@ const App = () => (
                     <Route path="/jenifer-novaki-privacy" element={<CategoryLanding />} />
                     <Route path="/camila-prado-privacy" element={<CategoryLanding />} />
                     <Route path="/mae-e-filha-erome" element={<CategoryLanding />} />
+                    <Route path="/corno-telegram" element={<CategoryLanding />} />
+                    <Route path="/telegram-corno" element={<CategoryLanding />} />
+                    <Route path="/amador-telegram" element={<CategoryLanding />} />
+                    <Route path="/telegram-canais" element={<CategoryLanding />} />
+                    <Route path="/telegram-grupo" element={<CategoryLanding />} />
+                    <Route path="/grupos-do-telegram" element={<CategoryLanding />} />
+                    <Route path="/telegram-puxadas" element={<CategoryLanding />} />
+                    <Route path="/curso-telegram" element={<CategoryLanding />} />
+                    <Route path="/erome-telegram" element={<CategoryLanding />} />
+                    <Route path="/telegram-fap" element={<CategoryLanding />} />
+                    <Route path="/flagras-telegram" element={<CategoryLanding />} />
+                    <Route path="/grupos-telegram-br" element={<CategoryLanding />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>

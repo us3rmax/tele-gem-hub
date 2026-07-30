@@ -247,7 +247,7 @@ def release_groups(count=DEFAULT_RATE):
     print(f"\n🚀 Fase 2: Liberando {count} grupos...")
 
     # Critérios: hidden=true, tem description ok (50-155 chars), tem thumbnail, não broken
-    res = supabase.table("groups").select("id, name, category, description, thumbnail_url, member_count").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).order("member_count", desc=True).limit(200).execute()
+    res = supabase.table("groups").select("id, name, category, description, thumbnail_url, member_count").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).neq("thumbnail_url", "").order("member_count", desc=True).limit(200).execute()
 
     candidates = [g for g in res.data if g.get("description") and 50 <= len(g["description"]) <= 155]
 

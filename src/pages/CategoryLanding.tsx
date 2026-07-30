@@ -5,6 +5,7 @@ import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
 import GroupCard from "@/components/GroupCard";
 import BannerAd from "@/components/BannerAd";
+import LandingSEOContent from "@/components/landing/LandingSEOContent";
 import { supabase } from "@/integrations/supabase/client";
 import type { Grupo } from "@/data/mock";
 
@@ -17,6 +18,8 @@ const pageConfigs: Record<string, any> = {
     keywords: "telegram porno, canais telegram porno, grupos telegram porno",
     filter: "category.ilike.%porno%,category.ilike.%xxx%,category.ilike.%amadoras%",
     categoryLink: "Porno",
+    seoKeyword: "canais de porno no Telegram",
+    seoCategory: "Porno",
   },
   "/putaria-telegram": {
     title: "Putaria Telegram - Grupos e Canais Brasil",
@@ -658,6 +661,161 @@ const pageConfigs: Record<string, any> = {
     keywords: "coroas telegram, grupos coroas telegram, telegram coroas telegram",
     filter: "category.eq.coroas",
     categoryLink: "coroas",
+    seoKeyword: "grupos de coroas no Telegram",
+    seoCategory: "Coroas",
+  },
+
+  // ─── NOVAS LANDING PAGES (baseado no keyword gap dos concorrentes) ───
+
+  "/telegram-vazados": {
+    title: "Telegram Vazados - Conteúdo Exclusivo Verificado",
+    seoTitle: "Telegram Vazados - Links Verificados | Canais18",
+    description: "Telegram vazados: conteúdo exclusivo de criadoras brasileiras e internacionais. Links verificados diariamente.",
+    keywords: "telegram vazados, vazados telegram, grupos vazados telegram",
+    filter: "category.eq.vazados",
+    categoryLink: "vazados",
+    seoKeyword: "vazados no Telegram",
+    seoCategory: "Vazados",
+  },
+  "/vazados-telegram": {
+    title: "Vazados Telegram - Canais e Grupos Ativos",
+    seoTitle: "Vazados Telegram - Grupos Verificados | Canais18",
+    description: "Vazados telegram: acervo de conteúdo vazado de criadoras. Links testados e funcionando. Acesse grátis.",
+    keywords: "vazados telegram, grupos vazados telegram, telegram vazados telegram",
+    filter: "category.eq.vazados",
+    categoryLink: "vazados",
+    seoKeyword: "vazados telegram",
+    seoCategory: "Vazados",
+  },
+  "/corno-telegram": {
+    title: "Corno Telegram - Grupos e Canais +18",
+    seoTitle: "Corno Telegram - Grupos Verificados | Canais18",
+    description: "Corno telegram: grupos dedicados a esse fetiche. Comunidade ativa e verificada em canais18.com.",
+    keywords: "corno telegram, grupos corno telegram, telegram corno telegram",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "grupos de corno no Telegram",
+    seoCategory: "Telegram",
+  },
+  "/telegram-corno": {
+    title: "Telegram Corno - Canais e Grupos +18",
+    seoTitle: "Telegram Corno - Grupos Verificados | Canais18",
+    description: "Telegram corno: conteúdo exclusivo sobre esse tema. Grupos verificados e com links ativos.",
+    keywords: "telegram corno, canais telegram corno, grupos telegram corno",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "corno no Telegram",
+    seoCategory: "Telegram",
+  },
+  "/amador-telegram": {
+    title: "Amador Telegram - Conteúdo Real Verificado",
+    seoTitle: "Amador Telegram - Grupos Verificados | Canais18",
+    description: "Amador telegram: conteúdo real de amadoras brasileiras. Previews, links diretos e verificação diária.",
+    keywords: "amador telegram, grupos amador telegram, telegram amador telegram",
+    filter: "category.eq.amadoras",
+    categoryLink: "amadoras",
+    seoKeyword: "amador no Telegram",
+    seoCategory: "Amadoras",
+  },
+  "/telegram-canais": {
+    title: "Telegram Canais - Diretório Completo +18",
+    seoTitle: "Telegram Canais - Grupos Verificados | Canais18",
+    description: "Telegram canais: diretório completo de canais adultos. Navegue por categoria e entre direto nos grupos.",
+    keywords: "telegram canais, canais telegram, grupos canais telegram",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "canais do Telegram",
+    seoCategory: "Telegram",
+  },
+  "/telegram-links": {
+    title: "Telegram Links - Acesso Direto a Grupos +18",
+    seoTitle: "Telegram Links - Grupos Verificados | Canais18",
+    description: "Telegram links: acesso direto a grupos adultos. Sem cadastro, sem pagamento. Links verificados.",
+    keywords: "telegram links, links telegram, grupos telegram links",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "links do Telegram",
+    seoCategory: "Telegram",
+  },
+  "/telegram-grupo": {
+    title: "Telegram Grupo - Encontre Grupos Ativos +18",
+    seoTitle: "Telegram Grupo - Grupos Verificados | Canais18",
+    description: "Telegram grupo: encontre grupos ativos com conteúdo adulto. Links testados e membros reais.",
+    keywords: "telegram grupo, grupos telegram, grupo telegram adulto",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "grupos do Telegram",
+    seoCategory: "Telegram",
+  },
+  "/grupos-do-telegram": {
+    title: "Grupos do Telegram - Diretório Adulto +18",
+    seoTitle: "Grupos do Telegram - Grupos Verificados | Canais18",
+    description: "Grupos do telegram: maior diretório de grupos adultos do Brasil. Organizado por categoria e verificado.",
+    keywords: "grupos do telegram, grupos telegram, telegram grupos",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "grupos do Telegram",
+    seoCategory: "Telegram",
+  },
+  "/telegram-puxadas": {
+    title: "Telegram Puxadas - Conteúdo Exclusivo +18",
+    seoTitle: "Telegram Puxadas - Grupos Verificados | Canais18",
+    description: "Telegram puxadas: conteúdo exclusivo puxado de plataformas pagas. Links verificados diariamente.",
+    keywords: "telegram puxadas, puxadas telegram, grupos puxadas telegram",
+    filter: "category.eq.privacy,category.eq.vazados",
+    categoryLink: "privacy",
+    seoKeyword: "puxadas no Telegram",
+    seoCategory: "Privacy",
+  },
+  "/curso-telegram": {
+    title: "Curso Telegram - Conteúdo Exclusivo +18",
+    seoTitle: "Curso Telegram - Grupos Verificados | Canais18",
+    description: "Curso telegram: conteúdo de cursos exclusivos disponibilizado gratuitamente. Links verificados.",
+    keywords: "curso telegram, cursos telegram, telegram cursos",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "cursos no Telegram",
+    seoCategory: "Telegram",
+  },
+  "/erome-telegram": {
+    title: "Erome Telegram - Conteúdo do Erome no Telegram",
+    seoTitle: "Erome Telegram - Grupos Verificados | Canais18",
+    description: "Erome telegram: conteúdo do Erome disponível no Telegram. Links diretos e verificados diariamente.",
+    keywords: "erome telegram, grupos erome telegram, telegram erome telegram",
+    filter: "category.eq.privacy",
+    categoryLink: "privacy",
+    seoKeyword: "Erome no Telegram",
+    seoCategory: "Privacy",
+  },
+  "/telegram-fap": {
+    title: "Telegram Fap - Grupos e Canais +18",
+    seoTitle: "Telegram Fap - Grupos Verificados | Canais18",
+    description: "Telegram fap: comunidade de conteúdo adulto organizado por categorias. Links verificados.",
+    keywords: "telegram fap, fap telegram, grupos fap telegram",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "fap no Telegram",
+    seoCategory: "Telegram",
+  },
+  "/flagras-telegram": {
+    title: "Flagras Telegram - Conteúdo Real Verificado",
+    seoTitle: "Flagras Telegram - Grupos Verificados | Canais18",
+    description: "Flagras telegram: flagras reais de brasileiros no Telegram. Conteúdo autêntico e verificado.",
+    keywords: "flagras telegram, grupos flagras telegram, telegram flagras telegram",
+    filter: "category.eq.amadoras",
+    categoryLink: "amadoras",
+    seoKeyword: "flagras no Telegram",
+    seoCategory: "Amadoras",
+  },
+  "/grupos-telegram-br": {
+    title: "Grupos Telegram BR - Diretório Brasileiro +18",
+    seoTitle: "Grupos Telegram BR - Grupos Verificados | Canais18",
+    description: "Grupos telegram BR: diretório brasileiro de grupos adultos. Conteúdo nacional verificado diariamente.",
+    keywords: "grupos telegram br, telegram grupos brasil, grupos brasileiros telegram",
+    filter: "category.eq.geral",
+    categoryLink: "geral",
+    seoKeyword: "grupos telegram brasileiros",
+    seoCategory: "Telegram",
   },
 };
 
@@ -680,6 +838,8 @@ const CategoryLanding = () => {
         .or(config.filter)
         .eq("featured", true)
         .or("hidden.is.null,hidden.eq.false")
+        .neq("thumbnail_url", null as any)
+        .not("thumbnail_url", "eq", "")
         .order("member_count", { ascending: false })
         .limit(12);
 
@@ -695,6 +855,8 @@ const CategoryLanding = () => {
           .or(config.filter)
           .or("featured.is.null,featured.eq.false")
           .or("hidden.is.null,hidden.eq.false")
+          .neq("thumbnail_url", null as any)
+          .not("thumbnail_url", "eq", "")
           .order("member_count", { ascending: false })
           .limit(12 - featured.length);
         if (featuredIds.length > 0) {
@@ -733,19 +895,6 @@ const CategoryLanding = () => {
           >
             Ver Todos os Grupos →
           </Link>
-
-          <div className="prose prose-invert max-w-none">
-            <p className="text-base text-muted-foreground leading-relaxed">
-              O Telegram se tornou uma das maiores plataformas para conteúdo adulto no Brasil. Com milhões de usuários
-              ativos, a rede oferece privacidade, segurança e uma variedade impressionante de canais dedicados a
-              entretenimento adulto.
-            </p>
-
-            <p className="text-base text-muted-foreground leading-relaxed">
-              Nossa seleção inclui os melhores canais, cuidadosamente verificados pela nossa equipe. Conteúdo amador
-              brasileiro, produções profissionais em HD, lives exclusivas e muito mais.
-            </p>
-          </div>
         </section>
 
         <BannerAd position="top" />
@@ -809,6 +958,13 @@ const CategoryLanding = () => {
             </Link>
           </div>
         </section>
+        <LandingSEOContent
+          keyword={config.seoKeyword || `${config.categoryLink} no Telegram`}
+          category={config.seoCategory || config.categoryLink || "Telegram"}
+          h1={config.title}
+          groupCount={grupos.length}
+          totalMembers={grupos.reduce((sum, g) => sum + (g.member_count || 0), 0)}
+        />
       </main>
     </div>
   );
