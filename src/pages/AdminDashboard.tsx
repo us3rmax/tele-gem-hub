@@ -186,12 +186,12 @@ const AdminDashboard = () => {
   const _subToTab: Record<string, string> = {
     pendentes: "pending",  aprovados: "approved",  rejeitados: "rejected",
     edicoes:   "edits",    premium:   "premium",   todos:      "grupos",
-    quebrados: "broken",
+    destaques: "destaques", quebrados: "broken",
   };
   const _tabToSub: Record<string, string> = {
     pending:  "pendentes", approved: "aprovados",  rejected: "rejeitados",
     edits:    "edicoes",   premium:  "premium",    grupos:   "todos",
-    broken:   "quebrados",
+    destaques: "destaques", broken:   "quebrados",
   };
 
   const mainSection = (
@@ -205,6 +205,7 @@ const AdminDashboard = () => {
     mainTab === "grupos"     ? (_subToTab[subTab ?? ""] ?? "pending") :
     mainTab === "banners"    ? "banners"    :
     mainTab === "categorias" ? "categorias" :
+    mainTab === "seo"        ? "seo"        :
     "pending";
 
   // Submissions state
@@ -252,6 +253,7 @@ const AdminDashboard = () => {
     member_count: "",
     is_premium: false,
     is_verified: false,
+    featured: false,
   });
   const [groupErrors, setGroupErrors] = useState<Record<string, string>>({});
 
@@ -500,6 +502,7 @@ const AdminDashboard = () => {
       member_count: "",
       is_premium: false,
       is_verified: false,
+      featured: false,
     });
     setGroupPhotoFile(null);
     setGroupPhotoPreview(null);
@@ -511,7 +514,7 @@ const AdminDashboard = () => {
   const openEditGroupModal = async (groupId: string) => {
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified, slug")
+      .select("id, name, category, telegram_link, description, thumbnail_url, member_count, is_premium, is_verified, featured, slug")
       .eq("id", groupId)
       .maybeSingle();
     if (error || !data) {
@@ -527,6 +530,7 @@ const AdminDashboard = () => {
       member_count: String(data.member_count || ""),
       is_premium: data.is_premium,
       is_verified: data.is_verified,
+      featured: data.featured || false,
     });
     setGroupPhotoPreview(data.thumbnail_url || null);
     setGroupPhotoFile(null);
@@ -591,6 +595,7 @@ const AdminDashboard = () => {
       thumbnail_url: publicUrl,
       is_premium: groupForm.is_premium,
       is_verified: groupForm.is_verified,
+      featured: groupForm.featured,
       member_count: groupForm.member_count ? parseInt(groupForm.member_count, 10) || 0 : 0,
     };
 
@@ -603,7 +608,7 @@ const AdminDashboard = () => {
         resetGroupModal();
         // Refresh relevant lists
         if (activeTab === "premium") fetchPremiumGroups();
-        if (activeTab === "grupos") fetchAllGroups();
+        if (activeTab === "grupos" || activeTab === "destaques") fetchAllGroups();
       }
     } else {
       const { error } = await supabase.from("groups").insert({
@@ -1314,6 +1319,16 @@ const AdminDashboard = () => {
                   <span className="flex-1">Todos os Grupos</span>
                 </button>
                 <button
+                  onClick={() => navigate("/admin/grupos/destaques")}
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "destaques" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
+                >
+                  <Star className="h-4 w-4 shrink-0" />
+                  <span className="flex-1">Destaques</span>
+                  {allGroups.filter((g) => g.featured).length > 0 && (
+                    <Badge variant="secondary" className="ml-auto text-xs bg-yellow-600/20 text-yellow-400 border-yellow-600/30">{allGroups.filter((g) => g.featured).length}</Badge>
+                  )}
+                </button>
+                <button
                   onClick={() => navigate("/admin/grupos/quebrados")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "broken" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
@@ -1833,6 +1848,67 @@ const AdminDashboard = () => {
                   Mostrando primeiros 50 resultados. Use a busca para filtrar.
                 </p>
               </>
+            )}
+          </TabsContent>
+
+          {/* Destaques tab */}
+          <TabsContent value="destaques" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-foreground">Criadoras em Destaque</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  As criadoras destacadas aparecem na seção "Criadoras em Destaque" da página /modelos.
+                  Marque até 16 grupos como destaque.
+                </p>
+              </div>
+            </div>
+
+            {allGroupsLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : allGroups.filter((g) => g.featured).length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-12 text-center">
+                <Star className="h-12 w-12 text-muted-foreground/30" />
+                <p className="text-muted-foreground">Nenhuma criadora em destaque.</p>
+                <p className="text-xs text-muted-foreground max-w-sm">
+                  Vá em "Todos os Grupos" e clique no ícone de estrela (⭐) ao lado de um grupo para marcá-lo como destaque.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {allGroups.filter((g) => g.featured).map((group) => (
+                  <div
+                    key={group.id}
+                    className="flex items-center gap-3 overflow-hidden rounded-xl border border-yellow-500/30 bg-card p-3"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                      {group.thumbnail_url ? (
+                        <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{group.name}</h3>
+                        <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">
+                          ⭐ Destaque
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{group.member_count} membros</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                      onClick={() => toggleFeatured(group)}
+                    >
+                      <Star className="h-3 w-3 fill-yellow-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -2490,7 +2566,17 @@ const AdminDashboard = () => {
                   onCheckedChange={(v) => setGroupForm((f) => ({ ...f, is_premium: !!v }))}
                 />
                 <Label htmlFor="group-premium" className="cursor-pointer text-sm">
-                  ⭐ Colocar em destaque (Premium)
+                  💎 Premium
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="group-featured"
+                  checked={groupForm.featured}
+                  onCheckedChange={(v) => setGroupForm((f) => ({ ...f, featured: !!v }))}
+                />
+                <Label htmlFor="group-featured" className="cursor-pointer text-sm">
+                  ⭐ Em Destaque (aparece na /modelos)
                 </Label>
               </div>
               <div className="flex items-center gap-2">

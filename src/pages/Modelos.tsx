@@ -138,17 +138,17 @@ const Modelos = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary/5 via-background to-background px-4 pt-16 pb-8 text-center">
-        <h1 className="mb-3 text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+      <section className="bg-gradient-to-b from-primary/5 via-background to-background px-4 pt-10 pb-6 text-center">
+        <h1 className="mb-2 text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl">
           Privacy <span className="text-primary">Search</span>
         </h1>
-        <p className="mx-auto mb-8 max-w-2xl text-base text-muted-foreground">
+        <p className="mx-auto mb-4 max-w-2xl text-base text-muted-foreground">
           Explore milhares de criadoras do Privacy. Busque por nome, categoria ou palavra-chave,
           salve suas favoritas e filtre por tipo de conteúdo.
         </p>
 
         {/* Search Bar */}
-        <div className="mx-auto mb-6 max-w-2xl">
+        <div className="mx-auto mb-4 max-w-2xl">
           <div className="relative flex items-center rounded-2xl border border-border bg-card px-4 py-3 shadow-lg">
             <Search className="mr-3 h-5 w-5 shrink-0 text-muted-foreground" />
             <input
@@ -207,7 +207,7 @@ const Modelos = () => {
 
           {/* Todos / Gratuitos tabs */}
           <div className="mb-5 flex items-center gap-2">
-            <div className="flex w-full max-w-xs rounded-xl border border-border bg-secondary/50 p-1">
+            <div className="flex w-full max-w-sm rounded-xl border border-border bg-secondary/50 p-1">
               <button
                 onClick={() => setFilterTab("todos")}
                 className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
