@@ -18,6 +18,14 @@ interface Group {
   category: string | null;
 }
 
+// Map platform to database category for fallback
+const PLATFORM_CATEGORY: Record<string, string> = {
+  "OnlyFans": "onlyfans",
+  "Privacy": "privacy",
+  "Erome": "celebridades",
+  "Erome/Privacy": "privacy",
+};
+
 const MODELS: Record<string, { displayName: string; platform: string; description: string }> = {
   "nayzinha": { displayName: "Nayzinha", platform: "OnlyFans", description: "Nayzinha — conteúdo exclusivo vazado do OnlyFans no Telegram. Grupos verificados com material da criadora." },
   "dra-sophia": { displayName: "Dra. Sophia", platform: "Privacy", description: "Dra. Sophia — conteúdo exclusivo vazado do Privacy no Telegram. Grupos verificados com material da criadora." },
@@ -83,12 +91,28 @@ export default function ModeloDetail() {
           .order("member_count", { ascending: false })
           .limit(30);
 
-        if (!err2 && data2) {
+        if (!err2 && data2 && data2.length > 0) {
           if (!cancelled) { setGroups(data2 as Group[]); return; }
         }
 
+        // FALLBACK: buscar grupos da categoria da plataforma (OnlyFans, Privacy, etc.)
+        const model = MODELS[slug] || { platform: "Telegram" };
+        const fallbackCategory = PLATFORM_CATEGORY[model.platform] || "onlyfans";
+        const { data: data3, error: err3 } = await supabase
+          .from("groups")
+          .select("id, slug, name, telegram_link, description, member_count, thumbnail_url, category")
+          .eq("hidden", false)
+          .not("thumbnail_url", "is", null)
+          .eq("category", fallbackCategory)
+          .order("member_count", { ascending: false })
+          .limit(30);
+
+        if (!err3 && data3) {
+          if (!cancelled) { setGroups(data3 as Group[]); return; }
+        }
+
         if (!cancelled) {
-          setGroups(data1 || data2 || []);
+          setGroups(data1 || data2 || data3 || []);
         }
       } catch (e) {
         console.error("Erro ao buscar grupos do modelo:", e);
