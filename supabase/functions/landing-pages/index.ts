@@ -216,26 +216,101 @@ serve(async (req) => {
 
   const tagCloudSlugs = Object.keys(seoMapping).filter(s => !s.includes("-telegram")).slice(0, 20);
 
-  // Adicionar JSON-LD structured data para rich snippets
+  // JSON-LD structured data: @graph with CollectionPage + BreadcrumbList + Organization + ItemList
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": seo.h1,
-    "description": seo.desc,
-    "url": canonicalUrl,
-    "publisher": {
-      "@type": "Organization",
-      "name": "Canais18",
-      "url": BASE_URL,
-      "logo": { "@type": "ImageObject", "url": `${BASE_URL}/logo.png` }
-    },
-    "breadcrumb": {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Canais18", "item": BASE_URL },
-        { "@type": "ListItem", "position": 2, "name": dbCategory, "item": canonicalUrl }
-      ]
-    }
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${BASE_URL}/#website`,
+        "name": "Canais18",
+        "url": BASE_URL,
+        "description": "Maior diretório de grupos e canais adultos do Telegram no Brasil. Links verificados diariamente.",
+        "inLanguage": "pt-BR",
+        "publisher": {
+          "@id": `${BASE_URL}/#organization`
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": `${BASE_URL}/#organization`,
+        "name": "Canais18",
+        "url": BASE_URL,
+        "logo": {
+          "@type": "ImageObject",
+          "url": `${BASE_URL}/logo.png`
+        },
+        "sameAs": []
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": `${canonicalUrl}#webpage`,
+        "url": canonicalUrl,
+        "name": seo.h1,
+        "description": seo.desc,
+        "isPartOf": { "@id": `${BASE_URL}/#website` },
+        "about": {
+          "@type": "Thing",
+          "name": `${dbCategory} Telegram`
+        },
+        "numberOfItems": groups.filter(g => g.name && g.telegram_link).length,
+        "itemListElement": groups.filter(g => g.name && g.telegram_link).slice(0, 10).map((g, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "name": g.name,
+          "url": `${BASE_URL}/group/${g.slug || g.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '')}`
+        }))
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${canonicalUrl}#breadcrumb`,
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Início", "item": BASE_URL },
+          { "@type": "ListItem", "position": 2, "name": "Canais", "item": `${BASE_URL}/grupos-telegram` },
+          { "@type": "ListItem", "position": 3, "name": dbCategory, "item": canonicalUrl }
+        ]
+      }
+    ]
+  });
+
+  // FAQPage schema for rich snippets
+  const faqJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `O que é ${dbCategory} no Telegram?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `O Telegram é uma plataforma que permite criar grupos e canais para compartilhar conteúdo. A categoria ${dbCategory} agrupa canais dedicados a esse tipo de conteúdo, com comunidades ativas e links verificados.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Os grupos são gratuitos?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim, todos os grupos listados no Canais18 são de acesso gratuito. Basta clicar no botão \"Entrar\" para ser redirecionado ao canal no Telegram."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Os links são verificados?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Sim. Nossa equipe testa diariamente cada link para garantir que os grupos ainda estão ativos. Se um link estiver quebrado, ele é removido automaticamente."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Como encontrar mais grupos de ${dbCategory}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Você pode navegar pelas outras categorias na tag cloud abaixo ou voltar para a página inicial para explorar todo o diretório do Canais18.`
+        }
+      }
+    ]
   });
 
   return new Response(`
@@ -249,6 +324,7 @@ serve(async (req) => {
     <link rel="canonical" href="${canonicalUrl}">
     <meta name="robots" content="index,follow,max-image-preview:large">
     <script type="application/ld+json">${jsonLd}</script>
+    <script type="application/ld+json">${faqJsonLd}</script>
     <style>
       :root { --primary: ${PRIMARY_COLOR}; --bg: #0a0a0a; --card: #161616; }
       body { background: var(--bg); color: #fff; font-family: system-ui, sans-serif; margin: 0; padding-top: 56px; }
@@ -301,6 +377,28 @@ serve(async (req) => {
         <div class="tag-cloud">
           ${tagCloudSlugs.map(slug => `<a href="${BASE_URL}/${slug}" class="tag">${slug.replace(/-/g, " ")}</a>`).join("")}
         </div>
+
+        <section class="faq-section" style="margin: 40px 0;">
+          <h2 class="section-title">❓ Perguntas Frequentes sobre ${dbCategory} no Telegram</h2>
+          <div style="background: #111; padding: 20px; border-radius: 12px; border: 1px solid #222;">
+            <details style="margin-bottom: 12px;">
+              <summary style="cursor: pointer; font-weight: 700; color: #ccc; padding: 8px 0;">O que é ${dbCategory} no Telegram?</summary>
+              <p style="color: #888; font-size: 0.9rem; margin-top: 8px; line-height: 1.6;">O Telegram é uma plataforma que permite criar grupos e canais para compartilhar conteúdo. A categoria <strong>${dbCategory}</strong> agrupa canais dedicados a esse tipo de conteúdo, com comunidades ativas e links verificados.</p>
+            </details>
+            <details style="margin-bottom: 12px;">
+              <summary style="cursor: pointer; font-weight: 700; color: #ccc; padding: 8px 0;">Os grupos são gratuitos?</summary>
+              <p style="color: #888; font-size: 0.9rem; margin-top: 8px; line-height: 1.6;">Sim, todos os grupos listados no Canais18 são de acesso gratuito. Basta clicar no botão "Entrar" para ser redirecionado ao canal no Telegram.</p>
+            </details>
+            <details style="margin-bottom: 12px;">
+              <summary style="cursor: pointer; font-weight: 700; color: #ccc; padding: 8px 0;">Os links são verificados?</summary>
+              <p style="color: #888; font-size: 0.9rem; margin-top: 8px; line-height: 1.6;">Sim. Nossa equipe testa diariamente cada link para garantir que os grupos ainda estão ativos. Se um link estiver quebrado, ele é removido automaticamente.</p>
+            </details>
+            <details style="margin-bottom: 12px;">
+              <summary style="cursor: pointer; font-weight: 700; color: #ccc; padding: 8px 0;">Como encontrar mais grupos de ${dbCategory}?</summary>
+              <p style="color: #888; font-size: 0.9rem; margin-top: 8px; line-height: 1.6;">Você pode navegar pelas outras categorias na tag cloud abaixo ou voltar para a <a href="${BASE_URL}" style="color: var(--primary);">página inicial</a> para explorar todo o diretório.</p>
+            </details>
+          </div>
+        </section>
       </main>
     </div>
   </body>
