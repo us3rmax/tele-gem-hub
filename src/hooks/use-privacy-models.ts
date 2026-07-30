@@ -1,6 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+const EDGE_FUNC_URL = "https://lymjjozpdsdoloahsyey.functions.supabase.co/image-proxy";
+
+/**
+ * Proxy a Privacy image URL through our edge function.
+ * Privacy images are protected by CloudFront Lambda and return 403 for external requests.
+ * Our edge function fetches them server-side with proper headers and returns the image.
+ */
+export function proxyPrivacyImage(url: string | null): string | null {
+  if (!url) return null;
+  if (!url.includes("image.privacy.com.br")) return url;
+  return `${EDGE_FUNC_URL}?url=${encodeURIComponent(url)}`;
+}
+
 export interface PrivacyModel {
   id: number;
   name: string;
@@ -14,6 +27,12 @@ export interface PrivacyModel {
   featured: boolean;
   is_active: boolean;
   created_at?: string;
+}
+
+/** Extended model with proxied image URLs */
+export interface PrivacyModelWithProxy extends PrivacyModel {
+  proxied_avatar: string;
+  proxied_cover: string | null;
 }
 
 async function fetchPrivacyModels(search?: string, perPage: number = 50): Promise<{
@@ -56,6 +75,14 @@ export function usePrivacyModels(search?: string, perPage: number = 50) {
     queryFn: () => fetchPrivacyModels(search, perPage),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
+    select: (data) => ({
+      ...data,
+      models: data.models.map((m) => ({
+        ...m,
+        proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
+        proxied_cover: proxyPrivacyImage(m.cover_url),
+      })) as PrivacyModelWithProxy[],
+    }),
   });
 }
 
@@ -65,5 +92,11 @@ export function useFeaturedPrivacyModels() {
     queryFn: fetchFeaturedPrivacyModels,
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    select: (data) =>
+      data.map((m) => ({
+        ...m,
+        proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
+        proxied_cover: proxyPrivacyImage(m.cover_url),
+      })) as PrivacyModelWithProxy[],
   });
 }

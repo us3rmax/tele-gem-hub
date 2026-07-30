@@ -6,7 +6,7 @@ import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGroups, useFeaturedGroups } from "@/hooks/use-groups";
-import { useFeaturedPrivacyModels, usePrivacyModels, type PrivacyModel } from "@/hooks/use-privacy-models";
+import { useFeaturedPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
 import { groupPath } from "@/lib/slug";
 import { Search, CheckCircle, Bookmark, ExternalLink } from "lucide-react";
 import type { Grupo } from "@/data/mock";
@@ -100,8 +100,8 @@ function ModelCard({ grupo }: { grupo: Grupo }) {
 }
 
 // Privacy Model Card — links directly to Privacy profile (no internal page)
-function PrivacyModelCard({ model }: { model: PrivacyModel }) {
-  const hasThumb = !!model.avatar_url;
+function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
+  const hasThumb = !!model.proxied_avatar;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border/30 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
@@ -114,7 +114,7 @@ function PrivacyModelCard({ model }: { model: PrivacyModel }) {
       >
         {hasThumb ? (
           <img
-            src={model.avatar_url}
+            src={model.proxied_avatar}
             alt={`${model.name} - Modelo Privacy | Canais18`}
             className="h-full w-full object-cover object-top transition-transform duration-500 hover:scale-105"
             loading="lazy"
@@ -127,7 +127,7 @@ function PrivacyModelCard({ model }: { model: PrivacyModel }) {
           </div>
         )}
 
-        {/* Verified badge */}
+        {/* Verified + Featured badges */}
         <div className="absolute top-3 right-3 flex items-center gap-1.5">
           {model.featured && (
             <span className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-bold text-white shadow-md">
@@ -139,12 +139,6 @@ function PrivacyModelCard({ model }: { model: PrivacyModel }) {
               <CheckCircle className="h-3 w-3" />
             </span>
           )}
-        </div>
-
-        {/* External link indicator */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-black/50 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm">
-          <ExternalLink className="h-3 w-3" />
-          Privacy
         </div>
       </a>
 
