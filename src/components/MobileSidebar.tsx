@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { X, Send, User, BookOpen, Flame, Clock, Eye, ThumbsUp, Grid3X3, Mail, FileText, Home, FolderOpen, Search } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -101,9 +102,7 @@ const MobileSidebar = ({ open, onClose, onSort, activeSort }: MobileSidebarProps
         className={`fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r border-border bg-background transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <span className="text-lg font-bold">
-            <span className="text-primary">TG</span>Index
-          </span>
+          <img src={logo} alt="Canais18" className="h-14 w-auto" />
           <button onClick={onClose} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
