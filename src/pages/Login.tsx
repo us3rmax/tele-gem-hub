@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,7 @@ const TURNSTILE_SITE_KEY = "0x4AAAAAACeD94GpcENqZjWY";
 const TURNSTILE_TIMEOUT_MS = 8000;
 
 const Login = () => {
-  const [searchParams] = useSearchParams();
-  const prefillEmail = searchParams.get("email") || "";
-  const [email, setEmail] = useState(prefillEmail);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -26,16 +24,15 @@ const Login = () => {
   const turnstileRef = useRef<TurnstileInstance>(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const returnUrl = searchParams.get("returnUrl") || "/";
   const passwordRef = useRef<HTMLInputElement>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
 
   useEffect(() => {
-    if (prefillEmail && passwordRef.current) {
+    if (passwordRef.current) {
       passwordRef.current.focus();
     }
-  }, [prefillEmail]);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -75,7 +72,7 @@ const Login = () => {
       setTurnstileToken(null);
       setLoading(false);
     } else {
-      navigate(returnUrl);
+      navigate("/");
     }
   };
 
@@ -85,7 +82,7 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}${returnUrl}`,
+        redirectTo: `${window.location.origin}/`,
       },
     });
     if (error) {
@@ -100,7 +97,7 @@ const Login = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "telegram",
       options: {
-        redirectTo: `${window.location.origin}${returnUrl}`,
+        redirectTo: `${window.location.origin}/`,
       },
     });
     if (error) {
