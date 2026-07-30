@@ -1,48 +1,60 @@
-// daily-tasks — envia as 33 URLs do sitemap ao Google Indexing API diariamente.
+// daily-tasks — envia URLs do sitemap ao Google Indexing API diariamente.
 // Acionado pelo pg_cron às 16:30 UTC (13:30 BRT).
-// Deploy: SUPABASE_ACCESS_TOKEN=... npx supabase functions deploy daily-tasks --no-verify-jwt --project-ref lymjjozpdsdoloahsyey
+// Deploy: npx supabase functions deploy daily-tasks --no-verify-jwt --project-ref lymjjozpdsdoloahsyey
+//
+// ESTRATÉGIA: 
+// - A cada execução, busca landing pages hardcoded + grupos visíveis com thumbnail
+// - Envia 200 URLs/dia (limite Google Indexing API gratuito)
+// - Usa cursor para enviar batches diferentes a cada dia (rotação circular)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Exatas 33 URLs do sitemap (8 estáticas + 25 categorias)
-const SITEMAP_URLS = [
-  // Estáticas
-  "https://www.canais18.com/",
-  "https://www.canais18.com/categorias",
-  "https://www.canais18.com/grupos-telegram",
-  "https://www.canais18.com/blog",
-  "https://www.canais18.com/contato",
-  "https://www.canais18.com/submit",
-  "https://www.canais18.com/privacy",
-  "https://www.canais18.com/terms",
-  // Categorias
-  "https://www.canais18.com/telegram-putaria",
-  "https://www.canais18.com/grupos-putaria-telegram",
-  "https://www.canais18.com/telegram-porno",
-  "https://www.canais18.com/telegram-xxx",
-  "https://www.canais18.com/grupos-telegram-18",
-  "https://www.canais18.com/novinhas-telegram",
-  "https://www.canais18.com/vazados-telegram",
-  "https://www.canais18.com/onlyfans-telegram",
-  "https://www.canais18.com/canal-de-putaria",
-  "https://www.canais18.com/grupo-putaria-telegram",
-  "https://www.canais18.com/xxx-telegram",
-  "https://www.canais18.com/grupos-porno-telegram",
-  "https://www.canais18.com/canais-putaria-telegram",
-  "https://www.canais18.com/canais-telegram-18",
-  "https://www.canais18.com/telegram-adulto",
-  "https://www.canais18.com/grupos-telegram-geral",
-  "https://www.canais18.com/amadoras-telegram",
-  "https://www.canais18.com/gay-telegram",
-  "https://www.canais18.com/fetiche-telegram",
-  "https://www.canais18.com/casadas-telegram",
-  "https://www.canais18.com/celebridades-telegram",
-  "https://www.canais18.com/asiaticas-telegram",
-  "https://www.canais18.com/bdsm-telegram",
-  "https://www.canais18.com/bbw-telegram",
-  "https://www.canais18.com/coroas-telegram",
+const DAILY_LIMIT = 200; // Limite do Google Indexing API gratuito
+
+// Landing pages — lista completa (80+ rotas)
+const LANDING_SLUGS = [
+  "/", "/categorias", "/grupos-telegram", "/modelos",
+  // === PUTARIA ===
+  "/telegram-putaria", "/grupos-putaria-telegram", "/canal-de-putaria",
+  "/grupo-putaria-telegram", "/grupos-de-putaria-telegram",
+  "/grupo-de-putaria-telegram", "/putaria-telegram", "/xvideos-putaria",
+  "/video-porno-telegram", "/porno-gratis-telegram", "/xvideos-porno-telegram",
+  "/putaria-brasileira", "/putaria-brasileira-telegram", "/grupos-porno-telegram",
+  "/canais-putaria-telegram",
+  // === PORNO / XXX ===
+  "/telegram-porno", "/telegram-xxx", "/xxx-telegram",
+  // === GERAL / 18+ ===
+  "/grupos-telegram-18", "/canais-telegram-18", "/telegram-adulto",
+  "/grupos-telegram-geral", "/links-telegram", "/telegram-proibido",
+  "/grupo-telegram-18", "/grupos-telegram-pode-tudo", "/grupos-telegram-secretos",
+  "/grupos-18-telegram", "/grupo-telegram-proibido", "/grupos-telegram",
+  // === SEXO ===
+  "/telegram-sexo", "/sexo-telegram", "/video-sexo-telegram",
+  "/videos-eroticos-telegram", "/chat-sexo-telegram",
+  // === NOVINHAS ===
+  "/novinhas-telegram", "/mulheres-nuas-telegram", "/vazadinhos-telegram",
+  // === VAZADOS ===
+  "/vazados-telegram", "/telegram-vazados", "/vazou-telegram", "/vazado-telegram",
+  "/grupos-telegram-vazados",
+  // === ONLYFANS ===
+  "/onlyfans-telegram", "/onlyfans-packs", "/onlyfans-vazados",
+  "/telegram-onlyfans", "/michele-umezu-onlyfans",
+  // === PRIVACY / EROME ===
+  "/privacy-telegram", "/erome-privacy", "/privacy-gratis",
+  // === CATEGORIAS ===
+  "/amadoras-telegram", "/gay-telegram", "/fetiche-telegram",
+  "/casadas-telegram", "/celebridades-telegram", "/asiaticas-telegram",
+  "/bdsm-telegram", "/bbw-telegram", "/coroas-telegram",
+  // === NOVAS (keyword gap) ===
+  "/corno-telegram", "/telegram-corno", "/amador-telegram",
+  "/telegram-canais", "/telegram-links", "/telegram-grupo",
+  "/grupos-do-telegram", "/telegram-puxadas", "/curso-telegram",
+  "/erome-telegram", "/telegram-fap", "/flagras-telegram",
+  "/grupos-telegram-br",
 ];
+
+const BASE_URL = "https://www.canais18.com";
 
 // ── Google OAuth2 (JWT RS256) ─────────────────────────────────────────────────
 
@@ -101,6 +113,17 @@ async function submitUrl(
   return r.ok ? "ok" : "err";
 }
 
+function generateSlug(name: string): string {
+  let slug = name.toLowerCase();
+  slug = slug.replace(/[^\x20-\x7E]/g, "");
+  slug = slug.replace(/[\s_]+/g, "-");
+  slug = slug.replace(/[^a-z0-9-]/g, "");
+  slug = slug.replace(/-+/g, "-");
+  slug = slug.replace(/^-+|-+$/g, "");
+  slug = slug.slice(0, 60).replace(/-+$/, "");
+  return slug;
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 serve(async (_req) => {
@@ -108,7 +131,7 @@ serve(async (_req) => {
   const today = new Date().toISOString().split("T")[0];
   const now   = new Date().toISOString();
 
-  // Usa apenas o primeiro projeto GCP — 33 URLs cabem folgado no limite diário de 200
+  // Usa o primeiro projeto GCP
   const credsJson = Deno.env.get("GOOGLE_CREDS_1");
   if (!credsJson) {
     return new Response(JSON.stringify({ ok: false, error: "GOOGLE_CREDS_1 not set" }), {
@@ -139,12 +162,55 @@ serve(async (_req) => {
     });
   }
 
-  // Envia todas as 33 URLs — sem cursor, sem bulk, sem paginação
+  // 1. Landing pages (prioridade alta — são as que mais trazem tráfego)
+  const landingUrls = LANDING_SLUGS.map(s => `${BASE_URL}${s}`);
+
+  // 2. Grupos visíveis com thumbnail (os que foram liberados pelo auto_release)
+  const { data: groups } = await sb
+    .from("groups")
+    .select("id, name")
+    .eq("hidden", false)
+    .not("thumbnail_url", "is", null)
+    .order("created_at", { ascending: false });
+
+  const groupUrls = (groups || []).map((g: any) => {
+    const slug = generateSlug(g.name);
+    const compactId = g.id.replace(/-/g, "");
+    if (slug) {
+      return `${BASE_URL}/group/${slug}-${compactId}`;
+    }
+    return `${BASE_URL}/group/${compactId}`;
+  });
+
+  // Combina: landing pages primeiro (mais importantes), depois grupos
+  const allUrls = [...landingUrls, ...groupUrls];
+  // Deduplica
+  const uniqueUrls = [...new Set(allUrls)];
+
+  // Lê cursor do dia anterior para rotação circular
+  const { data: progressData } = await sb
+    .from("indexing_progress")
+    .select("cursor_offset")
+    .eq("project_id", creds.project_id ?? "canais18-indexing")
+    .order("date", { ascending: false })
+    .limit(1)
+    .single();
+
+  const cursor = (progressData?.cursor_offset ?? 0) as number;
+
+  // Monta batch do dia (200 URLs a partir do cursor, rotação circular)
+  const urlsToSubmit: string[] = [];
+  for (let i = 0; i < DAILY_LIMIT && urlsToSubmit.length < DAILY_LIMIT; i++) {
+    const idx = (cursor + i) % uniqueUrls.length;
+    urlsToSubmit.push(uniqueUrls[idx]);
+  }
+
+  // Envia as URLs
   const results: Record<string, "ok" | "quota" | "err"> = {};
   let sent = 0;
   let quotaHit = false;
 
-  for (const url of SITEMAP_URLS) {
+  for (const url of urlsToSubmit) {
     const res = await submitUrl(token, url);
     results[url] = res;
     if (res === "quota") { quotaHit = true; break; }
@@ -152,13 +218,18 @@ serve(async (_req) => {
     await new Promise((r) => setTimeout(r, 100)); // 100ms entre chamadas
   }
 
+  // Atualiza cursor para a próxima execução
+  const newCursor = (cursor + urlsToSubmit.length) % uniqueUrls.length;
+
   // Registra no indexing_progress para o dashboard
   await sb.from("indexing_progress").upsert(
     {
       project_id: creds.project_id ?? "canais18-indexing",
       date: today,
       sent_count: sent,
-      sent_urls: SITEMAP_URLS.slice(0, sent),
+      total_available: uniqueUrls.length,
+      cursor_offset: newCursor,
+      sent_urls: urlsToSubmit.slice(0, Math.min(sent, 20)), // só últimas 20 para não lotar
     },
     { onConflict: "project_id,date" }
   );
@@ -179,10 +250,13 @@ serve(async (_req) => {
     JSON.stringify({
       ok: true,
       today,
-      total_urls: SITEMAP_URLS.length,
+      total_urls: urlsToSubmit.length,
+      total_available: uniqueUrls.length,
       sent,
       quota_hit: quotaHit,
-      results,
+      cursor: newCursor,
+      landing_count: landingUrls.length,
+      group_count: groupUrls.length,
     }),
     { headers: { "Content-Type": "application/json" } }
   );

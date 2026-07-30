@@ -3,8 +3,8 @@ auto_release.py — Canais18 Automated SEO Pipeline
 ==================================================
 Roda diariamente via GitHub Actions. Faz:
 1. Corrige descriptions vazias/curtas/longas dos grupos hidden
-2. Libera 8 grupos por dia (hidden→visible, noindex→index)
-3. Escalada automática: sobe para 12/dia após 30 dias, 15/dia após 60 dias
+2. Libera 15 grupos por dia (hidden→visible, noindex→index)
+3. Escalada automática: sobe para 20/dia após 20 dias, 25/dia após 45 dias
 4. Verifica links quebrados em grupos visíveis
 5. Recupera links que voltaram a funcionar
 
@@ -33,7 +33,7 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-DEFAULT_RATE = 8
+DEFAULT_RATE = 15
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("ERRO: SUPABASE_URL ou SUPABASE_SERVICE_KEY não configurados.")
@@ -89,18 +89,18 @@ def get_release_rate():
             days_running = (datetime.now() - datetime.strptime(start_date, "%Y-%m-%d")).days
             
             # Escalada automática
-            if days_running > 60 and rate < 15:
-                rate = 15
-                config["rate"] = 15
+            if days_running > 45 and rate < 25:
+                rate = 25
+                config["rate"] = 25
                 config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
                 update_release_config(config)
-                print(f"⬆️ Escalada: rate subiu para {rate} (60+ dias)")
-            elif days_running > 30 and rate < 12:
-                rate = 12
-                config["rate"] = 12
+                print(f"⬆️ Escalada: rate subiu para {rate} (45+ dias)")
+            elif days_running > 20 and rate < 20:
+                rate = 20
+                config["rate"] = 20
                 config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
                 update_release_config(config)
-                print(f"⬆️ Escalada: rate subiu para {rate} (30+ dias)")
+                print(f"⬆️ Escalada: rate subiu para {rate} (20+ dias)")
             
             return rate
     except:
