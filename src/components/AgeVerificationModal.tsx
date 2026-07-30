@@ -7,7 +7,13 @@ const AgeVerificationModal = () => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const excluded = ["/sitemap.xml", "/robots.txt", "/submit", "/privacy", "/terms", "/dmca", "/2257", "/removal", "/contato"];
+    const excluded = [
+      "/sitemap.xml", "/robots.txt", "/submit", "/privacy", "/terms",
+      "/dmca", "/2257", "/removal", "/contato",
+      "/auth/login", "/login", "/signin",
+      "/auth/register", "/register",
+      "/forgot-password",
+    ];
     if (!localStorage.getItem(AGE_KEY) && !excluded.includes(window.location.pathname)) {
       setShow(true);
     }
@@ -25,7 +31,7 @@ const AgeVerificationModal = () => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm bg-background/80">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm bg-black/70">
       <div className="mx-4 w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-2xl text-center space-y-6">
         <div className="space-y-2">
           <p className="text-4xl">⚠️</p>
