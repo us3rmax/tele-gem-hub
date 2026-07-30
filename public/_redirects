@@ -91,4 +91,5 @@
 /telegram-fap https://lymjjozpdsdoloahsyey.supabase.co/functions/v1/landing-pages?page=telegram-fap 200
 /flagras-telegram https://lymjjozpdsdoloahsyey.supabase.co/functions/v1/landing-pages?page=flagras-telegram 200
 /grupos-telegram-br https://lymjjozpdsdoloahsyey.supabase.co/functions/v1/landing-pages?page=grupos-telegram-br 200
+/modelo/:slug https://lymjjozpdsdoloahsyey.supabase.co/functions/v1/modelo-pages?slug=:slug 200
 /* /index.html 200

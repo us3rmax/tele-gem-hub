@@ -33,6 +33,7 @@ const CategoryLanding = lazy(() => import("./pages/CategoryLanding"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const Modelos = lazy(() => import("./pages/Modelos"));
+const ModeloDetail = lazy(() => import("./pages/ModeloDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,6 +70,7 @@ const App = () => (
                     <Route path="/auth/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/modelos" element={<Modelos />} />
+                    <Route path="/modelo/:slug" element={<ModeloDetail />} />
                     <Route path="/submit" element={<SubmitGroup />} />
                     <Route path="/my-groups" element={<MyGroups />} />
                     {/* Admin — URL preserva aba ativa ao recarregar */}

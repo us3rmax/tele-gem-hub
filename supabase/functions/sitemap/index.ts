@@ -9,6 +9,7 @@ const STATIC_PAGES = [
   { path: "/", priority: "1.0", changefreq: "daily" },
   { path: "/grupos-telegram", priority: "0.9", changefreq: "daily" },
   { path: "/categorias", priority: "0.8", changefreq: "weekly" },
+  { path: "/modelos", priority: "0.8", changefreq: "weekly" },
   { path: "/blog", priority: "0.7", changefreq: "weekly" },
 ];
 
@@ -24,22 +25,32 @@ const LANDING_PAGES = [
   "grupos-telegram-18", "canais-telegram-18", "telegram-adulto",
   "grupos-telegram-geral", "links-telegram", "telegram-proibido",
   "grupo-telegram-18", "grupos-telegram-pode-tudo", "grupos-telegram-secretos",
-  "grupos-18-telegram", "grupo-telegram-proibido",
-  "novinhas-telegram", "vazados-telegram", "onlyfans-telegram",
-  "telegram-vazados", "vazou-telegram", "vazado-telegram",
-  "famosos-nus-telegram", "onlyfans-packs", "onlyfans-vazados",
-  "telegram-sexo", "vazadinhos-telegram", "amadoras-quentes",
-  "grupos-telegram-vazados", "privacy-telegram",
-  "sexo-telegram", "telegram-onlyfans", "privacy-gratis",
-  "chat-sexo-telegram", "video-sexo-telegram", "mulheres-nuas-telegram",
-  "videos-eroticos-telegram",
-  "erome-privacy", "privacy-vazados", "erome-vazados", "erome-vazado",
-  "erome-vazou", "erome-gostosa", "vazados-erome",
+  "grupos-18-telegram", "grupo-telegram-proibido", "grupos-telegram",
+  "telegram-sexo", "sexo-telegram", "video-sexo-telegram",
+  "videos-eroticos-telegram", "chat-sexo-telegram",
+  "novinhas-telegram", "mulheres-nuas-telegram", "vazadinhos-telegram",
+  "vazados-telegram", "telegram-vazados", "vazou-telegram", "vazado-telegram",
+  "grupos-telegram-vazados",
+  "onlyfans-telegram", "onlyfans-packs", "onlyfans-vazados",
+  "telegram-onlyfans", "michele-umezu-onlyfans",
+  "privacy-telegram", "erome-privacy", "privacy-gratis",
+  "amadoras-telegram", "gay-telegram", "fetiche-telegram",
+  "casadas-telegram", "celebridades-telegram", "asiaticas-telegram",
+  "bdsm-telegram", "bbw-telegram", "coroas-telegram",
+  // === NOVAS (keyword gap) ===
+  "corno-telegram", "telegram-corno", "amador-telegram",
+  "telegram-canais", "telegram-links", "telegram-grupo",
+  "grupos-do-telegram", "telegram-puxadas", "curso-telegram",
+  "erome-telegram", "telegram-fap", "flagras-telegram",
+  "grupos-telegram-br",
+  // === MODELOS INDIVIDUAIS (hardcoded) ===
   "dra-sophia-privacy", "erome-juliana-silva", "bia-albina-erome",
-  "michele-umezu-onlyfans", "cosvickye-erome", "nayzinha-erome",
+  "cosvickye-erome", "nayzinha-erome",
   "privacy-bad-mi", "privacy-display-apk", "erome-nicole-rodrigues",
   "nyvi-estephan-erome", "nayara-erome", "jenifer-novaki-privacy",
   "camila-prado-privacy", "mae-e-filha-erome",
+  "erome-privacy", "privacy-vazados", "erome-vazados", "erome-vazado",
+  "erome-vazou", "erome-gostosa", "vazados-erome",
 ];
 
 function generateSlug(name: string): string {
@@ -55,10 +66,6 @@ function generateSlug(name: string): string {
 
 /**
  * Fetch ONLY visible (non-hidden) groups for the sitemap.
- * Hidden groups (hidden=true) are excluded to prevent:
- *   - 404 errors when Google tries to crawl them
- *   - "Crawled but not indexed" status
- *   - Soft 404 from empty pages
  */
 async function fetchVisibleGroups() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -68,7 +75,6 @@ async function fetchVisibleGroups() {
   let hasMore = true;
 
   while (hasMore) {
-    // CRITICAL FIX: Only fetch groups where hidden = false
     const { data, error } = await supabase
       .from("groups")
       .select("id, name, created_at, description")
@@ -84,6 +90,43 @@ async function fetchVisibleGroups() {
     }
   }
   return allGroups;
+}
+
+/**
+ * Fetch dynamic model/celebrity pages from the database.
+ * Model pages are groups where category starts with "modelo_".
+ * Deduplicates by model name so each model = 1 sitemap entry.
+ */
+async function fetchModelPages() {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  const { data, error } = await supabase
+    .from("groups")
+    .select("category, created_at")
+    .eq("hidden", false)
+    .like("category", "modelo_%");
+  
+  if (error) {
+    console.error("Error fetching model pages:", error);
+    return [];
+  }
+  if (!data || data.length === 0) return [];
+
+  // Deduplicate: extract model name from category prefix
+  const modelSet = new Map<string, { slug: string; name: string; created_at: string }>();
+  for (const group of data) {
+    const modelName = (group.category || "").replace(/^modelo_/, "");
+    const slug = generateSlug(modelName);
+    if (!slug) continue;
+    if (!modelSet.has(slug)) {
+      modelSet.set(slug, {
+        slug,
+        name: modelName,
+        created_at: group.created_at || new Date().toISOString(),
+      });
+    }
+  }
+  return Array.from(modelSet.values());
 }
 
 function buildUrlBlock(
@@ -103,6 +146,7 @@ function buildUrlBlock(
 Deno.serve(async () => {
   try {
     const groups = await fetchVisibleGroups();
+    const modelPages = await fetchModelPages();
     const today = new Date().toISOString().split("T")[0];
 
     // ── Static pages ──
@@ -115,13 +159,17 @@ Deno.serve(async () => {
       buildUrlBlock(`/${slug}`, today, "weekly", "0.9")
     ).join("\n");
 
+    // ── Model pages (dynamic, medium-high priority) ──
+    const modelUrls = modelPages.map((model) =>
+      buildUrlBlock(`/modelo/${model.slug}`, today, "weekly", "0.8")
+    ).join("\n");
+
     // ── Group pages (only visible ones, with proper changefreq) ──
     const groupUrls = groups.map((group) => {
       const slug = generateSlug(group.name);
       const compactId = group.id.replace(/-/g, "");
       const urlPath = slug ? `/group/${slug}-${compactId}` : `/group/${compactId}`;
       const lastmod = group.created_at ? group.created_at.split("T")[0] : today;
-      // Priority based on whether group has description (better content = higher priority)
       const priority = group.description ? "0.7" : "0.5";
       return buildUrlBlock(urlPath, lastmod, "weekly", priority);
     }).join("\n");
@@ -130,6 +178,7 @@ Deno.serve(async () => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${staticUrls}
 ${landingUrls}
+${modelUrls}
 ${groupUrls}
 </urlset>`;
 
@@ -137,6 +186,8 @@ ${groupUrls}
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
         "X-Sitemap-Source": "edge-functions",
+        "X-Sitemap-Models": String(modelPages.length),
+        "X-Sitemap-Groups": String(groups.length),
         "Cache-Control": "public, max-age=3600",
       },
     });
