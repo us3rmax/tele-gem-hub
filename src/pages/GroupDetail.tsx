@@ -98,19 +98,21 @@ const GroupDetail = () => {
         canonicalUrl={`https://www.canais18.com${groupPath(grupo)}`}
         jsonLd={{
           "@context": "https://schema.org",
-          "@type": "ItemPage",
-          name: `${grupo.name} - Canal Telegram 18+`,
+          "@type": "WebPage",
+          name: `${grupo.name} — Canal Telegram ${grupo.category} 18+`,
           description: seoDescription,
           url: `https://www.canais18.com${groupPath(grupo)}`,
           image: grupo.thumbnail_url || undefined,
           datePublished: grupo.created_at,
           dateModified: grupo.created_at,
           mainEntity: {
-            "@type": "Thing",
+            "@type": "OnlineCommunity",
             name: grupo.name,
             description: seoDescription,
             url: grupo.telegram_link,
+            numberOfMembers: grupo.member_count,
             ...(grupo.thumbnail_url ? { image: grupo.thumbnail_url } : {}),
+            "@context": "https://schema.org",
           },
           breadcrumb: {
             "@type": "BreadcrumbList",
@@ -203,7 +205,11 @@ const GroupDetail = () => {
           {grupo.description ? (
             <p className="mt-3 text-base leading-relaxed text-muted-foreground">{grupo.description}</p>
           ) : (
-            <p className="mt-3 text-base italic text-muted-foreground">Sem descrição disponível</p>
+            <p className="mt-3 text-base leading-relaxed text-muted-foreground">
+              {`Canal de Telegram na categoria ${grupo.category} com ${formatMembers(grupo.member_count)} membros ativos. `}
+              {`Encontre conteúdo ${grupo.category.toLowerCase()} atualizado diariamente neste grupo público do Telegram. `}
+              {`Acesse o link direto acima para participar do canal e receber conteúdo exclusivo.`}
+            </p>
           )}
         </section>
 
@@ -222,6 +228,20 @@ const GroupDetail = () => {
             </div>
           </section>
         )}
+
+        {/* Internal linking section — helps Google crawl and understand site structure */}
+        <section className="rounded-xl border border-border bg-card p-5 sm:p-6">
+          <h2 className="text-lg font-semibold text-card-foreground">Explorar Categorias</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Navegue pelas categorias do Canais18 para encontrar mais grupos do Telegram: {' '}
+            <Link to="/?category=Putaria" className="text-primary hover:underline">Putaria</Link>{', '}
+            <Link to="/?category=Novinhas" className="text-primary hover:underline">Novinhas</Link>{', '}
+            <Link to="/?category=Amadoras" className="text-primary hover:underline">Amadoras</Link>{', '}
+            <Link to="/?category=Vazados" className="text-primary hover:underline">Vazados</Link>{', '}
+            <Link to="/?category=Onlyfans" className="text-primary hover:underline">OnlyFans</Link>{', '}
+            <Link to="/telegram-putaria" className="text-primary hover:underline">Grupos Telegram</Link>
+          </p>
+        </section>
 
         <BannerAd position="bottom" />
       </main>
