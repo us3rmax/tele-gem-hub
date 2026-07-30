@@ -12,6 +12,17 @@ interface UseGroupsParams {
   perPage: number;
 }
 
+async function fetchFeaturedGroups(): Promise<Grupo[]> {
+  const { data } = await supabase
+    .from("groups")
+    .select("*")
+    .eq("featured", true)
+    .or("hidden.is.null,hidden.eq.false")
+    .order("created_at", { ascending: false })
+    .limit(16);
+  return (data as Grupo[]) || [];
+}
+
 async function fetchPremiumGroups(): Promise<Grupo[]> {
   const { data } = await supabase
     .from("groups")
@@ -73,6 +84,15 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
   const { data, error } = await query;
   if (error) throw error;
   return { groups: (data as Grupo[]) || [], totalCount: count || 0 };
+}
+
+export function useFeaturedGroups() {
+  return useQuery({
+    queryKey: ["featured-groups"],
+    queryFn: fetchFeaturedGroups,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 }
 
 export function usePremiumGroups() {
