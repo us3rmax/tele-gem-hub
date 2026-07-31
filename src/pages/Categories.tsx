@@ -85,8 +85,6 @@ async function fetchCategoryPreviews() {
   return results;
 }
 
-const PHOTO_PRIORITY_PAGES = 5;
-
 async function fetchCategoryGroups(category: string, page: number) {
   const from = (page - 1) * PER_PAGE;
   const to = from + PER_PAGE - 1;
@@ -101,17 +99,8 @@ async function fetchCategoryGroups(category: string, page: number) {
       .range(from, to),
   ]);
 
-  let groups = (dataResult.data as Grupo[]) ?? [];
-
-  // Nas primeiras 5 páginas, priorizar grupos com foto
-  if (page <= PHOTO_PRIORITY_PAGES) {
-    const withPhoto = groups.filter((g: any) => g.thumbnail_url);
-    const withoutPhoto = groups.filter((g: any) => !g.thumbnail_url);
-    groups = [...withPhoto, ...withoutPhoto];
-  }
-
   return {
-    groups,
+    groups: (dataResult.data as Grupo[]) ?? [],
     totalCount: countResult.count ?? 0,
   };
 }
