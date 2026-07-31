@@ -4,7 +4,8 @@ import type { Grupo } from "@/data/mock";
 
 const PER_PAGE_MOBILE = 20;
 const PER_PAGE_DESKTOP = 24;
-const PHOTO_PRIORITY_PAGES = 5; // Priorizar grupos com foto nas primeiras 5 páginas
+const PER_PAGE = 20;
+const PHOTO_PRIORITY_PAGES = 5;
 
 interface UseGroupsParams {
   sort: string;
@@ -50,15 +51,10 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
     if (error) throw error;
     const rows = (data as any[]) || [];
     const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
-    const groups = rows.map(({ total_count, ...g }: any) => g) as Grupo[];
-
-    // Nas primeiras 5 páginas, priorizar grupos com foto
-    if (page <= PHOTO_PRIORITY_PAGES) {
-      const withPhoto = groups.filter((g: any) => g.thumbnail_url);
-      const withoutPhoto = groups.filter((g: any) => !g.thumbnail_url);
-      return { groups: [...withPhoto, ...withoutPhoto], totalCount };
-    }
-    return { groups, totalCount };
+    return {
+      groups: rows.map(({ total_count, ...g }: any) => g) as Grupo[],
+      totalCount,
+    };
   }
 
   // ── Outros filtros ────────────────────────────────────────────────────────
@@ -68,36 +64,45 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
   countQuery = countQuery.or("hidden.is.null,hidden.eq.false");
   const { count } = await countQuery;
 
-  const to = from + perPage - 1;
   let query = supabase.from("groups").select("*");
   if (!search) query = query.eq("is_premium", false);
   if (search) query = query.ilike("name", `%${search}%`);
   query = query.or("hidden.is.null,hidden.eq.false");
 
-  switch (sort) {
-    case "vistos":
-      query = query.order("views", { ascending: false });
-      break;
-    case "votados":
-      query = query.order("member_count", { ascending: false });
-      break;
-    case "recentes":
-    default:
-      query = query.order("created_at", { ascending: false });
+  // Nas primeiras 5 páginas, priorizar grupos com thumbnail
+  if (page <= PHOTO_PRIORITY_PAGES) {
+    // Order: has_thumbnail DESC first, then by the requested sort
+    switch (sort) {
+      case "vistos":
+        query = query.order("has_thumbnail", { ascending: false }).order("views", { ascending: false });
+        break;
+      case "votados":
+        query = query.order("has_thumbnail", { ascending: false }).order("member_count", { ascending: false });
+        break;
+      case "recentes":
+      default:
+        query = query.order("has_thumbnail", { ascending: false }).order("created_at", { ascending: false });
+    }
+  } else {
+    // Páginas após a 5a, ordem normal
+    switch (sort) {
+      case "vistos":
+        query = query.order("views", { ascending: false });
+        break;
+      case "votados":
+        query = query.order("member_count", { ascending: false });
+        break;
+      case "recentes":
+      default:
+        query = query.order("created_at", { ascending: false });
+    }
   }
 
+  const to = from + perPage - 1;
   query = query.range(from, to);
   const { data, error } = await query;
   if (error) throw error;
-  const groups = (data as Grupo[]) || [];
-
-  // Nas primeiras 5 páginas, priorizar grupos com foto
-  if (page <= PHOTO_PRIORITY_PAGES) {
-    const withPhoto = groups.filter((g: any) => g.thumbnail_url);
-    const withoutPhoto = groups.filter((g: any) => !g.thumbnail_url);
-    return { groups: [...withPhoto, ...withoutPhoto], totalCount: count || 0 };
-  }
-  return { groups, totalCount: count || 0 };
+  return { groups: (data as Grupo[]) || [], totalCount: count || 0 };
 }
 
 export function useFeaturedGroups() {
@@ -133,7 +138,6 @@ export function useGroupDetail(slugParam: string | undefined) {
     queryFn: async () => {
       if (!slugParam) throw new Error("No slug");
       
-      // Tenta buscar pelo slug exato primeiro
       const { data: bySlug } = await supabase
         .from("groups")
         .select("*")
@@ -142,7 +146,6 @@ export function useGroupDetail(slugParam: string | undefined) {
       
       if (bySlug) return bySlug as Grupo;
 
-      // Tenta extrair o ID curto (8 chars hex) do final do slug
       const shortMatch = slugParam.match(/([a-f0-9]{8})$/);
       if (shortMatch) {
         const { data: byShortId } = await supabase
@@ -153,7 +156,6 @@ export function useGroupDetail(slugParam: string | undefined) {
         if (byShortId) return byShortId as Grupo;
       }
 
-      // Fallback: extrai UUID completo (32 chars) para URLs antigas
       const fullMatch = slugParam.match(/([a-f0-9]{32})$/);
       if (fullMatch) {
         const hex = fullMatch[1];
