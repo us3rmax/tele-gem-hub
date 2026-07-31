@@ -226,18 +226,7 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
           <p className="text-xs text-gray-400">@{model.profile_name}</p>
         </div>
 
-        {/* External link button */}
-        <a
-          href={model.privacy_link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
-        >
-          <span className="flex items-center gap-1">
-            <ExternalLink className="h-3 w-3" />
-            Ver
-          </span>
-        </a>
+
       </div>
     </div>
   );
@@ -315,14 +304,11 @@ const Modelos = () => {
         {/* Section 1: Criadoras em Destaque (groups + Privacy creadora models) */}
         {(featuredModels.length > 0 || creadoraPrivacyModels.length > 0) && (
           <section>
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
                 <span className="text-lg">⭐</span>
                 Criadoras em <span className="text-primary">Destaque</span>
               </h2>
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                {featuredModels.length + creadoraPrivacyModels.length} criadoras
-              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
@@ -350,14 +336,11 @@ const Modelos = () => {
         {/* Section 2: Top Creators (featured Privacy models) */}
         {featuredPrivacyModels.length > 0 && (
           <section>
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
                 <span className="text-lg">👑</span>
                 <span className="text-primary">Top Creators</span>
               </h2>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
-                {featuredPrivacyModels.length} criadoras
-              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
