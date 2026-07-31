@@ -1228,6 +1228,7 @@ const AdminDashboard = () => {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [privacySearch, setPrivacySearch] = useState("");
   const [privacySourceFilter, setPrivacySourceFilter] = useState<"all" | "manual" | "imported">("all");
+  const [privacyFeaturedFilter, setPrivacyFeaturedFilter] = useState<"creadora" | "top_creator" | null>(null);
 
   // Privacy Edit Modal state
   const [privacyEditModalOpen, setPrivacyEditModalOpen] = useState(false);
@@ -1613,6 +1614,12 @@ const AdminDashboard = () => {
     } else if (privacySourceFilter === "imported") {
       filtered = filtered.filter((m) => m.source !== "manual");
     }
+    // Featured filter
+    if (privacyFeaturedFilter === "creadora") {
+      filtered = filtered.filter((m) => m.featured_type === "creadora");
+    } else if (privacyFeaturedFilter === "top_creator") {
+      filtered = filtered.filter((m) => m.featured_type === "top_creator");
+    }
     // Search filter
     if (privacySearch.trim()) {
       const q = privacySearch.toLowerCase();
@@ -1623,7 +1630,7 @@ const AdminDashboard = () => {
       );
     }
     return filtered;
-  }, [privacyModels, privacySearch, privacySourceFilter]);
+  }, [privacyModels, privacySearch, privacySourceFilter, privacyFeaturedFilter]);
 
   if (!user || !isAdmin) return null;
 
@@ -2653,6 +2660,22 @@ const AdminDashboard = () => {
                 className="text-xs"
               >
                 Importados
+              </Button>
+              <Button
+                size="sm"
+                variant={privacyFeaturedFilter === "creadora" ? "default" : "outline"}
+                onClick={() => setPrivacyFeaturedFilter(privacyFeaturedFilter === "creadora" ? null : "creadora")}
+                className="text-xs"
+              >
+                ⭐ Criadoras
+              </Button>
+              <Button
+                size="sm"
+                variant={privacyFeaturedFilter === "top_creator" ? "default" : "outline"}
+                onClick={() => setPrivacyFeaturedFilter(privacyFeaturedFilter === "top_creator" ? null : "top_creator")}
+                className="text-xs"
+              >
+                👑 Top Creators
               </Button>
             </div>
 
