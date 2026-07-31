@@ -282,7 +282,7 @@ const Modelos = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
               {featuredLoading || creadoraLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
@@ -314,7 +314,7 @@ const Modelos = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
               {featuredPrivacyLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
@@ -377,7 +377,7 @@ const Modelos = () => {
           )}
 
           {privacyLoading ? (
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="overflow-hidden rounded-xl bg-gray-900">
                   <Skeleton className="aspect-[4/3] w-full" />
@@ -394,7 +394,7 @@ const Modelos = () => {
           ) : (
             <>
               {privacyModels.length > 0 && (
-                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
                   {privacyModels.map((model) => (
                     <PrivacyModelCard key={model.id} model={model} />
                   ))}
@@ -404,7 +404,7 @@ const Modelos = () => {
               {privacyModels.length > 8 && <BannerAd position="middle" />}
 
               {privacyModels.length > 16 && (
-                <div className="mt-4 grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
                   {privacyModels.slice(16).map((model) => (
                     <PrivacyModelCard key={model.id} model={model} />
                   ))}
