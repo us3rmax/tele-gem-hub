@@ -274,7 +274,7 @@ const Modelos = () => {
 
         {/* Section 1: Criadoras em Destaque (groups + Privacy creadora models) */}
         {(featuredModels.length > 0 || creadoraPrivacyModels.length > 0) && (
-          <section className="rounded-2xl border border-sky-200 bg-white p-5">
+          <section className="rounded-2xl border border-sky-200 bg-white p-3">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-lg">⭐</span>
@@ -282,7 +282,7 @@ const Modelos = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
               {featuredLoading || creadoraLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
@@ -306,7 +306,7 @@ const Modelos = () => {
 
         {/* Section 2: Top Creators (featured Privacy models) */}
         {featuredPrivacyModels.length > 0 && (
-          <section className="rounded-2xl border border-sky-200 bg-white p-5">
+          <section className="rounded-2xl border border-sky-200 bg-white p-3">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-lg">👑</span>
@@ -314,7 +314,7 @@ const Modelos = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
               {featuredPrivacyLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
@@ -336,7 +336,7 @@ const Modelos = () => {
 
 
         {/* Section 3: Mais Buscadas (all Privacy models with tabs) */}
-        <section className="rounded-2xl border border-sky-200 bg-white p-5">
+        <section className="rounded-2xl border border-sky-200 bg-white p-3">
           <div className="mb-5 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
               <span className="text-lg">🔍</span>
@@ -377,7 +377,7 @@ const Modelos = () => {
           )}
 
           {privacyLoading ? (
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="overflow-hidden rounded-xl bg-gray-900">
                   <Skeleton className="aspect-[4/3] w-full" />
@@ -394,7 +394,7 @@ const Modelos = () => {
           ) : (
             <>
               {privacyModels.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-1 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
                   {privacyModels.map((model) => (
                     <PrivacyModelCard key={model.id} model={model} />
                   ))}
@@ -404,7 +404,7 @@ const Modelos = () => {
               {privacyModels.length > 8 && <BannerAd position="middle" />}
 
               {privacyModels.length > 16 && (
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
+                <div className="mt-4 grid grid-cols-2 gap-1 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
                   {privacyModels.slice(16).map((model) => (
                     <PrivacyModelCard key={model.id} model={model} />
                   ))}
