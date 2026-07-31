@@ -30,7 +30,6 @@ import { generateSlug } from "@/lib/slug";
 
 import {
   CheckCircle,
-  CheckCircle,
   XCircle,
   Clock,
   ExternalLink,
@@ -1241,6 +1240,12 @@ const AdminDashboard = () => {
     is_verified: false,
   });
   const [privacyErrors, setPrivacyErrors] = useState<Record<string, string>>({});
+  const [privacyAvatarFile, setPrivacyAvatarFile] = useState<File | null>(null);
+  const [privacyCoverFile, setPrivacyCoverFile] = useState<File | null>(null);
+  const [privacyAvatarPreview, setPrivacyAvatarPreview] = useState<string | null>(null);
+  const [privacyCoverPreview, setPrivacyCoverPreview] = useState<string | null>(null);
+  const privacyAvatarRef = useRef<HTMLInputElement>(null);
+  const privacyCoverRef = useRef<HTMLInputElement>(null);
 
   const fetchPrivacyModels = async (search = "") => {
     setPrivacyLoading(true);
@@ -1315,6 +1320,10 @@ const AdminDashboard = () => {
       gender: "",
       is_verified: false,
     });
+    setPrivacyAvatarFile(null);
+    setPrivacyCoverFile(null);
+    setPrivacyAvatarPreview(null);
+    setPrivacyCoverPreview(null);
     setPrivacyErrors({});
     setPrivacyModalOpen(false);
   };
@@ -1328,15 +1337,82 @@ const AdminDashboard = () => {
     return Object.keys(errors).length === 0;
   };
 
+  const handlePrivacyAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setPrivacyErrors((prev) => ({ ...prev, avatar: "Imagem deve ter no máximo 2MB" }));
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setPrivacyErrors((prev) => ({ ...prev, avatar: "Arquivo deve ser uma imagem" }));
+      return;
+    }
+    setPrivacyAvatarFile(file);
+    setPrivacyAvatarPreview(URL.createObjectURL(file));
+    setPrivacyErrors((prev) => { const { avatar, ...rest } = prev; return rest; });
+  };
+
+  const handlePrivacyCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setPrivacyErrors((prev) => ({ ...prev, cover: "Imagem deve ter no máximo 2MB" }));
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setPrivacyErrors((prev) => ({ ...prev, cover: "Arquivo deve ser uma imagem" }));
+      return;
+    }
+    setPrivacyCoverFile(file);
+    setPrivacyCoverPreview(URL.createObjectURL(file));
+    setPrivacyErrors((prev) => { const { cover, ...rest } = prev; return rest; });
+  };
+
   const handlePrivacySave = async () => {
     if (!validatePrivacyForm()) return;
+    if (!user) return;
     setPrivacyModalSaving(true);
+
+    let avatarUrl: string | null = null;
+    let coverUrl: string | null = null;
+
+    // Upload avatar if file selected
+    if (privacyAvatarFile) {
+      const ext = privacyAvatarFile.name.split(".").pop();
+      const avatarPath = `privacy-models/${user.id}/${crypto.randomUUID()}_avatar.${ext}`;
+      const { error: avatarUploadError } = await supabase.storage
+        .from("privacy-models")
+        .upload(avatarPath, privacyAvatarFile, { contentType: privacyAvatarFile.type });
+      if (avatarUploadError) {
+        toast({ title: "Erro ao enviar foto", description: avatarUploadError.message, variant: "destructive" });
+        setPrivacyModalSaving(false);
+        return;
+      }
+      avatarUrl = supabase.storage.from("privacy-models").getPublicUrl(avatarPath).data.publicUrl;
+    }
+
+    // Upload cover if file selected
+    if (privacyCoverFile) {
+      const ext = privacyCoverFile.name.split(".").pop();
+      const coverPath = `privacy-models/${user.id}/${crypto.randomUUID()}_cover.${ext}`;
+      const { error: coverUploadError } = await supabase.storage
+        .from("privacy-models")
+        .upload(coverPath, privacyCoverFile, { contentType: privacyCoverFile.type });
+      if (coverUploadError) {
+        toast({ title: "Erro ao enviar capa", description: coverUploadError.message, variant: "destructive" });
+        setPrivacyModalSaving(false);
+        return;
+      }
+      coverUrl = supabase.storage.from("privacy-models").getPublicUrl(coverPath).data.publicUrl;
+    }
+
     const { error } = await supabase.from("privacy_models").insert({
       name: privacyForm.name.trim(),
       profile_name: privacyForm.profile_name.trim(),
       privacy_link: privacyForm.privacy_link.trim(),
-      avatar_url: privacyForm.avatar_url.trim() || null,
-      cover_url: privacyForm.cover_url.trim() || null,
+      avatar_url: avatarUrl,
+      cover_url: coverUrl,
       gender: privacyForm.gender || null,
       is_verified: privacyForm.is_verified,
       featured: false,
@@ -2937,21 +3013,79 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>URL da Foto (Avatar)</Label>
-              <Input
-                value={privacyForm.avatar_url}
-                onChange={(e) => setPrivacyForm((f) => ({ ...f, avatar_url: e.target.value }))}
-                placeholder="https://image.privacy.com.br/..."
-              />
+              <Label>Foto (Avatar)</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={privacyAvatarRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handlePrivacyAvatarChange}
+                />
+                {privacyAvatarPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={privacyAvatarPreview}
+                      alt="Avatar preview"
+                      className="h-20 w-20 rounded-full border-2 border-border object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrivacyAvatarFile(null);
+                        setPrivacyAvatarPreview(null);
+                      }}
+                      className="absolute -right-2 -top-2 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button type="button" variant="outline" size="sm" onClick={() => privacyAvatarRef.current?.click()}>
+                    <Upload className="mr-1 h-4 w-4" />
+                    Selecionar foto
+                  </Button>
+                )}
+              </div>
+              {privacyErrors.avatar && <p className="text-xs text-destructive">{privacyErrors.avatar}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label>URL da Capa (opcional)</Label>
-              <Input
-                value={privacyForm.cover_url}
-                onChange={(e) => setPrivacyForm((f) => ({ ...f, cover_url: e.target.value }))}
-                placeholder="https://image.privacy.com.br/..."
-              />
+              <Label>Capa (opcional)</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={privacyCoverRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handlePrivacyCoverChange}
+                />
+                {privacyCoverPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={privacyCoverPreview}
+                      alt="Cover preview"
+                      className="h-16 w-28 rounded-lg border border-border object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrivacyCoverFile(null);
+                        setPrivacyCoverPreview(null);
+                      }}
+                      className="absolute -right-2 -top-2 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button type="button" variant="outline" size="sm" onClick={() => privacyCoverRef.current?.click()}>
+                    <Upload className="mr-1 h-4 w-4" />
+                    Selecionar capa
+                  </Button>
+                )}
+              </div>
+              {privacyErrors.cover && <p className="text-xs text-destructive">{privacyErrors.cover}</p>}
             </div>
 
             <div className="space-y-2">
