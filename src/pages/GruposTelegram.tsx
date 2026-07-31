@@ -66,7 +66,7 @@ const GruposTelegram = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO
         title="Grupos Telegram - 151+ Canais | Canais18"
         description="Encontre os melhores grupos do Telegram. +151 canais verificados. Entre agora!"

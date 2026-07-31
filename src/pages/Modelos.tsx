@@ -244,7 +244,7 @@ const Modelos = () => {
   const privacyModels = useMemo(() => privacyData?.models ?? [], [privacyData?.models]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO
         title="Privacy Search — Explore as Melhores Criadoras Privacy | Canais18"
         description="Explore milhares de criadoras do Privacy. Busque por nome, categoria ou palavra-chave. Filtre por tipo de conteudo e encontre os melhores grupos de previas no Telegram."

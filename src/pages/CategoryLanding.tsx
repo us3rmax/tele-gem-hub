@@ -874,7 +874,7 @@ const CategoryLanding = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO
         title={config.seoTitle}
         description={config.description}

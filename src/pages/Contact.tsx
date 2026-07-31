@@ -8,7 +8,7 @@ const Contact = () => {
   const [sort, setSort] = useState("recentes");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO title="Contato | Canais18" description="Entre em contato com nossa equipe." />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />

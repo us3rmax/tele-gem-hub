@@ -51,7 +51,7 @@ const GroupDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="flex flex-1 flex-col bg-background">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
         <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
         <main className="mx-auto max-w-3xl space-y-6 px-4 py-6">
@@ -70,7 +70,7 @@ const GroupDetail = () => {
 
   if (isError || !grupo) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="flex flex-1 flex-col bg-background">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
         <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
         <div className="flex flex-col items-center justify-center py-32">
@@ -88,7 +88,7 @@ const GroupDetail = () => {
     : `Entre no canal ${grupo.name} do Telegram. ${formatMembers(grupo.member_count)} membros ativos. Categoria: ${grupo.category}. Conteúdo exclusivo 18+ atualizado.`;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO
         title={`${grupo.name} — Grupo Telegram +18 | Canais18`}
         description={seoDescription}

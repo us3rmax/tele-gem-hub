@@ -225,7 +225,7 @@ const MyGroups = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO title="Meus Grupos | Canais18" description="Acompanhe o desempenho dos seus canais." />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={() => {}} activeSort="" />

@@ -237,7 +237,7 @@ export default function ModeloDetail() {
   const totalMembers = groups.reduce((sum, g) => sum + (g.member_count || 0), 0);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-1 flex-col bg-background">
       <SEO
         title={`${h1} | Canais18`}
         description={model.description}
