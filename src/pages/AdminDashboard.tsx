@@ -49,6 +49,7 @@ import {
   Search,
   BarChart2,
   WifiOff,
+  Pencil,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
 
@@ -1226,6 +1227,21 @@ const AdminDashboard = () => {
   const [privacyModels, setPrivacyModels] = useState<any[]>([]);
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [privacySearch, setPrivacySearch] = useState("");
+  const [privacySourceFilter, setPrivacySourceFilter] = useState<"all" | "manual" | "imported">("all");
+
+  // Privacy Edit Modal state
+  const [privacyEditModalOpen, setPrivacyEditModalOpen] = useState(false);
+  const [privacyEditModel, setPrivacyEditModel] = useState<any>(null);
+  const [privacyEditForm, setPrivacyEditForm] = useState({
+    name: "", profile_name: "", privacy_link: "", gender: "female", is_verified: false,
+  });
+  const [privacyEditSaving, setPrivacyEditSaving] = useState(false);
+  const [privacyEditAvatarFile, setPrivacyEditAvatarFile] = useState<File | null>(null);
+  const [privacyEditCoverFile, setPrivacyEditCoverFile] = useState<File | null>(null);
+  const [privacyEditMediaFile, setPrivacyEditMediaFile] = useState<File | null>(null);
+  const [privacyEditAvatarPreview, setPrivacyEditAvatarPreview] = useState<string | null>(null);
+  const [privacyEditCoverPreview, setPrivacyEditCoverPreview] = useState<string | null>(null);
+  const [privacyEditMediaPreview, setPrivacyEditMediaPreview] = useState<string | null>(null);
 
   // Privacy Manual Creation Modal state
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
@@ -1474,15 +1490,140 @@ const AdminDashboard = () => {
     setPrivacyModalSaving(false);
   };
 
+  // Open edit modal for a privacy model
+  const openPrivacyEdit = (model: any) => {
+    setPrivacyEditModel(model);
+    setPrivacyEditForm({
+      name: model.name || "",
+      profile_name: model.profile_name || "",
+      privacy_link: model.privacy_link || "",
+      gender: model.gender || "female",
+      is_verified: model.is_verified || false,
+    });
+    setPrivacyEditAvatarFile(null);
+    setPrivacyEditCoverFile(null);
+    setPrivacyEditMediaFile(null);
+    setPrivacyEditAvatarPreview(model.avatar_url || null);
+    setPrivacyEditCoverPreview(model.cover_url || null);
+    setPrivacyEditMediaPreview(model.media_url || null);
+    setPrivacyEditModalOpen(true);
+  };
+
+  // Handle edit form changes
+  const handlePrivacyEditChange = (field: string, value: any) => {
+    setPrivacyEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle edit avatar file change
+  const handlePrivacyEditAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPrivacyEditAvatarFile(file);
+      setPrivacyEditAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Handle edit cover file change
+  const handlePrivacyEditCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPrivacyEditCoverFile(file);
+      setPrivacyEditCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Handle edit media file change
+  const handlePrivacyEditMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPrivacyEditMediaFile(file);
+      const isVideo = file.type.startsWith("video/");
+      setPrivacyEditMediaPreview(isVideo ? URL.createObjectURL(file) : URL.createObjectURL(file));
+    }
+  };
+
+  // Save privacy model edit
+  const handlePrivacyEditSave = async () => {
+    if (!privacyEditModel) return;
+    setPrivacyEditSaving(true);
+    try {
+      const updates: any = {
+        name: privacyEditForm.name,
+        profile_name: privacyEditForm.profile_name,
+        privacy_link: privacyEditForm.privacy_link,
+        gender: privacyEditForm.gender,
+        is_verified: privacyEditForm.is_verified,
+      };
+
+      // Upload new avatar if provided
+      if (privacyEditAvatarFile) {
+        const avatarPath = `avatars/${privacyEditModel.id}/${Date.now()}.${privacyEditAvatarFile.name.split('.').pop()}`;
+        const { error: avatarError } = await supabase.storage
+          .from("privacy-models")
+          .upload(avatarPath, privacyEditAvatarFile);
+        if (avatarError) throw avatarError;
+        const { data: avatarData } = supabase.storage.from("privacy-models").getPublicUrl(avatarPath);
+        updates.avatar_url = avatarData.publicUrl;
+      }
+
+      // Upload new cover if provided
+      if (privacyEditCoverFile) {
+        const coverPath = `covers/${privacyEditModel.id}/${Date.now()}.${privacyEditCoverFile.name.split('.').pop()}`;
+        const { error: coverError } = await supabase.storage
+          .from("privacy-models")
+          .upload(coverPath, privacyEditCoverFile);
+        if (coverError) throw coverError;
+        const { data: coverData } = supabase.storage.from("privacy-models").getPublicUrl(coverPath);
+        updates.cover_url = coverData.publicUrl;
+      }
+
+      // Upload new media if provided
+      if (privacyEditMediaFile) {
+        const isVideo = privacyEditMediaFile.type.startsWith("video/");
+        const mediaPath = `media/${privacyEditModel.id}/${Date.now()}.${privacyEditMediaFile.name.split('.').pop()}`;
+        const { error: mediaError } = await supabase.storage
+          .from("privacy-models")
+          .upload(mediaPath, privacyEditMediaFile);
+        if (mediaError) throw mediaError;
+        const { data: mediaData } = supabase.storage.from("privacy-models").getPublicUrl(mediaPath);
+        updates.media_url = mediaData.publicUrl;
+        updates.media_type = isVideo ? "video" : "image";
+      }
+
+      const { error } = await supabase
+        .from("privacy_models")
+        .update(updates)
+        .eq("id", privacyEditModel.id);
+      if (error) throw error;
+
+      setPrivacyEditModalOpen(false);
+      setPrivacyModels((prev) => prev.map((m) => m.id === privacyEditModel.id ? { ...m, ...updates } : m));
+      toast({ title: "Modelo atualizado com sucesso!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao atualizar modelo", description: err.message, variant: "destructive" });
+    }
+    setPrivacyEditSaving(false);
+  };
+
   const filteredPrivacyModels = useMemo(() => {
-    if (!privacySearch.trim()) return privacyModels;
-    const q = privacySearch.toLowerCase();
-    return privacyModels.filter(
-      (m) =>
-        m.name?.toLowerCase().includes(q) ||
-        m.profile_name?.toLowerCase().includes(q)
-    );
-  }, [privacyModels, privacySearch]);
+    let filtered = privacyModels;
+    // Source filter
+    if (privacySourceFilter === "manual") {
+      filtered = filtered.filter((m) => m.source === "manual");
+    } else if (privacySourceFilter === "imported") {
+      filtered = filtered.filter((m) => m.source !== "manual");
+    }
+    // Search filter
+    if (privacySearch.trim()) {
+      const q = privacySearch.toLowerCase();
+      filtered = filtered.filter(
+        (m) =>
+          m.name?.toLowerCase().includes(q) ||
+          m.profile_name?.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  }, [privacyModels, privacySearch, privacySourceFilter]);
 
   if (!user || !isAdmin) return null;
 
@@ -2487,6 +2628,34 @@ const AdminDashboard = () => {
               </div>
             </div>
 
+            {/* Source Filter */}
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant={privacySourceFilter === "all" ? "default" : "outline"}
+                onClick={() => setPrivacySourceFilter("all")}
+                className="text-xs"
+              >
+                Todos
+              </Button>
+              <Button
+                size="sm"
+                variant={privacySourceFilter === "manual" ? "default" : "outline"}
+                onClick={() => setPrivacySourceFilter("manual")}
+                className="text-xs"
+              >
+                Manuais
+              </Button>
+              <Button
+                size="sm"
+                variant={privacySourceFilter === "imported" ? "default" : "outline"}
+                onClick={() => setPrivacySourceFilter("imported")}
+                className="text-xs"
+              >
+                Importados
+              </Button>
+            </div>
+
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -2555,6 +2724,16 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="flex shrink-0 gap-1">
+                      {/* ✏️ Edit */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 hover:border-blue-500 hover:text-blue-500"
+                        onClick={() => openPrivacyEdit(model)}
+                        title="Editar modelo"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                       {/* ⭐ Toggle Criadora em Destaque */}
                       <Button
                         size="sm"
@@ -3218,6 +3397,137 @@ const AdminDashboard = () => {
             >
               {privacyModalSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               Adicionar Modelo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Privacy Edit Modal */}
+      <Dialog open={privacyEditModalOpen} onOpenChange={setPrivacyEditModalOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Modelo Privacy</DialogTitle>
+          </DialogHeader>
+          {privacyEditModel && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nome *</Label>
+                <Input
+                  value={privacyEditForm.name}
+                  onChange={(e) => handlePrivacyEditChange("name", e.target.value)}
+                  placeholder="Nome da modelo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Handle / @perfil *</Label>
+                <Input
+                  value={privacyEditForm.profile_name}
+                  onChange={(e) => handlePrivacyEditChange("profile_name", e.target.value)}
+                  placeholder="handle"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Link do Privacy *</Label>
+                <Input
+                  value={privacyEditForm.privacy_link}
+                  onChange={(e) => handlePrivacyEditChange("privacy_link", e.target.value)}
+                  placeholder="https://privacy.com.br/profile/..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Foto (Avatar)</Label>
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-secondary">
+                    {privacyEditAvatarPreview ? (
+                      <img src={privacyEditAvatarPreview} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 m-auto mt-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Button size="sm" variant="outline" type="button" onClick={() => document.getElementById("edit-avatar-input")?.click()}>
+                      <Upload className="mr-1 h-3 w-3" /> Nova Foto
+                    </Button>
+                    <input id="edit-avatar-input" type="file" accept="image/*" className="hidden" onChange={handlePrivacyEditAvatarChange} />
+                    {privacyEditAvatarFile && (
+                      <Button size="sm" variant="ghost" onClick={() => { setPrivacyEditAvatarFile(null); setPrivacyEditAvatarPreview(null); }}>Remover</Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Capa (opcional)</Label>
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                    {privacyEditCoverPreview ? (
+                      <img src={privacyEditCoverPreview} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 m-auto mt-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Button size="sm" variant="outline" type="button" onClick={() => document.getElementById("edit-cover-input")?.click()}>
+                      <Upload className="mr-1 h-3 w-3" /> Nova Capa
+                    </Button>
+                    <input id="edit-cover-input" type="file" accept="image/*" className="hidden" onChange={handlePrivacyEditCoverChange} />
+                    {privacyEditCoverFile && (
+                      <Button size="sm" variant="ghost" onClick={() => { setPrivacyEditCoverFile(null); setPrivacyEditCoverPreview(null); }}>Remover</Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Vídeo ou Imagem para Destaque</Label>
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-secondary">
+                    {privacyEditMediaPreview ? (
+                      privacyEditMediaFile?.type.startsWith("video/") ? (
+                        <video src={privacyEditMediaPreview} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                      ) : (
+                        <img src={privacyEditMediaPreview} alt="" className="h-full w-full object-cover" />
+                      )
+                    ) : (
+                      <ImageIcon className="h-6 w-6 m-auto mt-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Button size="sm" variant="outline" type="button" onClick={() => document.getElementById("edit-media-input")?.click()}>
+                      <Upload className="mr-1 h-3 w-3" /> Mídia
+                    </Button>
+                    <input id="edit-media-input" type="file" accept="image/*,video/mp4,video/webm" className="hidden" onChange={handlePrivacyEditMediaChange} />
+                    {privacyEditMediaFile && (
+                      <Button size="sm" variant="ghost" onClick={() => { setPrivacyEditMediaFile(null); setPrivacyEditMediaPreview(null); }}>Remover</Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Gênero</Label>
+                <Select value={privacyEditForm.gender} onValueChange={(v) => handlePrivacyEditChange("gender", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="female">Feminino</SelectItem>
+                    <SelectItem value="male">Masculino</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="edit-verified"
+                  checked={privacyEditForm.is_verified}
+                  onChange={(e) => handlePrivacyEditChange("is_verified", e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="edit-verified">Verificado</Label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrivacyEditModalOpen(false)}>Cancelar</Button>
+            <Button onClick={handlePrivacyEditSave} disabled={privacyEditSaving}>
+              {privacyEditSaving ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</>
+              ) : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
