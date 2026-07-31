@@ -142,7 +142,7 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-1 flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <SEO
         title={seo.title}
         description={seo.description}

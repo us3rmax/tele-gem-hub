@@ -75,7 +75,7 @@ const CategoryPage = () => {
   );
 
   return (
-    <div className="flex flex-1 flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <SEO
         title={seoTitle}
         description={seoDescription}

@@ -117,7 +117,7 @@ const CategoriesGrid = () => {
   });
 
   return (
-    <div className="flex flex-1 flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={() => {}} activeSort="" />
 
@@ -194,7 +194,7 @@ const CategoryGroups = ({ category }: { category: string }) => {
   const totalPages = Math.ceil((data?.totalCount ?? 0) / PER_PAGE);
 
   return (
-    <div className="flex flex-1 flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={() => {}} activeSort="" />
 

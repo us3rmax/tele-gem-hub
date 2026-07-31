@@ -7,7 +7,7 @@ const Advertise = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex flex-1 flex-col bg-background">
+    <div className="min-h-screen bg-background">
       <SEO title="Anunciar com Banner | Canais18" description="Anuncie seu canal com banner no Canais18 para máxima visibilidade." />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={() => {}} activeSort="" />
