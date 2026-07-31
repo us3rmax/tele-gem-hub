@@ -117,10 +117,22 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
             alt={`${model.name} - Modelo Privacy | Canais18`}
             className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
             loading="lazy"
+            onError={(e) => {
+              const target = e.currentTarget as HTMLImageElement;
+              target.style.display = 'none';
+              const fallback = target.nextElementSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'flex';
+            }}
           />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-500/30 to-purple-600/20">
-            <span className="text-5xl font-bold text-white/30">{model.name.charAt(0)}</span>
+        ) : null}
+        {!hasThumb && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-200">
+            <span className="text-5xl font-bold text-sky-400">{model.name.charAt(0)}</span>
+          </div>
+        )}
+        {hasThumb && (
+          <div className="absolute inset-0 hidden items-center justify-center bg-gradient-to-br from-sky-100 to-sky-200">
+            <span className="text-5xl font-bold text-sky-400">{model.name.charAt(0)}</span>
           </div>
         )}
       </a>
@@ -155,6 +167,7 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
 function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
   const hasMedia = !!model.proxied_media;
   const isVideo = model.media_type === "video";
+  const hasFallback = !hasMedia;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-sky-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
@@ -176,20 +189,28 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
               className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
             />
           ) : (
-            <img
-              src={model.proxied_media}
-              alt={`${model.name} - Criadora Privacy | Canais18`}
-              className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
-              loading="lazy"
-            />
+            <>
+              <img
+                src={model.proxied_media}
+                alt={`${model.name} - Criadora Privacy | Canais18`}
+                className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div className="absolute inset-0 hidden items-center justify-center bg-gradient-to-br from-sky-100 to-sky-200">
+                <span className="text-5xl font-bold text-sky-400">{model.name.charAt(0)}</span>
+              </div>
+            </>
           )
         ) : (
-          <img
-            src={model.proxied_cover || model.proxied_avatar}
-            alt={`${model.name} - Criadora Privacy | Canais18`}
-            className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
-            loading="lazy"
-          />
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-sky-100 to-sky-200">
+            <span className="text-5xl font-bold text-sky-400">{model.name.charAt(0)}</span>
+          </div>
         )}
       </a>
 
@@ -298,7 +319,7 @@ const Modelos = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
               {featuredLoading || creadoraLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
@@ -330,7 +351,7 @@ const Modelos = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
               {featuredPrivacyLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
@@ -393,7 +414,7 @@ const Modelos = () => {
           )}
 
           {privacyLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="overflow-hidden rounded-xl bg-gray-900">
                   <Skeleton className="aspect-[4/3] w-full" />
@@ -410,7 +431,7 @@ const Modelos = () => {
           ) : (
             <>
               {privacyModels.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
                   {privacyModels.map((model) => (
                     <PrivacyModelCard key={model.id} model={model} />
                   ))}
@@ -420,7 +441,7 @@ const Modelos = () => {
               {privacyModels.length > 8 && <BannerAd position="middle" />}
 
               {privacyModels.length > 16 && (
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-3 lg:grid-cols-4">
                   {privacyModels.slice(16).map((model) => (
                     <PrivacyModelCard key={model.id} model={model} />
                   ))}
