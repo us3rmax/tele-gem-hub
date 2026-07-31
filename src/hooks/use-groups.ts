@@ -4,6 +4,7 @@ import type { Grupo } from "@/data/mock";
 
 const PER_PAGE_MOBILE = 20;
 const PER_PAGE_DESKTOP = 24;
+const PHOTO_PRIORITY_PAGES = 5; // Priorizar grupos com foto nas primeiras 5 páginas
 
 interface UseGroupsParams {
   sort: string;
@@ -49,10 +50,15 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
     if (error) throw error;
     const rows = (data as any[]) || [];
     const totalCount = rows.length > 0 ? Number(rows[0].total_count) : 0;
-    return {
-      groups: rows.map(({ total_count, ...g }: any) => g) as Grupo[],
-      totalCount,
-    };
+    const groups = rows.map(({ total_count, ...g }: any) => g) as Grupo[];
+
+    // Nas primeiras 5 páginas, priorizar grupos com foto
+    if (page <= PHOTO_PRIORITY_PAGES) {
+      const withPhoto = groups.filter((g: any) => g.thumbnail_url);
+      const withoutPhoto = groups.filter((g: any) => !g.thumbnail_url);
+      return { groups: [...withPhoto, ...withoutPhoto], totalCount };
+    }
+    return { groups, totalCount };
   }
 
   // ── Outros filtros ────────────────────────────────────────────────────────
@@ -83,7 +89,15 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
   query = query.range(from, to);
   const { data, error } = await query;
   if (error) throw error;
-  return { groups: (data as Grupo[]) || [], totalCount: count || 0 };
+  const groups = (data as Grupo[]) || [];
+
+  // Nas primeiras 5 páginas, priorizar grupos com foto
+  if (page <= PHOTO_PRIORITY_PAGES) {
+    const withPhoto = groups.filter((g: any) => g.thumbnail_url);
+    const withoutPhoto = groups.filter((g: any) => !g.thumbnail_url);
+    return { groups: [...withPhoto, ...withoutPhoto], totalCount: count || 0 };
+  }
+  return { groups, totalCount: count || 0 };
 }
 
 export function useFeaturedGroups() {
