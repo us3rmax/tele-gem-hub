@@ -9,7 +9,7 @@ import { useFeaturedGroups } from "@/hooks/use-groups";
 import { useFeaturedPrivacyModels, useCreadoraPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
 
 import { groupPath } from "@/lib/slug";
-import { Search, CheckCircle, Bookmark, ExternalLink } from "lucide-react";
+import { Search, CheckCircle, ExternalLink } from "lucide-react";
 import type { Grupo } from "@/data/mock";
 
 function formatLikes(n: number) {
@@ -125,15 +125,6 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
             <span className="text-5xl font-bold text-white/30">{model.name.charAt(0)}</span>
           </div>
         )}
-
-        {/* Ranking badge top-right */}
-        {model.featured && model.ranking <= 20 && (
-          <div className="absolute top-2 right-2">
-            <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
-              {model.ranking}º
-            </span>
-          </div>
-        )}
       </a>
 
       {/* Info section — dark background */}
@@ -160,6 +151,93 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
           </div>
           <p className="text-xs text-gray-400">@{model.profile_name}</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Creadora Privacy Model Card — taller media area with video loop or image
+function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
+  const hasMedia = !!model.proxied_media;
+  const isVideo = model.media_type === "video";
+  const hasAvatar = !!model.proxied_avatar;
+
+  return (
+    <div className="overflow-hidden rounded-2xl bg-gray-900 shadow-sm transition-all duration-300 hover:shadow-lg">
+      {/* Taller media section — video loop or image */}
+      <a
+        href={model.privacy_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative block aspect-[3/4] overflow-hidden"
+      >
+        {hasMedia ? (
+          isVideo ? (
+            <video
+              src={model.proxied_media}
+              muted
+              loop
+              autoPlay
+              playsInline
+              className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
+            />
+          ) : (
+            <img
+              src={model.proxied_media}
+              alt={`${model.name} - Criadora Privacy | Canais18`}
+              className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
+              loading="lazy"
+            />
+          )
+        ) : (
+          <img
+            src={model.proxied_cover || model.proxied_avatar}
+            alt={`${model.name} - Criadora Privacy | Canais18`}
+            className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
+            loading="lazy"
+          />
+        )}
+      </a>
+
+      {/* Info section — dark background */}
+      <div className="flex items-center gap-3 px-3 py-3">
+        {/* Small circular avatar */}
+        {hasAvatar && (
+          <a href={model.privacy_link} target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <img
+              src={model.proxied_avatar}
+              alt={`${model.name} avatar`}
+              className="h-8 w-8 rounded-full border-2 border-gray-700 object-cover"
+              loading="lazy"
+              width={32}
+              height={32}
+            />
+          </a>
+        )}
+
+        {/* Name and handle */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <h3 className="line-clamp-1 text-sm font-bold text-white">{model.name}</h3>
+            {model.is_verified && (
+              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
+            )}
+          </div>
+          <p className="text-xs text-gray-400">@{model.profile_name}</p>
+        </div>
+
+        {/* External link button */}
+        <a
+          href={model.privacy_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:opacity-90"
+        >
+          <span className="flex items-center gap-1">
+            <ExternalLink className="h-3 w-3" />
+            Ver
+          </span>
+        </a>
       </div>
     </div>
   );
@@ -263,7 +341,7 @@ const Modelos = () => {
                     <ModelCard key={`g-${grupo.id}`} grupo={grupo} />
                   ))}
               {creadoraPrivacyModels.map((model) => (
-                <PrivacyModelCard key={`p-${model.id}`} model={model} />
+                <CreadoraPrivacyModelCard key={`p-${model.id}`} model={model} />
               ))}
             </div>
           </section>

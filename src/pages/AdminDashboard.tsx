@@ -1242,10 +1242,13 @@ const AdminDashboard = () => {
   const [privacyErrors, setPrivacyErrors] = useState<Record<string, string>>({});
   const [privacyAvatarFile, setPrivacyAvatarFile] = useState<File | null>(null);
   const [privacyCoverFile, setPrivacyCoverFile] = useState<File | null>(null);
+  const [privacyMediaFile, setPrivacyMediaFile] = useState<File | null>(null);
   const [privacyAvatarPreview, setPrivacyAvatarPreview] = useState<string | null>(null);
   const [privacyCoverPreview, setPrivacyCoverPreview] = useState<string | null>(null);
+  const [privacyMediaPreview, setPrivacyMediaPreview] = useState<string | null>(null);
   const privacyAvatarRef = useRef<HTMLInputElement>(null);
   const privacyCoverRef = useRef<HTMLInputElement>(null);
+  const privacyMediaRef = useRef<HTMLInputElement>(null);
 
   const fetchPrivacyModels = async (search = "") => {
     setPrivacyLoading(true);
@@ -1322,8 +1325,10 @@ const AdminDashboard = () => {
     });
     setPrivacyAvatarFile(null);
     setPrivacyCoverFile(null);
+    setPrivacyMediaFile(null);
     setPrivacyAvatarPreview(null);
     setPrivacyCoverPreview(null);
+    setPrivacyMediaPreview(null);
     setPrivacyErrors({});
     setPrivacyModalOpen(false);
   };
@@ -1369,6 +1374,24 @@ const AdminDashboard = () => {
     setPrivacyErrors((prev) => { const { cover, ...rest } = prev; return rest; });
   };
 
+  const handlePrivacyMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setPrivacyErrors((prev) => ({ ...prev, media: "Arquivo deve ter no máximo 10MB" }));
+      return;
+    }
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) {
+      setPrivacyErrors((prev) => ({ ...prev, media: "Arquivo deve ser uma imagem ou vídeo" }));
+      return;
+    }
+    setPrivacyMediaFile(file);
+    setPrivacyMediaPreview(URL.createObjectURL(file));
+    setPrivacyErrors((prev) => { const { media, ...rest } = prev; return rest; });
+  };
+
   const handlePrivacySave = async () => {
     if (!validatePrivacyForm()) return;
     if (!user) return;
@@ -1407,6 +1430,24 @@ const AdminDashboard = () => {
       coverUrl = supabase.storage.from("privacy-models").getPublicUrl(coverPath).data.publicUrl;
     }
 
+    // Upload media (video or image) if file selected
+    let mediaUrl: string | null = null;
+    let mediaType: string = "image";
+    if (privacyMediaFile) {
+      const ext = privacyMediaFile.name.split(".").pop();
+      const mediaPath = `privacy-models/${user.id}/${crypto.randomUUID()}_media.${ext}`;
+      const { error: mediaUploadError } = await supabase.storage
+        .from("privacy-models")
+        .upload(mediaPath, privacyMediaFile, { contentType: privacyMediaFile.type });
+      if (mediaUploadError) {
+        toast({ title: "Erro ao enviar mídia", description: mediaUploadError.message, variant: "destructive" });
+        setPrivacyModalSaving(false);
+        return;
+      }
+      mediaUrl = supabase.storage.from("privacy-models").getPublicUrl(mediaPath).data.publicUrl;
+      mediaType = privacyMediaFile.type.startsWith("video/") ? "video" : "image";
+    }
+
     const { error } = await supabase.from("privacy_models").insert({
       name: privacyForm.name.trim(),
       profile_name: privacyForm.profile_name.trim(),
@@ -1420,6 +1461,8 @@ const AdminDashboard = () => {
       is_active: true,
       ranking: 999,
       source: "manual",
+      media_url: mediaUrl,
+      media_type: mediaType,
     });
     if (error) {
       toast({ title: "Erro ao criar modelo", description: error.message, variant: "destructive" });
@@ -3086,6 +3129,56 @@ const AdminDashboard = () => {
                 )}
               </div>
               {privacyErrors.cover && <p className="text-xs text-destructive">{privacyErrors.cover}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vídeo ou Imagem para Destaque</Label>
+              <p className="text-xs text-muted-foreground">Aparece no card "⭐ Criadoras em Destaque" como mídia principal (em loop)</p>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={privacyMediaRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
+                  className="hidden"
+                  onChange={handlePrivacyMediaChange}
+                />
+                {privacyMediaPreview ? (
+                  <div className="relative inline-block">
+                    {privacyMediaFile?.type.startsWith("video/") ? (
+                      <video
+                        src={privacyMediaPreview}
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                        className="h-32 w-52 rounded-lg border border-border object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={privacyMediaPreview}
+                        alt="Media preview"
+                        className="h-32 w-52 rounded-lg border border-border object-cover"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrivacyMediaFile(null);
+                        setPrivacyMediaPreview(null);
+                      }}
+                      className="absolute -right-2 -top-2 rounded-full bg-destructive p-0.5 text-destructive-foreground"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button type="button" variant="outline" size="sm" onClick={() => privacyMediaRef.current?.click()}>
+                    <Upload className="mr-1 h-4 w-4" />
+                    Selecionar vídeo ou imagem
+                  </Button>
+                )}
+              </div>
+              {privacyErrors.media && <p className="text-xs text-destructive">{privacyErrors.media}</p>}
             </div>
 
             <div className="space-y-2">

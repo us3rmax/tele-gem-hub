@@ -27,6 +27,9 @@ export interface PrivacyModel {
   featured: boolean;
   featured_type: string | null; // 'creadora' | 'top_creator' | null
   is_active: boolean;
+  source?: string;
+  media_url: string | null;
+  media_type: string; // 'video' | 'image'
   created_at?: string;
 }
 
@@ -34,6 +37,7 @@ export interface PrivacyModel {
 export interface PrivacyModelWithProxy extends PrivacyModel {
   proxied_avatar: string;
   proxied_cover: string | null;
+  proxied_media: string | null;
 }
 
 async function fetchPrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean): Promise<{
@@ -110,6 +114,7 @@ export function usePrivacyModels(search?: string, perPage: number = 50, filterFr
         ...m,
         proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
         proxied_cover: proxyPrivacyImage(m.cover_url),
+        proxied_media: m.media_url,
       })) as PrivacyModelWithProxy[],
     }),
   });
@@ -126,6 +131,7 @@ export function useFeaturedPrivacyModels() {
         ...m,
         proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
         proxied_cover: proxyPrivacyImage(m.cover_url),
+        proxied_media: m.media_url,
       })) as PrivacyModelWithProxy[],
   });
 }
@@ -141,6 +147,7 @@ export function useCreadoraPrivacyModels() {
         ...m,
         proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
         proxied_cover: proxyPrivacyImage(m.cover_url),
+        proxied_media: m.media_url,
       })) as PrivacyModelWithProxy[],
   });
 }
