@@ -115,7 +115,7 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
             loading="lazy"
             referrerPolicy="no-referrer"
-            src={model.proxied_cover || model.proxied_avatar}
+            src={model.proxied_avatar}
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement;
               target.style.display = 'none';
