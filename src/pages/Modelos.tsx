@@ -98,18 +98,18 @@ function ModelCard({ grupo }: { grupo: Grupo }) {
   );
 }
 
-// Privacy Model Card — white card, large photo, blue button (Erogram style)
+// Privacy Model Card — white card, horizontal layout, blue button
 function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
   const hasThumb = !!model.proxied_avatar;
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
-      {/* Large photo section */}
+    <div className="overflow-hidden rounded-xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
+      {/* Horizontal photo section */}
       <a
         href={model.privacy_link}
         target="_blank"
         rel="noopener noreferrer"
-        className="relative block aspect-[3/4] overflow-hidden"
+        className="relative block aspect-[4/3] overflow-hidden"
       >
         {hasThumb ? (
           <img
@@ -117,6 +117,8 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
             alt={`${model.name} - Modelo Privacy | Canais18`}
             className="h-full w-full object-cover object-center transition-transform duration-500 hover:scale-105"
             loading="lazy"
+            width={400}
+            height={300}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-pink-500/30 to-purple-600/20">
@@ -126,19 +128,33 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
       </a>
 
       {/* Info section — white background */}
-      <div className="px-3 py-3">
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        {/* Small circular avatar */}
+        <a href={model.privacy_link} target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <img
+            src={model.proxied_avatar}
+            alt={`${model.name} avatar`}
+            className="h-8 w-8 rounded-full border-2 border-gray-200 object-cover"
+            loading="lazy"
+            width={32}
+            height={32}
+          />
+        </a>
+
         {/* Name and handle */}
-        <div className="mb-2">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <h3 className="line-clamp-1 text-sm font-bold text-gray-900">{model.name}</h3>
             {model.is_verified && (
               <CheckCircle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
             )}
           </div>
-          <p className="text-xs text-gray-400">@{model.profile_name}</p>
+          <p className="text-xs text-gray-500">@{model.profile_name}</p>
         </div>
+      </div>
 
-        {/* Blue View Profile button */}
+      {/* Blue View Profile button */}
+      <div className="px-3 pb-3">
         <a
           href={model.privacy_link}
           target="_blank"
@@ -152,10 +168,11 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
   );
 }
 
-// Creadora Privacy Model Card — white card, taller photo, blue button (Erogram style)
+// Creadora Privacy Model Card — white card, taller photo, avatar, blue button
 function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
   const hasMedia = !!model.proxied_media;
   const isVideo = model.media_type === "video";
+  const hasAvatar = !!model.proxied_avatar;
 
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
@@ -194,20 +211,36 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
         )}
       </a>
 
-      {/* Info section — white background */}
-      <div className="px-3 py-3">
+      {/* Info section — white background with avatar */}
+      <div className="flex items-center gap-3 px-3 py-3">
+        {/* Small circular avatar */}
+        {hasAvatar && (
+          <a href={model.privacy_link} target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <img
+              src={model.proxied_avatar}
+              alt={`${model.name} avatar`}
+              className="h-8 w-8 rounded-full border-2 border-gray-200 object-cover"
+              loading="lazy"
+              width={32}
+              height={32}
+            />
+          </a>
+        )}
+
         {/* Name and handle */}
-        <div className="mb-2">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <h3 className="line-clamp-1 text-sm font-bold text-gray-900">{model.name}</h3>
             {model.is_verified && (
               <CheckCircle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
             )}
           </div>
-          <p className="text-xs text-gray-400">@{model.profile_name}</p>
+          <p className="text-xs text-gray-500">@{model.profile_name}</p>
         </div>
+      </div>
 
-        {/* Blue View Profile button */}
+      {/* Blue View Profile button */}
+      <div className="px-3 pb-3">
         <a
           href={model.privacy_link}
           target="_blank"
