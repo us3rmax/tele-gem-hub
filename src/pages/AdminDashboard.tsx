@@ -1228,6 +1228,20 @@ const AdminDashboard = () => {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [privacySearch, setPrivacySearch] = useState("");
 
+  // Privacy Manual Creation Modal state
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [privacyModalSaving, setPrivacyModalSaving] = useState(false);
+  const [privacyForm, setPrivacyForm] = useState({
+    name: "",
+    profile_name: "",
+    privacy_link: "",
+    avatar_url: "",
+    cover_url: "",
+    gender: "",
+    is_verified: false,
+  });
+  const [privacyErrors, setPrivacyErrors] = useState<Record<string, string>>({});
+
   const fetchPrivacyModels = async (search = "") => {
     setPrivacyLoading(true);
     let query = supabase
@@ -1249,17 +1263,33 @@ const AdminDashboard = () => {
     setPrivacyLoading(false);
   };
 
-  const togglePrivacyFeatured = async (model: any) => {
-    const newVal = !model.featured;
+  // Toggle featured_type = 'creadora' (⭐ Criadoras em Destaque)
+  const togglePrivacyCreadora = async (model: any) => {
+    const newFeaturedType = model.featured_type === 'creadora' ? null : 'creadora';
     const { error } = await supabase
       .from("privacy_models")
-      .update({ featured: newVal })
+      .update({ featured: !!newFeaturedType, featured_type: newFeaturedType })
       .eq("id", model.id);
     if (!error) {
       setPrivacyModels((prev) =>
-        prev.map((m) => (m.id === model.id ? { ...m, featured: newVal } : m))
+        prev.map((m) => (m.id === model.id ? { ...m, featured: !!newFeaturedType, featured_type: newFeaturedType } : m))
       );
-      toast({ title: newVal ? "Destacado!" : "Destaque removido", duration: 1500 });
+      toast({ title: newFeaturedType ? "Adicionado nas Criadoras em Destaque!" : "Removido das Criadoras em Destaque", duration: 1500 });
+    }
+  };
+
+  // Toggle featured_type = 'top_creator' (👑 Top Creators)
+  const togglePrivacyTopCreator = async (model: any) => {
+    const newFeaturedType = model.featured_type === 'top_creator' ? null : 'top_creator';
+    const { error } = await supabase
+      .from("privacy_models")
+      .update({ featured: !!newFeaturedType, featured_type: newFeaturedType })
+      .eq("id", model.id);
+    if (!error) {
+      setPrivacyModels((prev) =>
+        prev.map((m) => (m.id === model.id ? { ...m, featured: !!newFeaturedType, featured_type: newFeaturedType } : m))
+      );
+      toast({ title: newFeaturedType ? "Adicionado nos Top Creators!" : "Removido dos Top Creators", duration: 1500 });
     }
   };
 
@@ -1272,6 +1302,57 @@ const AdminDashboard = () => {
       setPrivacyModels((prev) => prev.filter((m) => m.id !== model.id));
       toast({ title: "Modelo removido do site", duration: 1500 });
     }
+  };
+
+  // Manual Privacy Model Creation
+  const resetPrivacyModal = () => {
+    setPrivacyForm({
+      name: "",
+      profile_name: "",
+      privacy_link: "",
+      avatar_url: "",
+      cover_url: "",
+      gender: "",
+      is_verified: false,
+    });
+    setPrivacyErrors({});
+    setPrivacyModalOpen(false);
+  };
+
+  const validatePrivacyForm = () => {
+    const errors: Record<string, string> = {};
+    if (!privacyForm.name.trim()) errors.name = "Nome é obrigatório";
+    if (!privacyForm.profile_name.trim()) errors.profile_name = "Handle é obrigatório";
+    if (!privacyForm.privacy_link.trim()) errors.privacy_link = "Link do Privacy é obrigatório";
+    setPrivacyErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handlePrivacySave = async () => {
+    if (!validatePrivacyForm()) return;
+    setPrivacyModalSaving(true);
+    const { error } = await supabase.from("privacy_models").insert({
+      name: privacyForm.name.trim(),
+      profile_name: privacyForm.profile_name.trim(),
+      privacy_link: privacyForm.privacy_link.trim(),
+      avatar_url: privacyForm.avatar_url.trim() || null,
+      cover_url: privacyForm.cover_url.trim() || null,
+      gender: privacyForm.gender || null,
+      is_verified: privacyForm.is_verified,
+      featured: false,
+      featured_type: null,
+      is_active: true,
+      ranking: 999,
+      source: "manual",
+    });
+    if (error) {
+      toast({ title: "Erro ao criar modelo", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Modelo adicionado com sucesso!" });
+      resetPrivacyModal();
+      fetchPrivacyModels();
+    }
+    setPrivacyModalSaving(false);
   };
 
   const filteredPrivacyModels = useMemo(() => {
@@ -2269,12 +2350,22 @@ const AdminDashboard = () => {
               <div>
                 <h2 className="text-lg font-bold text-foreground">Gerenciar Modelos Privacy</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Controle os perfis do Privacy exibidos na página /modelos. Marque como destaque ou remova do site.
+                  Controle os perfis do Privacy exibidos na página /modelos. ⭐ = Criadoras em Destaque | 👑 = Top Creators
                 </p>
               </div>
-              <Badge variant="secondary" className="text-sm">
-                {privacyModels.length} modelos
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-sm">
+                  {privacyModels.length} modelos
+                </Badge>
+                <Button
+                  onClick={() => setPrivacyModalOpen(true)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  size="sm"
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" />
+                  Adicionar Modelo
+                </Button>
+              </div>
             </div>
 
             {/* Search */}
@@ -2316,9 +2407,14 @@ const AdminDashboard = () => {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <h3 className="text-sm font-semibold text-foreground truncate">{model.name}</h3>
-                        {model.featured && (
+                        {model.featured_type === 'creadora' && (
                           <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">
-                            Destaque
+                            ⭐ Destaque
+                          </Badge>
+                        )}
+                        {model.featured_type === 'top_creator' && (
+                          <Badge className="bg-amber-500/20 text-amber-500 border-amber-500/30 text-[10px]">
+                            👑 Top Creator
                           </Badge>
                         )}
                         {model.is_verified && (
@@ -2339,23 +2435,40 @@ const AdminDashboard = () => {
                         <span className="text-[10px] text-muted-foreground">Ranking #{model.ranking}</span>
                       </div>
                     </div>
-                    <div className="flex shrink-0 gap-1.5">
+                    <div className="flex shrink-0 gap-1">
+                      {/* ⭐ Toggle Criadora em Destaque */}
                       <Button
                         size="sm"
                         variant="outline"
-                        className={`h-8 px-2 ${
-                          model.featured
+                        className={`h-8 w-8 p-0 ${
+                          model.featured_type === 'creadora'
                             ? "border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
                             : "hover:border-yellow-500 hover:text-yellow-500"
                         }`}
-                        onClick={() => togglePrivacyFeatured(model)}
+                        onClick={() => togglePrivacyCreadora(model)}
+                        title="Fixar em Criadoras em Destaque"
                       >
-                        <Star className={`h-3 w-3 ${model.featured ? "fill-yellow-500" : ""}`} />
+                        <Star className={`h-3.5 w-3.5 ${model.featured_type === 'creadora' ? "fill-yellow-500" : ""}`} />
                       </Button>
+                      {/* 👑 Toggle Top Creator */}
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 px-2 border-red-300 text-red-400 hover:bg-red-500/10 hover:border-red-500 hover:text-red-500"
+                        className={`h-8 w-8 p-0 ${
+                          model.featured_type === 'top_creator'
+                            ? "border-amber-500 text-amber-500 hover:bg-amber-500/10"
+                            : "hover:border-amber-500 hover:text-amber-500"
+                        }`}
+                        onClick={() => togglePrivacyTopCreator(model)}
+                        title="Fixar em Top Creators"
+                      >
+                        <span className="text-sm font-bold">👑</span>
+                      </Button>
+                      {/* 🗑️ Remove */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 border-red-300 text-red-400 hover:bg-red-500/10 hover:border-red-500 hover:text-red-500"
                         onClick={() => togglePrivacyActive(model)}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -2781,6 +2894,103 @@ const AdminDashboard = () => {
             >
               {groupSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
               {editingGroupData ? "Salvar Alterações" : "Adicionar Grupo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Privacy Model Manual Creation Dialog */}
+      <Dialog open={privacyModalOpen} onOpenChange={setPrivacyModalOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar Modelo Privacy</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input
+                value={privacyForm.name}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Ex: Gaby Lopez"
+              />
+              {privacyErrors.name && <p className="text-xs text-destructive">{privacyErrors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Handle / @perfil *</Label>
+              <Input
+                value={privacyForm.profile_name}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, profile_name: e.target.value }))}
+                placeholder="Ex: gabylopez"
+              />
+              {privacyErrors.profile_name && <p className="text-xs text-destructive">{privacyErrors.profile_name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Link do Privacy *</Label>
+              <Input
+                value={privacyForm.privacy_link}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, privacy_link: e.target.value }))}
+                placeholder="https://privacy.com.br/profile/gabylopez"
+              />
+              {privacyErrors.privacy_link && <p className="text-xs text-destructive">{privacyErrors.privacy_link}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label>URL da Foto (Avatar)</Label>
+              <Input
+                value={privacyForm.avatar_url}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, avatar_url: e.target.value }))}
+                placeholder="https://image.privacy.com.br/..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>URL da Capa (opcional)</Label>
+              <Input
+                value={privacyForm.cover_url}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, cover_url: e.target.value }))}
+                placeholder="https://image.privacy.com.br/..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Gênero</Label>
+              <Select value={privacyForm.gender} onValueChange={(v) => setPrivacyForm((f) => ({ ...f, gender: v === "none" ? "" : v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não informado</SelectItem>
+                  <SelectItem value="F">Feminino</SelectItem>
+                  <SelectItem value="M">Masculino</SelectItem>
+                  <SelectItem value="NB">Não-binário</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="privacy-verified"
+                checked={privacyForm.is_verified}
+                onCheckedChange={(v) => setPrivacyForm((f) => ({ ...f, is_verified: !!v }))}
+              />
+              <Label htmlFor="privacy-verified" className="cursor-pointer text-sm">
+                ✓ Verificado
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={resetPrivacyModal}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handlePrivacySave}
+              disabled={privacyModalSaving}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {privacyModalSaving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Adicionar Modelo
             </Button>
           </DialogFooter>
         </DialogContent>

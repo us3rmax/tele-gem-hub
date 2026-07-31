@@ -6,7 +6,7 @@ import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFeaturedGroups } from "@/hooks/use-groups";
-import { useFeaturedPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
+import { useFeaturedPrivacyModels, useCreadoraPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
 
 import { groupPath } from "@/lib/slug";
 import { Search, CheckCircle, Bookmark, ExternalLink } from "lucide-react";
@@ -171,11 +171,15 @@ const Modelos = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [filterTab, setFilterTab] = useState<"todos" | "gratuitos">("todos");
 
-  // Section 1: Featured models (from admin dashboard - groups with featured=true)
+  // Section 1a: Featured groups (from admin dashboard - groups with featured=true)
   const { data: featuredData, isLoading: featuredLoading } = useFeaturedGroups();
   const featuredModels = useMemo(() => featuredData || [], [featuredData]);
 
-  // Section 2: Top Creators (featured Privacy models — the 16 we imported)
+  // Section 1b: Creadora Privacy models (featured_type = 'creadora' - page próprio)
+  const { data: creadoraData, isLoading: creadoraLoading } = useCreadoraPrivacyModels();
+  const creadoraPrivacyModels = useMemo(() => creadoraData || [], [creadoraData]);
+
+  // Section 2: Top Creators (featured Privacy models with featured_type = 'top_creator')
   const { data: featuredPrivacyData, isLoading: featuredPrivacyLoading } = useFeaturedPrivacyModels();
   const featuredPrivacyModels = useMemo(() => featuredPrivacyData || [], [featuredPrivacyData]);
 
@@ -230,8 +234,8 @@ const Modelos = () => {
       {/* Main Content */}
       <main className="mx-auto max-w-7xl space-y-12 px-4 py-8">
 
-        {/* Section 1: Criadoras em Destaque (from admin - groups) */}
-        {featuredModels.length > 0 && (
+        {/* Section 1: Criadoras em Destaque (groups + Privacy creadora models) */}
+        {(featuredModels.length > 0 || creadoraPrivacyModels.length > 0) && (
           <section>
             <div className="mb-5 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
@@ -239,12 +243,12 @@ const Modelos = () => {
                 Criadoras em <span className="text-primary">Destaque</span>
               </h2>
               <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                {featuredModels.length} criadoras
+                {featuredModels.length + creadoraPrivacyModels.length} criadoras
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {featuredLoading
+              {featuredLoading || creadoraLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
                       <Skeleton className="aspect-[3/4] w-full" />
@@ -256,8 +260,11 @@ const Modelos = () => {
                     </div>
                   ))
                 : featuredModels.map((grupo) => (
-                    <ModelCard key={grupo.id} grupo={grupo} />
+                    <ModelCard key={`g-${grupo.id}`} grupo={grupo} />
                   ))}
+              {creadoraPrivacyModels.map((model) => (
+                <PrivacyModelCard key={`p-${model.id}`} model={model} />
+              ))}
             </div>
           </section>
         )}

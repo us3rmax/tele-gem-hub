@@ -25,6 +25,7 @@ export interface PrivacyModel {
   privacy_link: string;
   ranking: number;
   featured: boolean;
+  featured_type: string | null; // 'creadora' | 'top_creator' | null
   is_active: boolean;
   created_at?: string;
 }
@@ -67,14 +68,31 @@ async function fetchPrivacyModels(search?: string, perPage: number = 50, filterF
   return { models: (data as PrivacyModel[]) || [], totalCount: count || 0 };
 }
 
+/** Fetch featured models with featured_type = 'top_creator' (👑 Top Creators section) */
 async function fetchFeaturedPrivacyModels(): Promise<PrivacyModel[]> {
   const { data, error } = await supabase
     .from("privacy_models")
     .select("*")
     .eq("featured", true)
+    .eq("featured_type", "top_creator")
     .eq("is_active", true)
     .order("ranking", { ascending: true })
     .limit(16);
+
+  if (error) throw error;
+  return (data as PrivacyModel[]) || [];
+}
+
+/** Fetch featured models with featured_type = 'creadora' (⭐ Criadoras em Destaque section - Privacy models) */
+async function fetchCreadoraPrivacyModels(): Promise<PrivacyModel[]> {
+  const { data, error } = await supabase
+    .from("privacy_models")
+    .select("*")
+    .eq("featured", true)
+    .eq("featured_type", "creadora")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   if (error) throw error;
   return (data as PrivacyModel[]) || [];
@@ -101,6 +119,21 @@ export function useFeaturedPrivacyModels() {
   return useQuery({
     queryKey: ["featured-privacy-models"],
     queryFn: fetchFeaturedPrivacyModels,
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    select: (data) =>
+      data.map((m) => ({
+        ...m,
+        proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
+        proxied_cover: proxyPrivacyImage(m.cover_url),
+      })) as PrivacyModelWithProxy[],
+  });
+}
+
+export function useCreadoraPrivacyModels() {
+  return useQuery({
+    queryKey: ["creadora-privacy-models"],
+    queryFn: fetchCreadoraPrivacyModels,
     staleTime: 3 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     select: (data) =>
