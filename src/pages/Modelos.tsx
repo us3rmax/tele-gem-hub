@@ -284,9 +284,9 @@ const Modelos = () => {
 
         {/* Section 1: Criadoras em Destaque (groups + Privacy creadora models) */}
         {(featuredModels.length > 0 || creadoraPrivacyModels.length > 0) && (
-          <section className="rounded-2xl border border-sky-200 bg-white p-3">
+          <section>
             <div className="mb-5">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                 <span className="text-lg">⭐</span>
                 Criadoras em <span className="text-primary">Destaque</span>
               </h2>
@@ -346,9 +346,9 @@ const Modelos = () => {
 
 
         {/* Section 3: Mais Buscadas (all Privacy models with tabs) */}
-        <section className="rounded-2xl border border-sky-200 bg-white p-3">
+        <section>
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-white">
               <span className="text-lg">🔍</span>
               Mais <span className="text-primary">Buscadas</span>
             </h2>
