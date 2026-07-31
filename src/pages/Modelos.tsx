@@ -98,9 +98,11 @@ function ModelCard({ grupo }: { grupo: Grupo }) {
   );
 }
 
-// Privacy Model Card — exact Erogram style
-function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
+// Privacy Model Card — exact Erogram style with loading optimization
+function PrivacyModelCard({ model, index }: { model: PrivacyModelWithProxy; index: number }) {
   const hasThumb = !!model.proxied_avatar;
+  // Eager load first 8 images, lazy load the rest
+  const isPriority = index < 8;
 
   return (
     <button
@@ -110,21 +112,29 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
     >
       <div className="relative aspect-[3/4] bg-[#f0f8ff]">
         {hasThumb ? (
-          <img
-            alt={`${model.name} Privacy`}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            src={model.proxied_avatar}
-            onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement;
-              target.style.display = 'none';
-            }}
-          />
-        ) : null}
-        <div className={`absolute inset-0 flex items-center justify-center ${hasThumb ? 'hidden' : ''}`}>
-          <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
-        </div>
+          <>
+            <img
+              alt={`${model.name} Privacy`}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+              loading={isPriority ? "eager" : "lazy"}
+              referrerPolicy="no-referrer"
+              src={model.proxied_avatar}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
+              }}
+            />
+            <div className="absolute inset-0 hidden items-center justify-center bg-[#f0f8ff]">
+              <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#f0f8ff]">
+            <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
+          </div>
+        )}
       </div>
       <div className="px-3 pt-2.5 sm:px-4 sm:pt-3">
         <div className="flex items-center gap-1.5">
@@ -148,7 +158,6 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
 function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
   const hasMedia = !!model.proxied_media;
   const isVideo = model.media_type === "video";
-  const hasFallback = !hasMedia && !model.proxied_avatar;
 
   return (
     <button
@@ -171,7 +180,7 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
             <img
               alt={`${model.name} Privacy`}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
-              loading="lazy"
+              loading="eager"
               referrerPolicy="no-referrer"
               src={model.proxied_media}
               onError={(e) => {
@@ -180,10 +189,11 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
               }}
             />
           )
-        ) : null}
-        <div className={`absolute inset-0 flex items-center justify-center ${hasMedia ? 'hidden' : ''}`}>
-          <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
-        </div>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#f0f8ff]">
+            <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
+          </div>
+        )}
       </div>
       <div className="px-3 pt-2.5 sm:px-4 sm:pt-3">
         <div className="flex items-center gap-1.5">
@@ -227,7 +237,7 @@ const Modelos = () => {
   // Exclude featured models (already shown in Top Creators section)
   const { data: privacyData, isLoading: privacyLoading, isError: privacyError } = usePrivacyModels(
     searchTerm || undefined,
-    100,
+    24,
     filterTab === "gratuitos" ? true : false,
     true // exclude featured (already shown in Top Creators)
   );
@@ -326,8 +336,8 @@ const Modelos = () => {
                       </div>
                     </div>
                   ))
-                : featuredPrivacyModels.map((model) => (
-                    <PrivacyModelCard key={model.id} model={model} />
+                : featuredPrivacyModels.map((model, i) => (
+                    <PrivacyModelCard key={model.id} model={model} index={i} />
                   ))}
             </div>
           </section>
@@ -395,8 +405,8 @@ const Modelos = () => {
             <>
               {privacyModels.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-                  {privacyModels.map((model) => (
-                    <PrivacyModelCard key={model.id} model={model} />
+                  {privacyModels.map((model, i) => (
+                    <PrivacyModelCard key={model.id} model={model} index={i} />
                   ))}
                 </div>
               )}
@@ -405,8 +415,8 @@ const Modelos = () => {
 
               {privacyModels.length > 16 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-                  {privacyModels.slice(16).map((model) => (
-                    <PrivacyModelCard key={model.id} model={model} />
+                  {privacyModels.slice(16).map((model, i) => (
+                    <PrivacyModelCard key={model.id} model={model} index={16 + i} />
                   ))}
                 </div>
               )}
