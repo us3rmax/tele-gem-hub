@@ -35,7 +35,7 @@ export interface PrivacyModelWithProxy extends PrivacyModel {
   proxied_cover: string | null;
 }
 
-async function fetchPrivacyModels(search?: string, perPage: number = 50): Promise<{
+async function fetchPrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean): Promise<{
   models: PrivacyModel[];
   totalCount: number;
 }> {
@@ -43,6 +43,13 @@ async function fetchPrivacyModels(search?: string, perPage: number = 50): Promis
     .from("privacy_models")
     .select("*", { count: "exact" })
     .eq("is_active", true);
+
+  // filterFree: true = only free (ranking >= 900), false = only premium (ranking < 900), undefined = all
+  if (filterFree !== undefined) {
+    query = filterFree
+      ? query.gte("ranking", 900)
+      : query.lt("ranking", 900);
+  }
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,profile_name.ilike.%${search}%`);
@@ -69,10 +76,10 @@ async function fetchFeaturedPrivacyModels(): Promise<PrivacyModel[]> {
   return (data as PrivacyModel[]) || [];
 }
 
-export function usePrivacyModels(search?: string, perPage: number = 50) {
+export function usePrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean) {
   return useQuery({
-    queryKey: ["privacy-models", search, perPage],
-    queryFn: () => fetchPrivacyModels(search, perPage),
+    queryKey: ["privacy-models", search, perPage, filterFree],
+    queryFn: () => fetchPrivacyModels(search, perPage, filterFree),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     select: (data) => ({

@@ -5,14 +5,12 @@ import SEO from "@/components/SEO";
 import MobileSidebar from "@/components/MobileSidebar";
 import BannerAd from "@/components/BannerAd";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGroups, useFeaturedGroups } from "@/hooks/use-groups";
+import { useFeaturedGroups } from "@/hooks/use-groups";
 import { useFeaturedPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
 
 import { groupPath } from "@/lib/slug";
 import { Search, CheckCircle, Bookmark, ExternalLink } from "lucide-react";
 import type { Grupo } from "@/data/mock";
-
-const PER_PAGE = 20;
 
 function formatLikes(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
@@ -183,21 +181,13 @@ const Modelos = () => {
 
   // Free profiles removed — already covered in Mais Buscadas tab
 
-  // Main query — filter by gratuitos if tab is active
-  const { data, isLoading, isError } = useGroups({
-    sort: "hot",
-    search: searchTerm || (filterTab === "gratuitos" ? "" : "Previas"),
-    page: 1,
-    perPage: PER_PAGE,
-  });
-
-  const grupos = useMemo(() => {
-    const all = data?.groups ?? [];
-    if (filterTab === "gratuitos") {
-      return all.filter((g) => !g.is_premium);
-    }
-    return all;
-  }, [data?.groups, filterTab]);
+  // Section 3: Mais Buscadas (all Privacy models with tabs)
+  const { data: privacyData, isLoading: privacyLoading, isError: privacyError } = usePrivacyModels(
+    searchTerm || undefined,
+    100,
+    filterTab === "gratuitos" ? true : undefined
+  );
+  const privacyModels = useMemo(() => privacyData?.models ?? [], [privacyData?.models]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -304,19 +294,13 @@ const Modelos = () => {
 
 
 
-        {/* Section 4: Mais Buscadas (all groups with tabs) */}
+        {/* Section 3: Mais Buscadas (all Privacy models with tabs) */}
         <section>
           <div className="mb-5 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
               <span className="text-lg">🔍</span>
               Mais <span className="text-primary">Buscadas</span>
             </h2>
-            <Link
-              to="/add"
-              className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Adicionar nova criadora
-            </Link>
           </div>
 
           {/* Todos / Gratuitos tabs */}
@@ -345,48 +329,50 @@ const Modelos = () => {
             </div>
           </div>
 
-          {isError && (
+          {privacyError && (
             <p className="py-12 text-center text-destructive">
               Erro ao carregar modelos. Tente novamente.
             </p>
           )}
 
-          {isLoading ? (
+          {privacyLoading ? (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
-                  <Skeleton className="aspect-[3/4] w-full" />
-                  <div className="space-y-2 p-4">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-8 w-full rounded-xl" />
+                <div key={i} className="overflow-hidden rounded-xl bg-gray-900">
+                  <Skeleton className="aspect-[4/3] w-full" />
+                  <div className="flex items-center gap-3 px-3 py-2.5">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-2 w-16" />
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <>
-              {grupos.length > 0 && (
+              {privacyModels.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {grupos.map((grupo) => (
-                    <ModelCard key={grupo.id} grupo={grupo} />
+                  {privacyModels.map((model) => (
+                    <PrivacyModelCard key={model.id} model={model} />
                   ))}
                 </div>
               )}
 
-              {grupos.length > 8 && <BannerAd position="middle" />}
+              {privacyModels.length > 8 && <BannerAd position="middle" />}
 
-              {grupos.length > 16 && (
+              {privacyModels.length > 16 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {grupos.slice(16).map((grupo) => (
-                    <ModelCard key={grupo.id} grupo={grupo} />
+                  {privacyModels.slice(16).map((model) => (
+                    <PrivacyModelCard key={model.id} model={model} />
                   ))}
                 </div>
               )}
             </>
           )}
 
-          {!isLoading && !isError && grupos.length === 0 && (
+          {!privacyLoading && !privacyError && privacyModels.length === 0 && (
             <p className="py-12 text-center text-muted-foreground">
               Nenhuma modelo encontrada com este filtro.
             </p>
