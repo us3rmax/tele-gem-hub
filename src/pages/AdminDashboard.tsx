@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { generateSlug } from "@/lib/slug";
+import { proxyPrivacyImage } from "@/hooks/use-privacy-models";
 
 import {
   CheckCircle,
@@ -2709,7 +2710,7 @@ const AdminDashboard = () => {
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                       <img
-                        src={model.avatar_url}
+                        src={proxyPrivacyImage(model.avatar_url) || model.avatar_url}
                         alt={model.name}
                         className="h-full w-full object-cover"
                         loading="lazy"
