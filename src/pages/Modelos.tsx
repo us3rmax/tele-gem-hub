@@ -161,7 +161,7 @@ function PrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
           rel="noopener noreferrer"
           className="block w-full rounded-full bg-sky-500 py-2 text-center text-sm font-bold text-white transition-colors hover:bg-sky-600"
         >
-          View profile
+          Ver perfil
         </a>
       </div>
     </div>
@@ -247,7 +247,7 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
           rel="noopener noreferrer"
           className="block w-full rounded-full bg-sky-500 py-2 text-center text-sm font-bold text-white transition-colors hover:bg-sky-600"
         >
-          View profile
+          Ver perfil
         </a>
       </div>
     </div>
