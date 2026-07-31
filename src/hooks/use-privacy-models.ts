@@ -35,7 +35,7 @@ export interface PrivacyModelWithProxy extends PrivacyModel {
   proxied_cover: string | null;
 }
 
-async function fetchPrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean): Promise<{
+async function fetchPrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean): Promise<{
   models: PrivacyModel[];
   totalCount: number;
 }> {
@@ -49,6 +49,10 @@ async function fetchPrivacyModels(search?: string, perPage: number = 50, filterF
     query = filterFree
       ? query.gte("ranking", 900)
       : query.lt("ranking", 900);
+  }
+
+  if (excludeFeatured) {
+    query = query.eq("featured", false);
   }
 
   if (search) {
@@ -76,10 +80,10 @@ async function fetchFeaturedPrivacyModels(): Promise<PrivacyModel[]> {
   return (data as PrivacyModel[]) || [];
 }
 
-export function usePrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean) {
+export function usePrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean) {
   return useQuery({
-    queryKey: ["privacy-models", search, perPage, filterFree],
-    queryFn: () => fetchPrivacyModels(search, perPage, filterFree),
+    queryKey: ["privacy-models", search, perPage, filterFree, excludeFeatured],
+    queryFn: () => fetchPrivacyModels(search, perPage, filterFree, excludeFeatured),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     select: (data) => ({

@@ -182,10 +182,12 @@ const Modelos = () => {
   // Free profiles removed — already covered in Mais Buscadas tab
 
   // Section 3: Mais Buscadas (all Privacy models with tabs)
+  // Exclude featured models (already shown in Top Creators section)
   const { data: privacyData, isLoading: privacyLoading, isError: privacyError } = usePrivacyModels(
     searchTerm || undefined,
     100,
-    filterTab === "gratuitos" ? true : undefined
+    filterTab === "gratuitos" ? true : false,
+    true // exclude featured (already shown in Top Creators)
   );
   const privacyModels = useMemo(() => privacyData?.models ?? [], [privacyData?.models]);
 
