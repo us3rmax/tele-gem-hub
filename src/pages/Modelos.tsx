@@ -325,9 +325,9 @@ const Modelos = () => {
 
         {/* Section 1: Criadoras em Destaque (groups + Privacy creadora models) */}
         {(featuredModels.length > 0 || creadoraPrivacyModels.length > 0) && (
-          <section>
+          <section className="rounded-2xl border border-sky-200 bg-white p-5">
             <div className="mb-5">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-lg">⭐</span>
                 Criadoras em <span className="text-primary">Destaque</span>
               </h2>
@@ -357,9 +357,9 @@ const Modelos = () => {
 
         {/* Section 2: Top Creators (featured Privacy models) */}
         {featuredPrivacyModels.length > 0 && (
-          <section>
+          <section className="rounded-2xl border border-sky-200 bg-white p-5">
             <div className="mb-5">
-              <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-lg">👑</span>
                 <span className="text-primary">Top Creators</span>
               </h2>
@@ -387,9 +387,9 @@ const Modelos = () => {
 
 
         {/* Section 3: Mais Buscadas (all Privacy models with tabs) */}
-        <section>
+        <section className="rounded-2xl border border-sky-200 bg-white p-5">
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
               <span className="text-lg">🔍</span>
               Mais <span className="text-primary">Buscadas</span>
             </h2>
