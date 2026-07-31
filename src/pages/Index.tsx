@@ -206,45 +206,48 @@ const Index = () => {
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6">
-        <section className="space-y-6 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 text-sm text-muted-foreground mx-auto">
-            <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
-            A maior coleção de grupos de putaria do telegram
-          </div>
+        {/* Hero header only on page 1 (no search, no category filter) */}
+        {page <= 1 && !searchTerm && !categoryFilter && (
+          <section className="space-y-6 text-center">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/50 bg-card/50 px-4 py-2 text-sm text-muted-foreground mx-auto">
+              <span className="inline-block w-2 h-2 rounded-full bg-primary"></span>
+              A maior coleção de grupos de putaria do telegram
+            </div>
 
-          {/* H1 - Main Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[1.1]">
-            Encontre os melhores grupos e canais do Telegram, além de modelos do <span className="text-primary">Privacy</span>
-          </h1>
+            {/* H1 - Main Headline */}
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[1.1]">
+              Encontre os melhores grupos e canais do Telegram, além de modelos do <span className="text-primary">Privacy</span>
+            </h1>
 
-          {/* Description */}
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-            O seu site favorito para encontrar links de grupos +18, canais do Telegram e milhares de modelos do Privacy. Entre nos grupos ativos e salve os seus favoritos.
-          </p>
+            {/* Description */}
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              O seu site favorito para encontrar links de grupos +18, canais do Telegram e milhares de modelos do Privacy. Entre nos grupos ativos e salve os seus favoritos.
+            </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col gap-3 justify-center pt-4 max-w-xl mx-auto w-full">
-            {/* Grid for buttons - Force 2 columns even on mobile */}
-            <div className="grid grid-cols-2 gap-3 w-full">
-              <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-2 py-4 rounded-xl transition shadow-lg text-[13px] sm:text-base">
-                <span>📱</span> Descubra Grupos
-              </a>
-              <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-2 py-4 rounded-xl transition shadow-lg text-[13px] sm:text-base">
-                <span>🔒</span> Descubra Bots
+            {/* CTA Buttons */}
+            <div className="flex flex-col gap-3 justify-center pt-4 max-w-xl mx-auto w-full">
+              {/* Grid for buttons - Force 2 columns even on mobile */}
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <a href="#grupos" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-2 py-4 rounded-xl transition shadow-lg text-[13px] sm:text-base">
+                  <span>📱</span> Descubra Grupos
+                </a>
+                <a href="#bots" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-2 py-4 rounded-xl transition shadow-lg text-[13px] sm:text-base">
+                  <span>🔒</span> Descubra Bots
+                </a>
+              </div>
+              {/* Full width bottom button */}
+              <a href="/modelos" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
+                Modelos Privacy +10k criadoras
               </a>
             </div>
-            {/* Full width bottom button */}
-            <a href="/modelos" className="w-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold px-6 py-4 rounded-xl transition shadow-lg text-sm sm:text-base">
-              Modelos Privacy +10k criadoras
-            </a>
-          </div>
-        </section>
+          </section>
+        )}
 
         <hr className="border-border/30" />
 
         <div id="grupos" className="scroll-mt-20"></div>
-{!isLoading && <PremiumCarousel grupos={premiumGrupos} />}
+{!isLoading && page <= 1 && !searchTerm && !categoryFilter && <PremiumCarousel grupos={premiumGrupos} />}
 
         {searchTerm ? (
           <section className="space-y-3">
