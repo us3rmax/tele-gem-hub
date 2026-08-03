@@ -50,6 +50,7 @@ import {
   Search,
   BarChart2,
   WifiOff,
+  EyeOff,
   Pencil,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
@@ -1775,16 +1776,6 @@ const AdminDashboard = () => {
                   <span className="flex-1">Todos os Grupos</span>
                 </button>
                 <button
-                  onClick={() => navigate("/admin/grupos/destaques")}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "destaques" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
-                >
-                  <Star className="h-4 w-4 shrink-0" />
-                  <span className="flex-1">Destaques</span>
-                  {allGroups.filter((g) => g.featured).length > 0 && (
-                    <Badge variant="secondary" className="ml-auto text-xs bg-yellow-600/20 text-yellow-400 border-yellow-600/30">{allGroups.filter((g) => g.featured).length}</Badge>
-                  )}
-                </button>
-                <button
                   onClick={() => navigate("/admin/grupos/quebrados")}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === "broken" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}
                 >
@@ -2351,65 +2342,22 @@ const AdminDashboard = () => {
             )}
           </TabsContent>
 
-          {/* Destaques tab */}
-          <TabsContent value="destaques" className="mt-4 space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Destaques tab — redirect to Privacy Models */}
+          <TabsContent value="destaques" className="mt-4">
+            <div className="flex flex-col items-center gap-4 py-16 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                <ExternalLink className="h-8 w-8 text-primary" />
+              </div>
               <div>
-                <h2 className="text-base font-bold text-foreground">Criadoras em Destaque</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  As criadoras destacadas aparecem na seção "Criadoras em Destaque" da página /modelos.
-                  Marque até 16 grupos como destaque.
+                <h2 className="text-lg font-bold text-foreground">Destaque gerenciado na aba Privacy</h2>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                  O gerenciamento de destaques foi unificado na aba <strong>Privacy Models</strong>. Lá você pode controlar tanto as ⭐ Criadoras em Destaque quanto os 👑 Top Creators.
                 </p>
               </div>
+              <Button onClick={() => navigate("/admin/privacy_models")} size="sm" className="gap-2">
+                <ExternalLink className="h-4 w-4" /> Ir para Privacy Models
+              </Button>
             </div>
-
-            {allGroupsLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : allGroups.filter((g) => g.featured).length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-12 text-center">
-                <Star className="h-12 w-12 text-muted-foreground/30" />
-                <p className="text-muted-foreground">Nenhuma criadora em destaque.</p>
-                <p className="text-xs text-muted-foreground max-w-sm">
-                  Vá em "Todos os Grupos" e clique no ícone de estrela (⭐) ao lado de um grupo para marcá-lo como destaque.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {allGroups.filter((g) => g.featured).map((group) => (
-                  <div
-                    key={group.id}
-                    className="flex items-center gap-3 overflow-hidden rounded-xl border border-yellow-500/30 bg-card p-3"
-                  >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
-                      {group.thumbnail_url ? (
-                        <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
-                      ) : (
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <h3 className="text-sm font-semibold text-foreground truncate">{group.name}</h3>
-                        <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-[10px]">
-                          ⭐ Destaque
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{group.member_count} membros</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-2 border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
-                      onClick={() => toggleFeatured(group)}
-                    >
-                      <Star className="h-3 w-3 fill-yellow-500" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
           </TabsContent>
 
             {/* Links Quebrados tab */}
@@ -2418,15 +2366,9 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-base font-bold text-foreground">Links Quebrados</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Grupos com telegram_link retornando 404/403/timeout. Corrija ou remova.
+                    Grupos marcados como quebrados pelo sistema automático. Corrija o link ou remova o grupo.
                   </p>
                 </div>
-                {brokenSelected.size > 0 && (
-                  <Button size="sm" onClick={handleSaveBrokenBulk} className="gap-1.5">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Salvar {brokenSelected.size} selecionados
-                  </Button>
-                )}
               </div>
 
               {brokenGroupsLoading ? (
@@ -2434,13 +2376,17 @@ const AdminDashboard = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : brokenGroups.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                  <p className="text-sm">Nenhum link quebrado encontrado.</p>
+                <div className="flex flex-col items-center gap-3 py-16 text-center">
+                  <CheckCircle className="h-10 w-10 text-green-500" />
+                  <p className="text-sm font-medium text-foreground">Nenhum link quebrado encontrado.</p>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    Os links são verificados automaticamente pelo workflow de manutenção. Se um link estiver quebrado, ele aparecerá aqui.
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card/50">
+                <>
+                  {/* Selection header */}
+                  <div className="flex items-center gap-2 mb-2">
                     <Checkbox
                       checked={brokenSelected.size === brokenGroups.length && brokenGroups.length > 0}
                       onCheckedChange={(checked) => {
@@ -2452,54 +2398,94 @@ const AdminDashboard = () => {
                       Selecionar todos ({brokenGroups.length} grupos)
                     </span>
                   </div>
-                  {brokenGroups.map((group) => (
-                    <div
-                      key={group.id}
-                      className={`flex flex-col gap-2 rounded-xl border p-3 transition-colors ${
-                        brokenSelected.has(group.id) ? "border-primary/40 bg-primary/5" : "border-border bg-card"
-                      }`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <Checkbox
-                          className="mt-0.5"
-                          checked={brokenSelected.has(group.id)}
-                          onCheckedChange={(checked) => {
-                            setBrokenSelected((prev) => {
-                              const s = new Set(prev);
-                              if (checked) s.add(group.id); else s.delete(group.id);
-                              return s;
-                            });
-                          }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-foreground truncate">{group.name}</p>
-                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                            <WifiOff className="h-3 w-3 text-red-400 shrink-0" />
-                            {group.telegram_link}
-                          </p>
+                  {/* Bulk actions */}
+                  {brokenSelected.size > 0 && (
+                    <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                      <span className="text-xs font-medium text-primary">{brokenSelected.size} selecionado(s)</span>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={handleSaveBrokenBulk} disabled={bulkActionLoading}>
+                        <CheckCircle className="h-3 w-3" /> Salvar {brokenSelected.size}
+                      </Button>
+                      <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" onClick={async () => {
+                        const ids = Array.from(brokenSelected);
+                        const results = await Promise.all(ids.map(id => supabase.from("groups").update({ hidden: true }).eq("id", id)));
+                        const failed = results.filter(r => r.error);
+                        if (failed.length === 0) {
+                          toast({ title: `${ids.length} grupo(s) ocultado(s)!` });
+                          setBrokenGroups(prev => prev.filter(g => !brokenSelected.has(g.id)));
+                          setBrokenSelected(new Set());
+                        } else {
+                          toast({ title: `${failed.length} erro(s)`, variant: "destructive" });
+                        }
+                      }} disabled={bulkActionLoading}>
+                        <EyeOff className="h-3 w-3" /> Ocultar
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setBrokenSelected(new Set())}>
+                        Limpar
+                      </Button>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {brokenGroups.map((group) => (
+                      <div
+                        key={group.id}
+                        className={`flex flex-col gap-2 rounded-xl border p-3 transition-colors ${
+                          brokenSelected.has(group.id) ? "border-primary/40 bg-primary/5" : "border-border bg-card"
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={brokenSelected.has(group.id)}
+                            onCheckedChange={(checked) => {
+                              setBrokenSelected((prev) => {
+                                const s = new Set(prev);
+                                if (checked) s.add(group.id); else s.delete(group.id);
+                                return s;
+                              });
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground truncate">{group.name}</p>
+                            <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                              <WifiOff className="h-3 w-3 text-red-400 shrink-0" />
+                              {group.telegram_link}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pl-6">
+                          <Input
+                            value={brokenLinkEdits[group.id] ?? group.telegram_link}
+                            onChange={(e) =>
+                              setBrokenLinkEdits((prev) => ({ ...prev, [group.id]: e.target.value }))
+                            }
+                            placeholder="Novo link do Telegram..."
+                            className="h-8 text-xs font-mono"
+                          />
+                          <Button
+                            size="sm"
+                            className="h-8 shrink-0"
+                            disabled={!brokenLinkEdits[group.id]?.trim() || brokenLinkEdits[group.id] === group.telegram_link}
+                            onClick={() => handleSaveBrokenLink(group.id)}
+                          >
+                            Salvar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 shrink-0"
+                            onClick={async () => {
+                              await supabase.from("groups").update({ hidden: true }).eq("id", group.id);
+                              toast({ title: "Grupo ocultado" });
+                              setBrokenGroups(prev => prev.filter(g => g.id !== group.id));
+                            }}
+                          >
+                            Ocultar
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 pl-6">
-                        <Input
-                          value={brokenLinkEdits[group.id] ?? group.telegram_link}
-                          onChange={(e) =>
-                            setBrokenLinkEdits((prev) => ({ ...prev, [group.id]: e.target.value }))
-                          }
-                          placeholder="Novo link do Telegram..."
-                          className="h-8 text-xs font-mono"
-                        />
-                        <Button
-                          size="sm"
-                          className="h-8 shrink-0"
-                          disabled={!brokenLinkEdits[group.id]?.trim() || brokenLinkEdits[group.id] === group.telegram_link}
-                          onClick={() => handleSaveBrokenLink(group.id)}
-                        >
-                          Salvar
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </>
               )}
             </TabsContent>
 
@@ -2589,11 +2575,16 @@ const AdminDashboard = () => {
               </div>
             )}
           </TabsContent>
-          <TabsContent value="banners" className="mt-4 space-y-4">
+          <TabsContent value="banners" className="mt-4 space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-foreground">Gerenciar Banners</h2>
-              <Button size="sm" onClick={() => openBannerModal()}>
-                <Plus className="mr-1 h-4 w-4" />
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Gerenciar Banners</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Banners de imagem e vídeo exibidos no site. Organizados por posição.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => openBannerModal()} className="gap-1.5">
+                <Plus className="h-4 w-4" />
                 Adicionar Banner
               </Button>
             </div>
@@ -2603,90 +2594,127 @@ const AdminDashboard = () => {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : banners.length === 0 ? (
-              <p className="py-12 text-center text-muted-foreground">Nenhum banner cadastrado.</p>
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <LayoutDashboard className="h-12 w-12 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Nenhum banner cadastrado.</p>
+              </div>
             ) : (
-              banners.map((banner) => {
-                const expired = isExpired(banner);
-                return (
-                  <div key={banner.id} className="overflow-hidden rounded-xl border border-border bg-card">
-                    <div className="flex gap-4 p-4">
-                      {/* Image preview */}
-                      <div className="flex h-24 w-48 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
-                        <img
-                          src={banner.image_url}
-                          alt={banner.title}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      </div>
+              <>
+                {/* Stats bar */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{banners.length}</p>
+                    <p className="text-xs text-muted-foreground">Total</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-green-500">{banners.filter(b => b.is_active && !isExpired(b)).length}</p>
+                    <p className="text-xs text-muted-foreground">Ativos</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-500">{banners.filter(b => !b.is_active && !isExpired(b)).length}</p>
+                    <p className="text-xs text-muted-foreground">Inativos</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-red-500">{banners.filter(b => isExpired(b)).length}</p>
+                    <p className="text-xs text-muted-foreground">Expirados</p>
+                  </div>
+                </div>
 
-                      {/* Info */}
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-base font-bold text-foreground">{banner.title}</h3>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="capitalize">
-                              {banner.position}
-                            </Badge>
-                            {expired ? (
-                              <Badge className="bg-red-600/20 text-red-400 border-red-600/30">Expirado</Badge>
-                            ) : banner.is_active ? (
-                              <Badge className="bg-green-600/20 text-green-400 border-green-600/30">Ativo</Badge>
-                            ) : (
-                              <Badge className="bg-muted text-muted-foreground border-border">Inativo</Badge>
-                            )}
+                {/* Hero banners section */}
+                {banners.filter(b => b.position.startsWith("hero")).length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded bg-purple-500/20 text-purple-500 text-xs">🎬</span>
+                      Banners Hero (Vídeo)
+                    </h3>
+                    <div className="space-y-2">
+                      {banners.filter(b => b.position.startsWith("hero")).map((banner) => (
+                        <div key={banner.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                          <div className="flex gap-3 p-3">
+                            <div className="flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-purple-500/10">
+                              {banner.video_url ? (
+                                <video src={banner.video_url} muted loop className="h-full w-full object-cover" />
+                              ) : (
+                                <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="text-sm font-semibold text-foreground truncate">{banner.title}</h4>
+                                <Badge variant={expired ? "destructive" : "default"} className="text-[10px] capitalize">{banner.position}</Badge>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {expired ? <Badge className="bg-red-600/20 text-red-400 border-red-600/30 text-[10px]">Expirado</Badge> : banner.is_active ? <Badge className="bg-green-600/20 text-green-400 border-green-600/30 text-[10px]">Ativo</Badge> : <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                                {banner.expires_at && <span className="text-[10px] text-muted-foreground">{formatDate(banner.expires_at)}</span>}
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 gap-1">
+                              <Switch checked={banner.is_active && !expired} onCheckedChange={() => handleBannerToggle(banner)} disabled={expired} />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 border-t border-border px-3 py-2">
+                            <div className="ml-auto flex gap-1">
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1" onClick={() => openBannerModal(banner)}><Pencil className="h-3 w-3" /> Editar</Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1" onClick={() => handleBannerDuplicate(banner)}><Copy className="h-3 w-3" /> Duplicar</Button>
+                              <Button size="sm" variant="destructive" className="h-7 px-2 text-xs gap-1" onClick={() => setDeleteBannerId(banner.id)}><Trash2 className="h-3 w-3" /> Excluir</Button>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          {banner.link_url && (
-                            <a
-                              href={banner.link_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-primary hover:underline"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              Link
-                            </a>
-                          )}
-                          <span>Expira: {banner.expires_at ? formatDate(banner.expires_at) : "Sem expiração"}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-3 border-t border-border px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={banner.is_active && !expired}
-                          onCheckedChange={() => handleBannerToggle(banner)}
-                          disabled={expired}
-                        />
-                        <span className="text-xs text-muted-foreground">
-                          {expired ? "Expirado" : banner.is_active ? "Ativo" : "Inativo"}
-                        </span>
-                      </div>
-                      <div className="ml-auto flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => openBannerModal(banner)}>
-                          <Pencil className="mr-1 h-3 w-3" />
-                          Editar
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleBannerDuplicate(banner)}>
-                          <Copy className="mr-1 h-3 w-3" />
-                          Duplicar
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => setDeleteBannerId(banner.id)}>
-                          <Trash2 className="mr-1 h-3 w-3" />
-                          Excluir
-                        </Button>
-                      </div>
+                      ))}
                     </div>
                   </div>
-                );
-              })
+                )}
+
+                {/* Regular banners grouped by position */}
+                {["top", "middle", "bottom"].map((pos) => {
+                  const posBanners = banners.filter(b => b.position === pos);
+                  if (posBanners.length === 0) return null;
+                  const posLabels: Record<string, string> = { top: "Topo", middle: "Meio", bottom: "Rodapé" };
+                  return (
+                    <div key={pos}>
+                      <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-500/20 text-blue-500 text-xs font-bold">{pos === "top" ? "↑" : pos === "middle" ? "↕" : "↓"}</span>
+                        {posLabels[pos]} ({posBanners.length})
+                      </h3>
+                      <div className="space-y-2">
+                        {posBanners.map((banner) => {
+                          const expired = isExpired(banner);
+                          return (
+                          <div key={banner.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                            <div className="flex gap-3 p-3">
+                              <div className="flex h-16 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                                <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                              </div>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="text-sm font-semibold text-foreground truncate">{banner.title}</h4>
+                                  <Badge variant="outline" className="text-[10px] capitalize">{banner.position}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {expired ? <Badge className="bg-red-600/20 text-red-400 border-red-600/30 text-[10px]">Expirado</Badge> : banner.is_active ? <Badge className="bg-green-600/20 text-green-400 border-green-600/30 text-[10px]">Ativo</Badge> : <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                                  {banner.expires_at && <span className="text-[10px] text-muted-foreground">{formatDate(banner.expires_at)}</span>}
+                                  {banner.link_url && <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline flex items-center gap-0.5"><ExternalLink className="h-2.5 w-2.5" /> Link</a>}
+                                </div>
+                              </div>
+                              <div className="flex shrink-0 gap-1">
+                                <Switch checked={banner.is_active && !expired} onCheckedChange={() => handleBannerToggle(banner)} disabled={expired} />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 border-t border-border px-3 py-2">
+                              <div className="ml-auto flex gap-1">
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1" onClick={() => openBannerModal(banner)}><Pencil className="h-3 w-3" /> Editar</Button>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1" onClick={() => handleBannerDuplicate(banner)}><Copy className="h-3 w-3" /> Duplicar</Button>
+                                <Button size="sm" variant="destructive" className="h-7 px-2 text-xs gap-1" onClick={() => setDeleteBannerId(banner.id)}><Trash2 className="h-3 w-3" /> Excluir</Button>
+                              </div>
+                            </div>
+                          </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
             )}
           </TabsContent>
 
