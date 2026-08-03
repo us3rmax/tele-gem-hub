@@ -405,13 +405,13 @@ const Modelos = () => {
             <>
               {privacyModels.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-                  {privacyModels.map((model, i) => (
+                  {privacyModels.slice(0, 16).map((model, i) => (
                     <PrivacyModelCard key={model.id} model={model} index={i} />
                   ))}
                 </div>
               )}
 
-              {privacyModels.length > 8 && <BannerAd position="middle" />}
+              {privacyModels.length > 16 && <BannerAd position="middle" />}
 
               {privacyModels.length > 16 && (
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
