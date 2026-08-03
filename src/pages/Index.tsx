@@ -296,20 +296,12 @@ const Index = () => {
         ) : (
           <>
             <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {grupos.slice(0, 10).map((grupo) => (
+              {grupos.map((grupo) => (
                 <GroupCard key={grupo.id} grupo={grupo} hideBadges />
               ))}
             </section>
 
-            {grupos.length > 10 && <BannerAd position="middle" />}
-
-            {grupos.length > 10 && (
-              <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {grupos.slice(10).map((grupo) => (
-                  <GroupCard key={grupo.id} grupo={grupo} hideBadges />
-                ))}
-              </section>
-            )}
+            {grupos.length >= 22 && page < totalPages && <BannerAd position="middle" />}
           </>
         )}
 

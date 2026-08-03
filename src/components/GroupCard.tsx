@@ -67,9 +67,11 @@ const GroupCard = ({ grupo, hideBadges = false }: {grupo: Grupo;hideBadges?: boo
           {grupo.category}
         </span>
         <div className="mt-3 flex items-center justify-between">
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            👥 {formatMembers(grupo.member_count)}
-          </span>
+          {(grupo.member_count && grupo.member_count > 0) ? (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              👥 {formatMembers(grupo.member_count)}
+            </span>
+          ) : <span />}
           <span
             className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold uppercase text-primary-foreground transition-colors hover:bg-primary/90">
             Entrar <Send className="h-3 w-3 bg-primary" />
