@@ -19,6 +19,7 @@ Configuração de escalada (salva em Supabase seo_config):
 """
 
 import os
+import re
 import sys
 import time
 import json
@@ -273,9 +274,55 @@ def fix_descriptions_batch(batch_size=20):
     return fixed
 
 
+# --- FASE 6: Enviar URLs para Google Indexing API ---
+def indexar_grupos_liberados(released_groups: list):
+    """Envia as URLs dos grupos recém-liberados para a Google Indexing API."""
+    if not released_groups:
+        print("\n🔍 Fase 6: Nenhuma URL para indexar (nenhum grupo liberado)")
+        return {"sucesso": 0, "erro": 0, "rate_limited": 0}
+
+    print(f"\n🔍 Fase 6: Indexando {len(released_groups)} URLs recém-liberadas no Google...")
+
+    try:
+        from indexador_google import indexar_urls
+    except ImportError:
+        print("   ⚠️ indexador_google.py não encontrado, pulando indexação")
+        return {"sucesso": 0, "erro": 0, "rate_limited": 0}
+
+    # Construir URLs dos grupos liberados (mesmo formato do sitemap)
+    urls = []
+    for g in released_groups:
+        name = g.get("name", "")
+        group_id = g.get("id", "")
+        # Gerar slug igual ao vite.config.ts
+        slug = name.lower()
+        # Remove chars fora de ASCII printável
+        slug = ''.join(c for c in slug if 0x20 <= ord(c) <= 0x7E)
+        # Substitui espaços/underscores por hífens
+        slug = re.sub(r'[\s_]+', '-', slug)
+        # Mantém só a-z, 0-9, -
+        slug = re.sub(r'[^a-z0-9-]', '', slug)
+        # Remove hífens duplicados
+        slug = re.sub(r'-+', '-', slug)
+        # Remove hífens no início/fim
+        slug = slug.strip('-')
+        # Limita a 60 chars
+        slug = slug[:60].rstrip('-')
+        compact_id = group_id.replace("-", "")
+        if slug:
+            urls.append(f"https://www.canais18.com/group/{slug}-{compact_id}")
+        else:
+            urls.append(f"https://www.canais18.com/group/{compact_id}")
+
+    cred_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "/tmp/gcp_credentials.json")
+    resultados = indexar_urls(urls, credentials_file=cred_file)
+    return resultados
+
+
 # --- FASE 2: Liberar grupos ---
 def release_groups(count=DEFAULT_RATE):
-    """Libera grupos hidden=NULL ou hidden=true que estão prontos (description + thumbnail)."""
+    """Libera grupos hidden=NULL ou hidden=true que estão prontos (description + thumbnail).
+    Retorna a lista de grupos liberados para indexação."""
     print(f"\n🚀 Fase 2: Liberando até {count} grupos...")
 
     # Critérios: hidden=true OU hidden=NULL, tem description ok (50-155 chars), tem thumbnail, não broken
@@ -324,7 +371,8 @@ def release_groups(count=DEFAULT_RATE):
         print(f"   ✅ Liberado: {g['name'][:50]} ({g.get('category', '?')}) - {g.get('member_count', 0)} membros")
 
     print(f"   Total liberados: {released}/{count}")
-    return released
+    # Retorna a lista de grupos liberados (para Fase 6)
+    return released, ready[:count]
 
 
 # --- FASE 3: Verificar links quebrados ---
@@ -433,7 +481,12 @@ def main():
     results["descriptions_fixed"] = fix_descriptions_batch(batch_size=20)
 
     # Fase 2: Liberar grupos
-    results["groups_released"] = release_groups(rate)
+    release_result = release_groups(rate)
+    if isinstance(release_result, tuple):
+        results["groups_released"], released_groups = release_result
+    else:
+        results["groups_released"] = release_result
+        released_groups = []
 
     # Fase 3: Verificar links quebrados
     results["broken_found"] = check_broken_links(batch_size=50)
@@ -444,6 +497,9 @@ def main():
     # Fase 5: Thumbnails
     results["thumbnails_missing"] = fix_thumbnails_batch(batch_size=10)
 
+    # Fase 6: Enviar para Google Indexing API
+    indexing_results = indexar_grupos_liberados(released_groups)
+
     # Resumo
     print(f"\n{'=' * 60}")
     print(f"✅ Pipeline concluído!")
@@ -452,6 +508,8 @@ def main():
     print(f"   Links quebrados: {results['broken_found']}")
     print(f"   Links recuperados: {results['links_fixed']}")
     print(f"   Sem thumbnail: {results['thumbnails_missing']}")
+    print(f"   Indexadas no Google: {indexing_results.get('sucesso', 0)}")
+    print(f"   Erros indexação: {indexing_results.get('erro', 0)}")
     print(f"   Rate: {rate}/dia")
     print(f"{'=' * 60}")
 
@@ -464,6 +522,8 @@ def main():
         "broken": results["broken_found"],
         "fixed": results["links_fixed"],
         "no_thumb": results["thumbnails_missing"],
+        "indexed_google": indexing_results.get("sucesso", 0),
+        "index_errors": indexing_results.get("erro", 0),
     }
     with open("/tmp/release_log.json", "w") as f:
         json.dump(log, f)
@@ -481,6 +541,8 @@ def main():
         "broken_found": results["broken_found"],
         "links_fixed": results["links_fixed"],
         "thumbnails_missing": results["thumbnails_missing"],
+        "indexed_google": indexing_results.get("sucesso", 0),
+        "index_errors": indexing_results.get("erro", 0),
         "timestamp": now_iso,
     }
     try:
