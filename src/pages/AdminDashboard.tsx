@@ -368,41 +368,67 @@ const AdminDashboard = () => {
     // Phase 2: confirmed — execute deletion
     deleteConfirmed.current = false;
     setDeleteUserLoading(true);
+    console.log("[DELETE USER] Starting deletion for:", userId);
     try {
-      const results = await Promise.all([
-        supabase.from("groups").delete().eq("submitted_by", userId),
-        supabase.from("group_submissions").delete().eq("submitted_by", userId),
-        supabase.from("profiles").delete().eq("id", userId),
-        supabase.from("user_roles").delete().eq("user_id", userId),
-      ]);
-
-      // Check for errors in profile/groups/submissions deletion
-      for (const result of results) {
-        if (result.error) {
-          console.error("Delete error:", result.error.message);
-          toast({ title: "Erro ao excluir dados do usuário", description: result.error.message, variant: "destructive" });
-          setDeleteUserLoading(false);
-          setDeleteUserId(null);
-          return;
-        }
+      // 1. Delete groups
+      const r1 = await supabase.from("groups").delete().eq("submitted_by", userId);
+      console.log("[DELETE USER] Groups:", r1.error || "OK, deleted " + r1.data?.length + " rows");
+      if (r1.error) {
+        toast({ title: "Erro ao excluir grupos", description: r1.error.message, variant: "destructive" });
+        setDeleteUserLoading(false);
+        setDeleteUserId(null);
+        return;
       }
 
-      // Try to delete auth user (may fail without service role key — that's ok)
+      // 2. Delete submissions
+      const r2 = await supabase.from("group_submissions").delete().eq("submitted_by", userId);
+      console.log("[DELETE USER] Submissions:", r2.error || "OK, deleted " + r2.data?.length + " rows");
+      if (r2.error) {
+        toast({ title: "Erro ao excluir submissões", description: r2.error.message, variant: "destructive" });
+        setDeleteUserLoading(false);
+        setDeleteUserId(null);
+        return;
+      }
+
+      // 3. Delete user_roles
+      const r3 = await supabase.from("user_roles").delete().eq("user_id", userId);
+      console.log("[DELETE USER] Roles:", r3.error || "OK, deleted " + r3.data?.length + " rows");
+      if (r3.error) {
+        toast({ title: "Erro ao excluir roles", description: r3.error.message, variant: "destructive" });
+        setDeleteUserLoading(false);
+        setDeleteUserId(null);
+        return;
+      }
+
+      // 4. Delete profile
+      const r4 = await supabase.from("profiles").delete().eq("id", userId);
+      console.log("[DELETE USER] Profile:", r4.error || "OK, deleted " + r4.data?.length + " rows");
+      if (r4.error) {
+        toast({ title: "Erro ao excluir perfil", description: r4.error.message, variant: "destructive" });
+        setDeleteUserLoading(false);
+        setDeleteUserId(null);
+        return;
+      }
+
+      // 5. Try to delete auth user (may fail without service role key — that's ok)
       try {
         const { error: authError } = await supabase.auth.admin.deleteUser(userId);
         if (authError) {
-          console.warn("Auth user deletion skipped (needs service role key). Data deleted from app tables.");
+          console.warn("[DELETE USER] Auth deletion skipped:", authError.message);
+        } else {
+          console.log("[DELETE USER] Auth user deleted.");
         }
-      } catch {
-        console.warn("Auth deletion failed — user can still be removed from admin panel later.");
+      } catch (e) {
+        console.warn("[DELETE USER] Auth deletion failed.");
       }
 
-      // Refresh
+      // 6. Refresh the list
       await fetchUsers();
+      console.log("[DELETE USER] Done. User list refreshed.");
       setDeleteUserId(null);
       toast({ title: "Usuário excluído com sucesso!" });
     } catch (err: any) {
-      console.error("Error deleting user:", err);
+      console.error("[DELETE USER] Fatal error:", err);
       toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
     }
     setDeleteUserLoading(false);
