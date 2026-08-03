@@ -52,6 +52,12 @@ import {
   WifiOff,
   EyeOff,
   Pencil,
+  Users,
+  ChevronDown,
+  ChevronUp,
+  MousePointerClick,
+  Shield,
+  Eye,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
 
@@ -201,8 +207,9 @@ const AdminDashboard = () => {
     mainTab === "banners"        ? "banners"       :
     mainTab === "seo"            ? "seo"           :
     mainTab === "privacy_models" ? "privacy_models":
+    mainTab === "usuarios"       ? "usuarios"      :
     "grupos_section"
-  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models";
+  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models" | "usuarios";
 
   const activeTab =
     mainTab === "grupos"         ? (_subToTab[subTab ?? ""] ?? "pending") :
@@ -210,6 +217,7 @@ const AdminDashboard = () => {
     mainTab === "categorias"     ? "categorias" :
     mainTab === "seo"            ? "seo"        :
     mainTab === "privacy_models" ? "privacy_models" :
+    mainTab === "usuarios"       ? "usuarios"   :
     "pending";
 
   // Submissions state
@@ -324,6 +332,28 @@ const AdminDashboard = () => {
   const [categoryUploadingSlug, setCategoryUploadingSlug] = useState<string | null>(null);
   const categoryFileRef = useRef<HTMLInputElement>(null);
   const [categoryUploadTarget, setCategoryUploadTarget] = useState<string | null>(null);
+
+  // --- Users tab state ---
+  interface UserAdminData {
+    id: string;
+    email: string;
+    role: string | null;
+    is_admin: boolean;
+    created_at: string;
+    total_submissions: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    paid_submissions: number;
+    total_groups_visible: number;
+    total_clicks: number;
+    groups?: { id: string; name: string; category: string; clicks_count: number; views: number; status: string }[];
+  }
+  const [usersData, setUsersData] = useState<UserAdminData[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersSearch, setUsersSearch] = useState("");
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [usersSourceFilter, setUsersSourceFilter] = useState<"all" | "submitters" | "inactive">("all");
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -391,6 +421,8 @@ const AdminDashboard = () => {
       fetchCategories();
     } else if (activeTab === "privacy_models") {
       fetchPrivacyModels();
+    } else if (activeTab === "usuarios") {
+      fetchUsers();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -1031,6 +1063,109 @@ const AdminDashboard = () => {
     } else {
       toast({ title: "Grupo promovido a premium! ⭐" });
     }
+  };
+
+  // --- Users logic ---
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      // 1. Fetch all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, email, role, created_at")
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (profilesError) throw profilesError;
+
+      // 2. Fetch user_roles to determine admin status
+      const { data: userRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .eq("role", "admin");
+
+      if (rolesError) throw rolesError;
+
+      const adminIds = new Set((userRoles || []).map((r: any) => r.user_id));
+
+      // 3. Fetch submission stats per user
+      const { data: submissions, error: subsError } = await supabase
+        .from("group_submissions")
+        .select("submitted_by, status, is_paid")
+        .order("created_at", { ascending: false });
+
+      if (subsError) throw subsError;
+
+      const submissionStats = new Map<string, { total: number; approved: number; pending: number; rejected: number; paid: number }>();
+      (submissions || []).forEach((sub: any) => {
+        const uid = sub.submitted_by;
+        const current = submissionStats.get(uid) || { total: 0, approved: 0, pending: 0, rejected: 0, paid: 0 };
+        current.total++;
+        if (sub.status === "approved") current.approved++;
+        else if (sub.status === "pending") current.pending++;
+        else if (sub.status === "rejected") current.rejected++;
+        if (sub.is_paid) current.paid++;
+        submissionStats.set(uid, current);
+      });
+
+      // 4. Fetch approved groups that have submitted_by set (user-submitted groups)
+      const { data: userGroups, error: groupsError } = await supabase
+        .from("groups")
+        .select("id, name, category, thumbnail_url, is_premium, is_pinned, is_verified, member_count, created_at, source, submitted_by, featured, clicks_count, views")
+        .not("submitted_by", "is", null)
+        .or("hidden.is.null,hidden.eq.false")
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (groupsError) throw groupsError;
+
+      // Also fetch all groups to get clicks for user-submitted ones
+      const groupStats = new Map<string, { visible: number; clicks: number; groups: UserAdminData["groups"] }>();
+      (userGroups || []).forEach((g: any) => {
+        const uid = g.submitted_by;
+        if (!uid) return;
+        const current = groupStats.get(uid) || { visible: 0, clicks: 0, groups: [] };
+        current.visible++;
+        current.clicks += (g.clicks_count || 0);
+        current.groups!.push({
+          id: g.id,
+          name: g.name,
+          category: g.category,
+          clicks_count: g.clicks_count || 0,
+          views: g.views || 0,
+          status: "visible",
+        });
+        groupStats.set(uid, current);
+      });
+
+      // 5. Enrich profiles with all data
+      const enriched: UserAdminData[] = (profiles || []).map((p: any) => {
+        const stats = submissionStats.get(p.id) || { total: 0, approved: 0, pending: 0, rejected: 0, paid: 0 };
+        const gStats = groupStats.get(p.id) || { visible: 0, clicks: 0, groups: [] };
+        return {
+          id: p.id,
+          email: p.email || "Sem email",
+          role: p.role,
+          is_admin: adminIds.has(p.id),
+          created_at: p.created_at,
+          total_submissions: stats.total,
+          approved: stats.approved,
+          pending: stats.pending,
+          rejected: stats.rejected,
+          paid_submissions: stats.paid,
+          total_groups_visible: gStats.visible,
+          total_clicks: gStats.clicks,
+          groups: gStats.groups,
+        };
+      });
+
+      setUsersData(enriched);
+    } catch (err: any) {
+      console.error("Error fetching users:", err);
+      toast({ title: "Erro ao carregar usuários", variant: "destructive" });
+    }
+    setUsersLoading(false);
   };
 
   // --- Banners logic ---
@@ -1697,6 +1832,7 @@ const AdminDashboard = () => {
               else if (v === "banners")    navigate("/admin/banners");
               else if (v === "seo")        navigate("/admin/seo/analytics");
               else if (v === "privacy_models") navigate("/admin/privacy_models");
+              else if (v === "usuarios")        navigate("/admin/usuarios");
             }}>          <TabsList className="w-full">
             <TabsTrigger value="grupos_section" className="flex-1 gap-2">
               <Search className="h-4 w-4" />
@@ -1717,6 +1853,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="seo" className="flex-1 gap-2">
               <BarChart2 className="h-4 w-4" />
               SEO
+            </TabsTrigger>
+            <TabsTrigger value="usuarios" className="flex-1 gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
             </TabsTrigger>
           </TabsList>
 
@@ -2960,6 +3100,241 @@ const AdminDashboard = () => {
               <p className="text-xs text-center text-muted-foreground">
                 Mostrando {filteredPrivacyModels.length} de {privacyModels.length} modelos.
               </p>
+            )}
+          </TabsContent>
+
+          {/* Usuarios tab */}
+          <TabsContent value="usuarios" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Usuários do Sistema</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Perfis cadastrados, submissões de grupos e analytics de cliques.
+                </p>
+              </div>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por email..."
+                  value={usersSearch}
+                  onChange={(e) => setUsersSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={usersSourceFilter === "all" ? "default" : "outline"}
+                  onClick={() => setUsersSourceFilter("all")}
+                  className="text-xs"
+                >
+                  Todos
+                  <Badge variant="secondary" className="ml-1.5 bg-white/20">{usersData.length}</Badge>
+                </Button>
+                <Button
+                  size="sm"
+                  variant={usersSourceFilter === "submitters" ? "default" : "outline"}
+                  onClick={() => setUsersSourceFilter("submitters")}
+                  className="text-xs"
+                >
+                  Submissores
+                </Button>
+                <Button
+                  size="sm"
+                  variant={usersSourceFilter === "inactive" ? "default" : "outline"}
+                  onClick={() => setUsersSourceFilter("inactive")}
+                  className="text-xs"
+                >
+                  Inativos
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-lg border border-border bg-card p-3 text-center">
+                <p className="text-2xl font-bold text-foreground">{usersData.length}</p>
+                <p className="text-xs text-muted-foreground">Total de Usuários</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3 text-center">
+                <p className="text-2xl font-bold text-amber-500">{usersData.filter(u => u.is_admin).length}</p>
+                <p className="text-xs text-muted-foreground">Admins</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3 text-center">
+                <p className="text-2xl font-bold text-green-500">{usersData.filter(u => u.total_submissions > 0).length}</p>
+                <p className="text-xs text-muted-foreground">Submissores</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3 text-center">
+                <p className="text-2xl font-bold text-blue-500">{usersData.reduce((acc, u) => acc + u.total_submissions, 0)}</p>
+                <p className="text-xs text-muted-foreground">Total Submissões</p>
+              </div>
+            </div>
+
+            {usersLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {usersData
+                  .filter((u) => {
+                    if (usersSourceFilter === "submitters") return u.total_submissions > 0;
+                    if (usersSourceFilter === "inactive") return u.total_submissions === 0;
+                    return true;
+                  })
+                  .filter((u) => {
+                    if (!usersSearch) return true;
+                    return u.email.toLowerCase().includes(usersSearch.toLowerCase());
+                  })
+                  .map((user) => (
+                    <div key={user.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                      {/* User header row */}
+                      <button
+                        className="w-full flex items-center gap-3 p-3 hover:bg-accent/50 transition-colors text-left"
+                        onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                      >
+                        {/* Avatar placeholder */}
+                        <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold ${user.is_admin ? "bg-amber-500/20 text-amber-500" : "bg-blue-500/20 text-blue-500"}`}>
+                          {user.email.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground truncate">{user.email}</span>
+                            {user.is_admin && (
+                              <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-500 border-amber-500/30">
+                                <Shield className="h-2.5 w-2.5 mr-0.5" /> Admin
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            <span className="text-[11px] text-muted-foreground">
+                              {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="hidden sm:flex items-center gap-4">
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-foreground">{user.total_submissions}</p>
+                            <p className="text-[10px] text-muted-foreground">Submissões</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-green-500">{user.approved}</p>
+                            <p className="text-[10px] text-muted-foreground">Aprovadas</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-amber-500">{user.pending}</p>
+                            <p className="text-[10px] text-muted-foreground">Pendentes</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-red-500">{user.rejected}</p>
+                            <p className="text-[10px] text-muted-foreground">Rejeitadas</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-blue-500 flex items-center gap-0.5">
+                              <MousePointerClick className="h-3 w-3" /> {user.total_clicks}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">Cliques</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-bold text-purple-500">{user.total_groups_visible}</p>
+                            <p className="text-[10px] text-muted-foreground">Grupos</p>
+                          </div>
+                          {user.paid_submissions > 0 && (
+                            <div className="text-center">
+                              <p className="text-sm font-bold text-yellow-500">{user.paid_submissions}</p>
+                              <p className="text-[10px] text-muted-foreground">Pagas</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Expand indicator */}
+                        <div className="shrink-0">
+                          {expandedUser === user.id ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Expanded details */}
+                      {expandedUser === user.id && (
+                        <div className="border-t border-border p-3 space-y-3">
+                          {/* Mobile stats (shown only on small screens) */}
+                          <div className="sm:hidden grid grid-cols-3 gap-2">
+                            <div className="text-center p-2 rounded-lg bg-secondary/50">
+                              <p className="text-sm font-bold text-foreground">{user.total_submissions}</p>
+                              <p className="text-[10px] text-muted-foreground">Submissões</p>
+                            </div>
+                            <div className="text-center p-2 rounded-lg bg-secondary/50">
+                              <p className="text-sm font-bold text-green-500">{user.approved}</p>
+                              <p className="text-[10px] text-muted-foreground">Aprovadas</p>
+                            </div>
+                            <div className="text-center p-2 rounded-lg bg-secondary/50">
+                              <p className="text-sm font-bold text-blue-500">{user.total_clicks}</p>
+                              <p className="text-[10px] text-muted-foreground">Cliques</p>
+                            </div>
+                          </div>
+
+                          {/* Groups submitted by this user */}
+                          <div>
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                              Grupos Submetidos ({user.total_groups_visible})
+                            </h4>
+                            {user.groups && user.groups.length > 0 ? (
+                              <div className="space-y-1.5">
+                                {user.groups.map((g) => (
+                                  <div key={g.id} className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30">
+                                    <Eye className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-foreground truncate">{g.name}</p>
+                                      <p className="text-[10px] text-muted-foreground">{g.category}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                        <MousePointerClick className="h-2.5 w-2.5" /> {g.clicks_count}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground">
+                                        👁 {g.views || 0}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground py-2">Nenhum grupo submetido por este usuário.</p>
+                            )}
+                          </div>
+
+                          {/* User info */}
+                          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            <span>ID: <code className="text-[10px] bg-secondary/50 px-1 rounded">{user.id.slice(0, 8)}...</code></span>
+                            <span>Role: {user.role || "user"}</span>
+                            <span>Cadastro: {new Date(user.created_at).toLocaleString("pt-BR")}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                {usersData.filter((u) => {
+                  if (usersSourceFilter === "submitters") return u.total_submissions > 0;
+                  if (usersSourceFilter === "inactive") return u.total_submissions === 0;
+                  return true;
+                }).filter((u) => {
+                  if (!usersSearch) return true;
+                  return u.email.toLowerCase().includes(usersSearch.toLowerCase());
+                }).length === 0 && (
+                  <p className="py-12 text-center text-muted-foreground">Nenhum usuário encontrado.</p>
+                )}
+              </div>
             )}
           </TabsContent>
         </Tabs>
