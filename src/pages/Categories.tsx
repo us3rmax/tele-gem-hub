@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
@@ -33,7 +33,7 @@ const CATEGORIES = [
   { slug: "geral", label: "Geral" },
 ];
 
-const PER_PAGE = 20;
+const PER_PAGE = 22;
 
 const FALLBACK_GRADIENT: Record<string, string> = {
   putaria: "from-rose-600 to-red-800",
@@ -184,6 +184,14 @@ const CategoryGroups = ({ category }: { category: string }) => {
 
   const label = CATEGORIES.find((c) => c.slug === category)?.label ?? category;
 
+  // Scroll to top when page changes
+  useEffect(() => {
+    if (page > 1) {
+      const timer = setTimeout(() => window.scrollTo({ top: 0 }), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [page]);
+
   const { data, isLoading } = useQuery({
     queryKey: ["category-groups", category, page],
     queryFn: () => fetchCategoryGroups(category, page),
@@ -245,7 +253,6 @@ const CategoryGroups = ({ category }: { category: string }) => {
           total={totalPages}
           onChange={(p) => {
             setPage(p);
-            window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
       </main>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
@@ -10,7 +10,7 @@ import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGroups, usePremiumGroups } from "@/hooks/use-groups";
-const PER_PAGE = 20;
+const PER_PAGE = 22;
 
 // Meta descriptions únicas por categoria para evitar duplicidade quando filtrado por ?category=X
 const CATEGORY_SEO: Record<string, { title: string; description: string; keywords: string }> = {
@@ -110,7 +110,7 @@ const Index = () => {
   const searchTerm = searchParams.get("search") || "";
   const categoryFilter = searchParams.get("category") || "";
 
-  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 20 });
+  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 30 });
   const { data: premiumGrupos = [] } = usePremiumGroups();
 
   // Filter out "gay" category groups from homepage (only visible when accessing the category page directly)
@@ -147,8 +147,15 @@ const Index = () => {
 
   const handlePageChange = (p: number) => {
     setSearchParams({ page: String(p), ...(categoryFilter ? { category: categoryFilter } : {}) });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Scroll to top after page data loads (useEffect to run after render)
+  useEffect(() => {
+    if (page > 1) {
+      const timer = setTimeout(() => window.scrollTo({ top: 0 }), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [page]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -289,16 +296,16 @@ const Index = () => {
         ) : (
           <>
             <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-              {grupos.slice(0, 10).map((grupo) => (
+              {grupos.slice(0, 11).map((grupo) => (
                 <GroupCard key={grupo.id} grupo={grupo} hideBadges />
               ))}
             </section>
 
-            {grupos.length > 10 && <BannerAd position="middle" />}
+            {grupos.length > 11 && <BannerAd position="middle" />}
 
-            {grupos.length > 10 && (
+            {grupos.length > 11 && (
               <section className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                {grupos.slice(10).map((grupo) => (
+                {grupos.slice(11).map((grupo) => (
                   <GroupCard key={grupo.id} grupo={grupo} hideBadges />
                 ))}
               </section>
