@@ -293,6 +293,8 @@ const AdminDashboard = () => {
   const [brokenGroupsLoading, setBrokenGroupsLoading] = useState(false);
   const [brokenLinkEdits, setBrokenLinkEdits] = useState<Record<string, string>>({});
   const [brokenSelected, setBrokenSelected] = useState<Set<string>>(new Set());
+  const [groupsSelected, setGroupsSelected] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [premiumLoading, setPremiumLoading] = useState(false);
   const [premiumSearch, setPremiumSearch] = useState("");
 
@@ -965,6 +967,42 @@ const AdminDashboard = () => {
       setBrokenGroups((prev) => prev.filter((g) => !brokenSelected.has(g.id)));
       setBrokenSelected(new Set());
     }
+  };
+
+  // --- Bulk Actions for Groups ---
+
+  const handleBulkToggleFeatured = async (setFeatured: boolean) => {
+    if (groupsSelected.size === 0) return;
+    setBulkActionLoading(true);
+    const ids = Array.from(groupsSelected);
+    const { error } = await supabase.from("groups").update({ featured: setFeatured }).in("id", ids);
+    if (!error) {
+      setAllGroups((prev) =>
+        prev.map((g) => (groupsSelected.has(g.id) ? { ...g, featured: setFeatured } : g))
+      );
+      toast({ title: `${ids.length} grupo(s) ${setFeatured ? 'destacado(s)' : 'removido(s) do destaque'}` });
+    } else {
+      toast({ title: "Erro ao atualizar", variant: "destructive" });
+    }
+    setBulkActionLoading(false);
+    setGroupsSelected(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (groupsSelected.size === 0) return;
+    setBulkActionLoading(true);
+    const ids = Array.from(groupsSelected);
+    const { error } = await supabase.from("groups").delete().in("id", ids);
+    if (!error) {
+      setAllGroups((prev) => prev.filter((g) => !groupsSelected.has(g.id)));
+      setPremiumGroups((prev) => prev.filter((g) => !groupsSelected.has(g.id)));
+      toast({ title: `${ids.length} grupo(s) excluído(s)!` });
+    } else {
+      toast({ title: "Erro ao excluir", variant: "destructive" });
+    }
+    setBulkActionLoading(false);
+    setGroupsSelected(new Set());
+    setDeleteGroupId(null);
   };
 
   const handleTogglePremium = async (groupId: string, newValue: boolean) => {
@@ -2201,6 +2239,38 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <>
+                {/* Bulk selection header */}
+                <div className="flex items-center gap-2 mb-2">
+                  <Checkbox
+                    checked={groupsSelected.size === allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).slice(0, 50).length && allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).slice(0, 50).length > 0}
+                    onCheckedChange={(checked) => {
+                      const visibleGroups = allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).slice(0, 50);
+                      if (checked) setGroupsSelected(new Set(visibleGroups.map((g) => g.id)));
+                      else setGroupsSelected(new Set());
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Selecionar todos ({allGroups.filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter).slice(0, 50).length})
+                  </span>
+                </div>
+                {/* Bulk action buttons */}
+                {groupsSelected.size > 0 && (
+                  <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                    <span className="text-xs font-medium text-primary">{groupsSelected.size} selecionado(s)</span>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleBulkToggleFeatured(true)} disabled={bulkActionLoading}>
+                      <Star className="h-3 w-3" /> Destacar
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleBulkToggleFeatured(false)} disabled={bulkActionLoading}>
+                      <XCircle className="h-3 w-3" /> Remover destaque
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" onClick={() => handleBulkDelete()} disabled={bulkActionLoading}>
+                      <Trash2 className="h-3 w-3" /> Excluir {groupsSelected.size}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setGroupsSelected(new Set())}>
+                      Limpar
+                    </Button>
+                  </div>
+                )}
                 <div className="space-y-2">
                   {allGroups
                     .filter((g) => groupsSourceFilter === "all" || g.source === groupsSourceFilter)
@@ -2208,8 +2278,20 @@ const AdminDashboard = () => {
                     .map((group) => (
                       <div
                         key={group.id}
-                        className="flex items-center gap-3 overflow-hidden rounded-xl border border-border bg-card p-3"
+                        className={`flex items-center gap-3 overflow-hidden rounded-xl border p-3 transition-colors ${
+                          groupsSelected.has(group.id) ? "border-primary/40 bg-primary/5" : "border-border bg-card"
+                        }`}
                       >
+                        <Checkbox
+                          checked={groupsSelected.has(group.id)}
+                          onCheckedChange={(checked) => {
+                            setGroupsSelected((prev) => {
+                              const s = new Set(prev);
+                              if (checked) s.add(group.id); else s.delete(group.id);
+                              return s;
+                            });
+                          }}
+                        />
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                           {group.thumbnail_url ? (
                             <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
@@ -2698,16 +2780,60 @@ const AdminDashboard = () => {
             ) : filteredPrivacyModels.length === 0 ? (
               <p className="py-12 text-center text-muted-foreground">Nenhum modelo encontrado.</p>
             ) : (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <>
+                {/* Bulk selection header */}
+                <div className="flex items-center gap-2 mb-2">
+                  <Checkbox
+                    checked={privacySelected.size === filteredPrivacyModels.length && filteredPrivacyModels.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) setPrivacySelected(new Set(filteredPrivacyModels.map((m) => m.id)));
+                      else setPrivacySelected(new Set());
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Selecionar todos ({filteredPrivacyModels.length})
+                  </span>
+                </div>
+                {/* Bulk action buttons */}
+                {privacySelected.size > 0 && (
+                  <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-primary/10 border border-primary/20">
+                    <span className="text-xs font-medium text-primary">{privacySelected.size} selecionado(s)</span>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleBulkToggleFeatured(true)} disabled={bulkActionLoading}>
+                      <Star className="h-3 w-3" /> Destacar
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => handleBulkToggleFeatured(false)} disabled={bulkActionLoading}>
+                      <XCircle className="h-3 w-3" /> Remover destaque
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" onClick={() => handleBulkDelete()} disabled={bulkActionLoading}>
+                      <Trash2 className="h-3 w-3" /> Excluir {privacySelected.size}
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setPrivacySelected(new Set())}>
+                      Limpar
+                    </Button>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {filteredPrivacyModels.map((model) => (
                   <div
                     key={model.id}
                     className={`flex items-center gap-3 overflow-hidden rounded-xl border p-3 transition-colors ${
-                      model.featured
+                      privacySelected.has(model.id)
+                        ? "border-primary/40 bg-primary/5"
+                        : model.featured
                         ? "border-yellow-500/30 bg-card"
                         : "border-border bg-card"
                     }`}
                   >
+                    <Checkbox
+                      checked={privacySelected.has(model.id)}
+                      onCheckedChange={(checked) => {
+                        setPrivacySelected((prev) => {
+                          const s = new Set(prev);
+                          if (checked) s.add(model.id); else s.delete(model.id);
+                          return s;
+                        });
+                      }}
+                    />
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
                       <img
                         src={proxyPrivacyImage(model.avatar_url) || model.avatar_url}
@@ -2799,6 +2925,7 @@ const AdminDashboard = () => {
                   </div>
                 ))}
               </div>
+              </>
             )}
 
             {!privacyLoading && filteredPrivacyModels.length > 0 && (
