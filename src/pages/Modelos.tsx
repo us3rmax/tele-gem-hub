@@ -246,9 +246,9 @@ const Modelos = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Privacy Search — Explore as Melhores Criadoras Privacy | Canais18"
-        description="Explore milhares de criadoras do Privacy. Busque por nome, categoria ou palavra-chave. Filtre por tipo de conteudo e encontre os melhores grupos de previas no Telegram."
-        keywords="privacy search, modelos privacy, previas privacy, criadoras privacy, grupos privacy telegram"
+        title="Privacy — 325+ Criadoras, Grupos e Previas Gratuitas | Canais18"
+        description="Encontre as melhores criadoras do Privacy. Veja previas gratuitas, links de grupos, perfis e conteudos exclusivos. Ranking atualizado com Top Creators e Criadoras em Destaque."
+        keywords="privacy, privacy grupos, privacy previas, criadoras privacy, modelos privacy, privacy gratis, privacy como funciona, privacy o que e, top creators privacy, criadoras em destaque privacy"
         canonicalUrl="https://www.canais18.com/modelos"
       />
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
@@ -257,11 +257,11 @@ const Modelos = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-primary/5 via-background to-background px-4 pt-10 pb-6 text-center">
         <h1 className="mb-2 text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-          Privacy <span className="text-primary">Search</span>
+          <span className="text-primary">Privacy</span> — Criadoras e Grupos
         </h1>
         <p className="mx-auto mb-4 max-w-2xl text-base text-muted-foreground">
-          Explore milhares de criadoras do Privacy. Busque por nome, categoria ou palavra-chave,
-          salve suas favoritas e filtre por tipo de conteudo.
+          Descubra as melhores criadoras do Privacy com previas gratuitas, perfis verificados e
+          links de grupos. Ranking atualizado com Top Creators e Criadoras em Destaque.
         </p>
 
         {/* Search Bar */}
@@ -270,7 +270,7 @@ const Modelos = () => {
             <Search className="mr-3 h-5 w-5 shrink-0 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Buscar por nome, palavra-chave, tipo..."
+              placeholder="Buscar criadoras Privacy, previas, grupos..."
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -288,7 +288,7 @@ const Modelos = () => {
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                 <span className="text-lg">⭐</span>
-                Criadoras em <span className="text-primary">Destaque</span>
+                Criadoras Privacy em <span className="text-primary">Destaque</span>
               </h2>
             </div>
 
@@ -320,7 +320,7 @@ const Modelos = () => {
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
                 <span className="text-lg">👑</span>
-                <span className="text-primary">Top Creators</span>
+                <span className="text-primary">Top Creators</span> do Privacy
               </h2>
             </div>
 
@@ -350,7 +350,7 @@ const Modelos = () => {
           <div className="mb-5 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-lg font-bold text-white">
               <span className="text-lg">🔍</span>
-              Mais <span className="text-primary">Buscadas</span>
+              Criadoras Privacy <span className="text-primary">Mais Buscadas</span>
             </h2>
           </div>
 
