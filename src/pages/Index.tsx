@@ -113,8 +113,17 @@ const Index = () => {
   const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 20 });
   const { data: premiumGrupos = [] } = usePremiumGroups();
 
-  const grupos = data?.groups ?? [];
-  const totalCount = data?.totalCount ?? 0;
+  // Filter out "gay" category groups from homepage (only visible when accessing the category page directly)
+  const grupos = useMemo(() => {
+    const raw = data?.groups ?? [];
+    if (categoryFilter) return raw;
+    return raw.filter((g: any) => g.category !== "gay");
+  }, [data?.groups, categoryFilter]);
+
+  const totalCount = useMemo(() => {
+    if (categoryFilter) return data?.totalCount ?? 0;
+    return grupos.length > 0 ? data?.totalCount ?? 0 : 0;
+  }, [data?.totalCount, categoryFilter, grupos.length]);
   const totalPages = Math.ceil(totalCount / PER_PAGE);
 
   // SEO dinâmico baseado na categoria filtrada
