@@ -75,9 +75,19 @@ CATEGORY_KEYWORDS = {
 }
 
 # --- RELEASE RATE MANAGEMENT ---
+# "Sweet spot" para indexação gradual:
+# - Semana 1-2: 15/dia (site novo, Google ainda aprendendo)
+# - Semana 3-4: 25/dia (Google já conhece o site)
+# - Semana 5-8: 50/dia (crescimento controlado)
+# - Semana 9+: 100/dia (escalada máxima, se taxa de indexação > 70%)
+# - Fator de ajuste: se indexação < 50%, volta para 15/dia
+# - Máximo absoluto: 150/dia
+
+MAX_RATE = 150
+DEFAULT_RATE = 15
+
 def get_release_rate():
-    """Retorna a taxa de liberação atual (com escalada automática)."""
-    # Tentar pegar do banco
+    """Retorna a taxa de liberação atual (com escalada automática baseada em sweet spot)."""
     try:
         res = supabase.table("seo_config").select("value").eq("key", "release_rate").single().execute()
         if res.data and res.data.get("value"):
@@ -87,20 +97,41 @@ def get_release_rate():
             rate = config.get("rate", DEFAULT_RATE)
             start_date = config.get("start_date", datetime.now().strftime("%Y-%m-%d"))
             days_running = (datetime.now() - datetime.strptime(start_date, "%Y-%m-%d")).days
+            last_indexed_ratio = config.get("last_indexed_ratio", 0)
             
-            # Escalada automática
-            if days_running > 45 and rate < 25:
+            # Escalada baseada em tempo E taxa de indexação
+            if days_running > 60 and rate < 100:
+                rate = 100
+                config["rate"] = 100
+                config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
+                update_release_config(config)
+                print(f"⬆️ Escalada: rate subiu para {rate} (60+ dias)")
+            elif days_running > 35 and rate < 50:
+                rate = 50
+                config["rate"] = 50
+                config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
+                update_release_config(config)
+                print(f"⬆️ Escalada: rate subiu para {rate} (35+ dias)")
+            elif days_running > 14 and rate < 25:
                 rate = 25
                 config["rate"] = 25
                 config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
                 update_release_config(config)
-                print(f"⬆️ Escalada: rate subiu para {rate} (45+ dias)")
-            elif days_running > 20 and rate < 20:
-                rate = 20
-                config["rate"] = 20
+                print(f"⬆️ Escalada: rate subiu para {rate} (14+ dias)")
+            
+            # Se taxa de indexação < 50%, reduzir para proteger o site
+            if last_indexed_ratio > 0 and last_indexed_ratio < 0.5 and rate > 10:
+                rate = 10
+                config["rate"] = 10
                 config["last_adjusted"] = datetime.now().strftime("%Y-%m-%d")
                 update_release_config(config)
-                print(f"⬆️ Escalada: rate subiu para {rate} (20+ dias)")
+                print(f"⬇️ Redução: rate caiu para {rate} (indexação < 50%)")
+            
+            # Garantir que não passa do máximo
+            if rate > MAX_RATE:
+                rate = MAX_RATE
+                config["rate"] = MAX_RATE
+                update_release_config(config)
             
             return rate
     except:
@@ -110,7 +141,8 @@ def get_release_rate():
     config = {
         "rate": DEFAULT_RATE,
         "start_date": datetime.now().strftime("%Y-%m-%d"),
-        "last_adjusted": datetime.now().strftime("%Y-%m-%d")
+        "last_adjusted": datetime.now().strftime("%Y-%m-%d"),
+        "last_indexed_ratio": 0
     }
     update_release_config(config)
     return DEFAULT_RATE
@@ -243,28 +275,55 @@ def fix_descriptions_batch(batch_size=20):
 
 # --- FASE 2: Liberar grupos ---
 def release_groups(count=DEFAULT_RATE):
-    """Libera grupos hidden que estão prontos (description + thumbnail)."""
-    print(f"\n🚀 Fase 2: Liberando {count} grupos...")
+    """Libera grupos hidden=NULL ou hidden=true que estão prontos (description + thumbnail)."""
+    print(f"\n🚀 Fase 2: Liberando até {count} grupos...")
 
-    # Critérios: hidden=true, tem description ok (50-155 chars), tem thumbnail, não broken
-    res = supabase.table("groups").select("id, name, category, description, thumbnail_url, member_count").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).neq("thumbnail_url", "").order("member_count", desc=True).limit(200).execute()
-
-    candidates = [g for g in res.data if g.get("description") and 50 <= len(g["description"]) <= 155]
-
-    if not candidates:
-        print("   Nenhum grupo pronto para liberar (precisam description + thumbnail)")
+    # Critérios: hidden=true OU hidden=NULL, tem description ok (50-155 chars), tem thumbnail, não broken
+    # Nota: Supabase RLS pode não permitir is_.or_() então fazemos 2 queries
+    
+    # Query 1: hidden=true (grupos explicitamente ocultos)
+    res_hidden = supabase.table("groups").select("id, name, category, description, thumbnail_url, member_count, telegram_link").eq("hidden", True).neq("telegram_link", "").order("member_count", desc=True).limit(200).execute()
+    
+    # Query 2: hidden=NULL (grupos nunca processados)
+    res_null = supabase.table("groups").select("id, name, category, description, thumbnail_url, member_count, telegram_link").is_("hidden", "null").neq("telegram_link", "").order("member_count", desc=True).limit(200).execute()
+    
+    # Combinar candidatos
+    all_candidates = (res_hidden.data or []) + (res_null.data or [])
+    
+    # Filtrar: description válida (50-155 chars)
+    ready = [g for g in all_candidates if g.get("description") and 50 <= len(g["description"]) <= 155]
+    
+    # Se não tem prontos com description, tenta liberar sem description (fallback)
+    if not ready:
+        no_desc = [g for g in all_candidates if not g.get("description") or len(g.get("description", "")) == 0]
+        if no_desc:
+            # Gerar description primeiro para os primeiros
+            print(f"   Gerando descriptions para {min(len(no_desc), count)} grupos...")
+            for g in no_desc[:count]:
+                desc = generate_description(g["name"], g.get("category", "geral"))
+                supabase.table("groups").update({"description": desc}).eq("id", g["id"]).execute()
+                g["description"] = desc
+                time.sleep(2)
+            ready = no_desc[:count]
+            print(f"   {len(ready)} descriptions geradas")
+    
+    if not ready:
+        print("   Nenhum grupo pronto para liberar (precisam description)")
         return 0
 
+    # Ordenar por member_count desc (priorizar grupos maiores)
+    ready.sort(key=lambda x: x.get("member_count") or 0, reverse=True)
+
     released = 0
-    for g in candidates[:count]:
+    for g in ready[:count]:
         supabase.table("groups").update({
             "hidden": False,
-            "is_indexed": True
+            "is_indexed": False  # Marca como não indexado ainda (será atualizado quando Google indexar)
         }).eq("id", g["id"]).execute()
         released += 1
-        print(f"   ✅ Liberado: {g['name'][:50]} ({g['category']}) - {g.get('member_count', 0)} membros")
+        print(f"   ✅ Liberado: {g['name'][:50]} ({g.get('category', '?')}) - {g.get('member_count', 0)} membros")
 
-    print(f"   Total liberados: {released}")
+    print(f"   Total liberados: {released}/{count}")
     return released
 
 
@@ -463,15 +522,21 @@ def main():
         visible_groups = visible_res.count
         hidden_res = supabase.table("groups").select("id", count="exact").eq("hidden", True).execute()
         hidden_groups = hidden_res.count
-        # Prontos para liberar: hidden=true, description ok (50-155 chars), thumbnail ok
-        ready_res = supabase.table("groups").select("id").eq("hidden", True).neq("description", "").neq("thumbnail_url", None).execute()
-        ready_groups = sum(1 for g in (ready_res.data or []) if g.get("description") and 50 <= len(g.get("description", "")) <= 155)
+        # Grupos com hidden=NULL (nunca processados)
+        null_res = supabase.table("groups").select("id", count="exact").is_("hidden", "null").execute()
+        null_groups = null_res.count
+        # Prontos para liberar: hidden=true OU hidden=NULL, description ok (50-155 chars)
+        ready_hidden = supabase.table("groups").select("id, description").eq("hidden", True).neq("description", "").execute()
+        ready_null = supabase.table("groups").select("id, description").is_("hidden", "null").neq("description", "").execute()
+        ready_combined = (ready_hidden.data or []) + (ready_null.data or [])
+        ready_groups = sum(1 for g in ready_combined if g.get("description") and 50 <= len(g.get("description", "")) <= 155)
 
         supabase.table("seo_config").upsert(
             {"key": "group_counts", "value": {
                 "total": total_groups,
                 "visible": visible_groups,
                 "hidden": hidden_groups,
+                "hidden_null": null_groups,
                 "ready_to_release": ready_groups,
             }},
             on_conflict="key"
