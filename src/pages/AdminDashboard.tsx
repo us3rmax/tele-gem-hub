@@ -355,39 +355,61 @@ const AdminDashboard = () => {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [usersSourceFilter, setUsersSourceFilter] = useState<"all" | "submitters" | "inactive">("all");
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
-  const [deleteUserConfirm, setDeleteUserConfirm] = useState(false);
   const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+  const deleteConfirmed = useRef(false);
 
   const handleDeleteUser = async (userId: string) => {
-    if (!deleteUserConfirm) {
+    // Phase 1: ask for confirmation
+    if (!deleteConfirmed.current || deleteUserId !== userId) {
+      deleteConfirmed.current = true;
       setDeleteUserId(userId);
-      setDeleteUserConfirm(true);
       return;
     }
+    // Phase 2: confirmed — execute deletion
+    deleteConfirmed.current = false;
     setDeleteUserLoading(true);
     try {
-      // Delete user's groups (where submitted_by matches)
-      await supabase.from("groups").delete().eq("submitted_by", userId);
-      // Delete user's submissions
-      await supabase.from("group_submissions").delete().eq("submitted_by", userId);
-      // Delete user's profile
-      await supabase.from("profiles").delete().eq("id", userId);
-      // Delete user's role
-      await supabase.from("user_roles").delete().eq("user_id", userId);
-      // Delete the auth user
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) {
-        console.warn("Could not delete auth user (may need service role key):", authError.message);
+      const results = await Promise.all([
+        supabase.from("groups").delete().eq("submitted_by", userId),
+        supabase.from("group_submissions").delete().eq("submitted_by", userId),
+        supabase.from("profiles").delete().eq("id", userId),
+        supabase.from("user_roles").delete().eq("user_id", userId),
+      ]);
+
+      // Check for errors in profile/groups/submissions deletion
+      for (const result of results) {
+        if (result.error) {
+          console.error("Delete error:", result.error.message);
+          toast({ title: "Erro ao excluir dados do usuário", description: result.error.message, variant: "destructive" });
+          setDeleteUserLoading(false);
+          setDeleteUserId(null);
+          return;
+        }
       }
-      // Refresh the list
+
+      // Try to delete auth user (may fail without service role key — that's ok)
+      try {
+        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+        if (authError) {
+          console.warn("Auth user deletion skipped (needs service role key). Data deleted from app tables.");
+        }
+      } catch {
+        console.warn("Auth deletion failed — user can still be removed from admin panel later.");
+      }
+
+      // Refresh
       await fetchUsers();
-      toast({ title: "Usuário e todos os seus dados excluídos com sucesso!" });
+      setDeleteUserId(null);
+      toast({ title: "Usuário excluído com sucesso!" });
     } catch (err: any) {
       console.error("Error deleting user:", err);
       toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
     }
     setDeleteUserLoading(false);
-    setDeleteUserConfirm(false);
+  };
+
+  const cancelDeleteUser = () => {
+    deleteConfirmed.current = false;
     setDeleteUserId(null);
   };
   useEffect(() => {
@@ -3300,21 +3322,16 @@ const AdminDashboard = () => {
                         </div>
                       </button>
 
-                      {/* Delete button (outside the expand button to avoid triggering expand) */}
+                        {/* Delete button (outside the expand button to avoid triggering expand) */}
                       <div className="flex items-center gap-2 px-3 pb-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (deleteUserId === user.id && deleteUserConfirm) {
-                              handleDeleteUser(user.id);
-                            } else {
-                              setDeleteUserId(user.id);
-                              setDeleteUserConfirm(true);
-                            }
+                            handleDeleteUser(user.id);
                           }}
                           disabled={deleteUserLoading}
                           className={`text-[11px] flex items-center gap-1 transition-colors ${
-                            deleteUserId === user.id && deleteUserConfirm
+                            deleteUserId === user.id
                               ? "text-red-500 font-bold"
                               : "text-muted-foreground hover:text-red-400"
                           }`}
@@ -3324,7 +3341,7 @@ const AdminDashboard = () => {
                               <Loader2 className="h-3 w-3 animate-spin" />
                               Excluindo...
                             </>
-                          ) : deleteUserId === user.id && deleteUserConfirm ? (
+                          ) : deleteUserId === user.id ? (
                             <>
                               <Trash2 className="h-3 w-3" />
                               Confirmar exclusão
@@ -3336,12 +3353,11 @@ const AdminDashboard = () => {
                             </>
                           )}
                         </button>
-                        {deleteUserId === user.id && deleteUserConfirm && (
+                        {deleteUserId === user.id && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeleteUserConfirm(false);
-                              setDeleteUserId(null);
+                              cancelDeleteUser();
                             }}
                             className="text-[11px] text-muted-foreground hover:text-foreground"
                           >
