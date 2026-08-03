@@ -354,6 +354,42 @@ const AdminDashboard = () => {
   const [usersSearch, setUsersSearch] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [usersSourceFilter, setUsersSourceFilter] = useState<"all" | "submitters" | "inactive">("all");
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deleteUserConfirm, setDeleteUserConfirm] = useState(false);
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!deleteUserConfirm) {
+      setDeleteUserId(userId);
+      setDeleteUserConfirm(true);
+      return;
+    }
+    setDeleteUserLoading(true);
+    try {
+      // Delete user's groups (where submitted_by matches)
+      await supabase.from("groups").delete().eq("submitted_by", userId);
+      // Delete user's submissions
+      await supabase.from("group_submissions").delete().eq("submitted_by", userId);
+      // Delete user's profile
+      await supabase.from("profiles").delete().eq("id", userId);
+      // Delete user's role
+      await supabase.from("user_roles").delete().eq("user_id", userId);
+      // Delete the auth user
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      if (authError) {
+        console.warn("Could not delete auth user (may need service role key):", authError.message);
+      }
+      // Refresh the list
+      await fetchUsers();
+      toast({ title: "Usuário e todos os seus dados excluídos com sucesso!" });
+    } catch (err: any) {
+      console.error("Error deleting user:", err);
+      toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
+    }
+    setDeleteUserLoading(false);
+    setDeleteUserConfirm(false);
+    setDeleteUserId(null);
+  };
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/");
@@ -3263,6 +3299,56 @@ const AdminDashboard = () => {
                           )}
                         </div>
                       </button>
+
+                      {/* Delete button (outside the expand button to avoid triggering expand) */}
+                      <div className="flex items-center gap-2 px-3 pb-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (deleteUserId === user.id && deleteUserConfirm) {
+                              handleDeleteUser(user.id);
+                            } else {
+                              setDeleteUserId(user.id);
+                              setDeleteUserConfirm(true);
+                            }
+                          }}
+                          disabled={deleteUserLoading}
+                          className={`text-[11px] flex items-center gap-1 transition-colors ${
+                            deleteUserId === user.id && deleteUserConfirm
+                              ? "text-red-500 font-bold"
+                              : "text-muted-foreground hover:text-red-400"
+                          }`}
+                        >
+                          {deleteUserLoading ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Excluindo...
+                            </>
+                          ) : deleteUserId === user.id && deleteUserConfirm ? (
+                            <>
+                              <Trash2 className="h-3 w-3" />
+                              Confirmar exclusão
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-3 w-3" />
+                              Excluir usuário
+                            </>
+                          )}
+                        </button>
+                        {deleteUserId === user.id && deleteUserConfirm && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteUserConfirm(false);
+                              setDeleteUserId(null);
+                            }}
+                            className="text-[11px] text-muted-foreground hover:text-foreground"
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
 
                       {/* Expanded details */}
                       {expandedUser === user.id && (
