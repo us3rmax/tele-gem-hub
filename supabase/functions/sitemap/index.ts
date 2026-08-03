@@ -78,7 +78,7 @@ async function fetchVisibleGroups() {
     const { data, error } = await supabase
       .from("groups")
       .select("id, name, created_at, description")
-      .eq("hidden", false)
+      .neq("hidden", true)
       .range(offset, offset + batchSize - 1);
     if (error) throw error;
     if (data && data.length > 0) {
@@ -103,7 +103,7 @@ async function fetchModelPages() {
   const { data, error } = await supabase
     .from("groups")
     .select("category, created_at")
-    .eq("hidden", false)
+    .neq("hidden", true)
     .like("category", "modelo_%");
   
   if (error) {
