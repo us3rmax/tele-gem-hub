@@ -19,5 +19,9 @@ Disallow: /dashboard
 Disallow: /auth/
 Disallow: /profile
 Disallow: /settings
+Disallow: /register
+Disallow: /minha-conta
+Disallow: /meus-grupos
+Disallow: /enviar-grupo
 
 Sitemap: https://www.canais18.com/sitemap.xml
