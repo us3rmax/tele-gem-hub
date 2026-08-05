@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import SEO from "@/components/SEO";
@@ -233,15 +233,27 @@ const Modelos = () => {
 
   // Free profiles removed — already covered in Mais Buscadas tab
 
-  // Section 3: Mais Buscadas (all Privacy models with tabs)
-  // Exclude featured models (already shown in Top Creators section)
+  // Section 3: Mais Buscadas (all Privacy models with tabs) — infinite loading
+  const PER_PAGE = 24;
+  const [loadedCount, setLoadedCount] = useState(PER_PAGE);
   const { data: privacyData, isLoading: privacyLoading, isError: privacyError } = usePrivacyModels(
     searchTerm || undefined,
-    24,
+    loadedCount,
     filterTab === "gratuitos" ? true : false,
     true // exclude featured (already shown in Top Creators)
   );
   const privacyModels = useMemo(() => privacyData?.models ?? [], [privacyData?.models]);
+  const hasMore = useMemo(() => privacyData?.totalCount ? privacyModels.length < privacyData.totalCount : false, [privacyModels.length, privacyData?.totalCount]);
+  const isLoadMoreLoading = privacyLoading && privacyModels.length > 0;
+
+  const handleLoadMore = useCallback(() => {
+    setLoadedCount((prev) => prev + PER_PAGE);
+  }, []);
+
+  // Reset when search or filter changes
+  useMemo(() => {
+    setLoadedCount(PER_PAGE);
+  }, [searchTerm, filterTab]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -386,7 +398,7 @@ const Modelos = () => {
             </p>
           )}
 
-          {privacyLoading ? (
+          {privacyLoading && privacyModels.length === 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="overflow-hidden rounded-xl bg-gray-900">
@@ -405,19 +417,32 @@ const Modelos = () => {
             <>
               {privacyModels.length > 0 && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-                  {privacyModels.slice(0, 16).map((model, i) => (
+                  {privacyModels.map((model, i) => (
                     <PrivacyModelCard key={model.id} model={model} index={i} />
                   ))}
                 </div>
               )}
 
-              {privacyModels.length > 16 && <BannerAd position="middle" />}
-
-              {privacyModels.length > 16 && (
-                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-                  {privacyModels.slice(16).map((model, i) => (
-                    <PrivacyModelCard key={model.id} model={model} index={16 + i} />
-                  ))}
+              {/* Load More button */}
+              {hasMore && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isLoadMoreLoading}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all duration-200 hover:bg-primary/90 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoadMoreLoading ? (
+                      <>
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Carregando...
+                      </>
+                    ) : (
+                      "Carregar mais"
+                    )}
+                  </button>
                 </div>
               )}
             </>

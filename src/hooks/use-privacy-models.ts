@@ -40,7 +40,7 @@ export interface PrivacyModelWithProxy extends PrivacyModel {
   proxied_media: string | null;
 }
 
-async function fetchPrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean): Promise<{
+async function fetchPrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean, offset: number = 0): Promise<{
   models: PrivacyModel[];
   totalCount: number;
 }> {
@@ -65,7 +65,7 @@ async function fetchPrivacyModels(search?: string, perPage: number = 50, filterF
   }
 
   query = query.order("ranking", { ascending: true });
-  query = query.limit(perPage);
+  query = query.range(offset, offset + perPage - 1);
 
   const { data, error, count } = await query;
   if (error) throw error;
@@ -102,10 +102,10 @@ async function fetchCreadoraPrivacyModels(): Promise<PrivacyModel[]> {
   return (data as PrivacyModel[]) || [];
 }
 
-export function usePrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean) {
+export function usePrivacyModels(search?: string, perPage: number = 50, filterFree?: boolean, excludeFeatured?: boolean, offset: number = 0) {
   return useQuery({
-    queryKey: ["privacy-models", search, perPage, filterFree, excludeFeatured],
-    queryFn: () => fetchPrivacyModels(search, perPage, filterFree, excludeFeatured),
+    queryKey: ["privacy-models", search, perPage, filterFree, excludeFeatured, offset],
+    queryFn: () => fetchPrivacyModels(search, perPage, filterFree, excludeFeatured, offset),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
     select: (data) => ({
