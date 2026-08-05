@@ -98,16 +98,25 @@ function ModelCard({ grupo }: { grupo: Grupo }) {
   );
 }
 
-// Privacy Model Card — exact Erogram style with loading optimization
+// Known model slugs for internal linking
+const MODEL_SLUGS: Record<string, string> = {
+  "Ester Muniz": "ester-muniz",
+  "Jaiane Lima": "jaianelimma",
+  "BAD MI | MC MIRELLA": "bad-mi",
+  "Bad Mi": "bad-mi",
+  "Bella Longuinho": "bella-longuinho",
+  "Prof Ketlin": "prof-ketlin",
+};
+
+// Privacy Model Card — links to internal model page for SEO
 function PrivacyModelCard({ model, index }: { model: PrivacyModelWithProxy; index: number }) {
   const hasThumb = !!model.proxied_avatar;
-  // Eager load first 8 images, lazy load the rest
   const isPriority = index < 8;
+  const slug = MODEL_SLUGS[model.name] || MODEL_SLUGS[model.name.split("|")[0]?.trim()] || null;
 
   return (
-    <button
-      type="button"
-      onClick={() => window.open(model.privacy_link, '_blank', 'noopener,noreferrer')}
+    <Link
+      to={slug ? `/modelo/${slug}` : model.privacy_link}
       className="group w-full text-left rounded-2xl overflow-hidden bg-white ring-[2px] ring-[#00AFF0]/30 hover:ring-[#00AFF0] shadow-[0_8px_28px_-8px_rgba(0,175,240,0.25)] hover:shadow-[0_12px_36px_-6px_rgba(0,175,240,0.35)] hover:-translate-y-1 transition-all duration-300 cursor-pointer focus:outline-none"
     >
       <div className="relative aspect-[3/4] bg-[#f0f8ff]">
@@ -150,7 +159,7 @@ function PrivacyModelCard({ model, index }: { model: PrivacyModelWithProxy; inde
           Ver perfil
         </div>
       </div>
-    </button>
+    </Link>
   );
 }
 

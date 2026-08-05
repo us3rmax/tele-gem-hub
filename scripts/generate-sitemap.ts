@@ -13,6 +13,10 @@ const STATIC_PAGES = [
   { path: "/", priority: "1.0", changefreq: "daily" },
   // High-value SEO pages
   { path: "/modelos", priority: "0.95", changefreq: "daily" },
+  // Top Creator model pages (highest priority for SEO)
+  { path: "/modelo/ester-muniz", priority: "0.95", changefreq: "weekly" },
+  { path: "/modelo/jaianelimma", priority: "0.95", changefreq: "weekly" },
+  { path: "/modelo/bad-mi", priority: "0.95", changefreq: "weekly" },
   { path: "/categorias", priority: "0.9", changefreq: "daily" },
   { path: "/grupos-telegram", priority: "0.9", changefreq: "daily" },
   { path: "/blog", priority: "0.8", changefreq: "weekly" },
