@@ -48,6 +48,9 @@ const MODEL_SEO: Record<string, { displayName: string; platform: string; descrip
   "mae-e-filha": { displayName: "Mãe e Filha", platform: "Erome", description: "Mãe e Filha — conteúdo do Erome disponível no Telegram. Grupos verificados." },
   "erome-gostosa": { displayName: "Gostosa", platform: "Erome", description: "Conteúdo gostosa do Erome disponível no Telegram. Grupos verificados e atualizados." },
   "erome-privacy": { displayName: "Privacy Erome", platform: "Erome/Privacy", description: "Conteúdo vazado do Privacy para Erome disponível no Telegram. Grupos verificados." },
+  "ester-muniz": { displayName: "Ester Muniz", platform: "Privacy", description: "Ester Muniz no Privacy — encontre previas gratis, fotos e grupos com conteúdo exclusivo da criadora @Esttermuniz. Links verificados e atualizados diariamente.", seoTitle: "Ester Muniz Privacy — Previas Gratis, Fotos e Grupos Telegram | Canais18" },
+  "jaianelimma": { displayName: "Jaiane Lima", platform: "Privacy", description: "Jaiane Lima no Privacy — encontre previas gratis, fotos e grupos com conteúdo exclusivo da criadora @jaianelimma. Links verificados e atualizados diariamente.", seoTitle: "Jaiane Lima Privacy — Previas Gratis, Fotos e Grupos Telegram | Canais18" },
+  "bad-mi": { displayName: "Bad Mi", platform: "Privacy", description: "Bad Mi no Privacy — encontre previas gratis, fotos e grupos com conteúdo exclusivo da criadora. Links verificados e atualizados diariamente.", seoTitle: "Bad Mi Privacy — Previas Gratis, Fotos e Grupos Telegram | Canais18" },
 };
 
 async function fetchModelGroups(modelSlug: string, sbUrl: string, sbKey: string): Promise<Group[]> {
@@ -157,6 +160,7 @@ serve(async (req) => {
   const canonicalUrl = `${BASE_URL}/modelo/${modelSlug}`;
   const h1 = `${seo.displayName} Telegram: Conteúdo de ${seo.platform}`;
   const metaDesc = seo.description;
+  const seoTitle = (seo as any).seoTitle || h1;
 
   // JSON-LD structured data: @graph with WebPage + Person + ItemList + BreadcrumbList + FAQPage
   const jsonLd = JSON.stringify({
@@ -265,11 +269,11 @@ serve(async (req) => {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${h1} | Canais18</title>
+    <title>${seoTitle}</title>
     <meta name="description" content="${metaDesc}">
     <link rel="canonical" href="${canonicalUrl}">
     <meta name="robots" content="index,follow,max-image-preview:large">
-    <meta property="og:title" content="${h1}">
+    <meta property="og:title" content="${seoTitle}">
     <meta property="og:description" content="${metaDesc}">
     <meta property="og:url" content="${canonicalUrl}">
     <meta property="og:type" content="website">
