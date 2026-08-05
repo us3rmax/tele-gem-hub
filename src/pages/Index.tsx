@@ -9,7 +9,7 @@ import SortTabs from "@/components/SortTabs";
 import PremiumCarousel from "@/components/PremiumCarousel";
 import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGroups, usePremiumGroups } from "@/hooks/use-groups";
+import { useGroups, usePremiumGroups, useFeaturedGroups } from "@/hooks/use-groups";
 const PER_PAGE = 22;
 
 // Meta descriptions únicas por categoria para evitar duplicidade quando filtrado por ?category=X
@@ -112,6 +112,7 @@ const Index = () => {
 
   const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 30 });
   const { data: premiumGrupos = [] } = usePremiumGroups();
+  const { data: featuredGrupos = [] } = useFeaturedGroups();
 
   // Filter out "gay" category groups from homepage (only visible when accessing the category page directly)
   const grupos = useMemo(() => {
@@ -264,6 +265,20 @@ const Index = () => {
 
         <div id="grupos" className="scroll-mt-20"></div>
 {!isLoading && page <= 1 && !searchTerm && !categoryFilter && <PremiumCarousel grupos={premiumGrupos} />}
+
+        {/* Featured Groups section - visible on ALL pages */}
+        {featuredGrupos.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-lg font-bold text-foreground">
+              ⭐ Grupos em destaque
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {featuredGrupos.map((grupo: any) => (
+                <GroupCard key={grupo.id} grupo={grupo} hideBadges />
+              ))}
+            </div>
+          </section>
+        )}
 
         {searchTerm ? (
           <section className="space-y-3">
