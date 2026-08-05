@@ -264,7 +264,7 @@ const Index = () => {
         <hr className="border-border/30" />
 
         <div id="grupos" className="scroll-mt-20"></div>
-{!isLoading && page <= 1 && !searchTerm && !categoryFilter && <PremiumCarousel grupos={premiumGrupos} />}
+{!isLoading && !searchTerm && !categoryFilter && <PremiumCarousel grupos={premiumGrupos} />}
 
         {/* Featured Groups section - visible on ALL pages */}
         {featuredGrupos.length > 0 && (
