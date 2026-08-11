@@ -165,8 +165,8 @@ function PrivacyModelCard({ model, index }: { model: PrivacyModelWithProxy; inde
 
 // Creadora Privacy Model Card — exact Erogram style with video support
 function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
-  const hasMedia = !!model.proxied_media;
-  const isVideo = model.media_type === "video";
+  const mediaUrl = model.proxied_media || model.proxied_avatar;
+  const isVideo = model.media_type === "video" && !!model.proxied_media;
 
   return (
     <button
@@ -175,10 +175,10 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
       className="group w-full text-left rounded-2xl overflow-hidden bg-white ring-[2px] ring-[#00AFF0]/30 hover:ring-[#00AFF0] shadow-[0_8px_28px_-8px_rgba(0,175,240,0.25)] hover:shadow-[0_12px_36px_-6px_rgba(0,175,240,0.35)] hover:-translate-y-1 transition-all duration-300 cursor-pointer focus:outline-none"
     >
       <div className="relative aspect-[3/4] bg-[#f0f8ff]">
-        {hasMedia ? (
+        {mediaUrl ? (
           isVideo ? (
             <video
-              src={model.proxied_media}
+              src={mediaUrl}
               muted
               loop
               autoPlay
@@ -191,10 +191,12 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
               loading="eager"
               referrerPolicy="no-referrer"
-              src={model.proxied_media}
+              src={mediaUrl}
               onError={(e) => {
                 const target = e.currentTarget as HTMLImageElement;
                 target.style.display = 'none';
+                const fallback = target.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
               }}
             />
           )
@@ -203,6 +205,9 @@ function CreadoraPrivacyModelCard({ model }: { model: PrivacyModelWithProxy }) {
             <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
           </div>
         )}
+        <div className="absolute inset-0 hidden items-center justify-center bg-[#f0f8ff]">
+          <span className="text-5xl font-bold text-[#00AFF0]/20">{model.name.charAt(0)}</span>
+        </div>
       </div>
       <div className="px-3 pt-2.5 sm:px-4 sm:pt-3">
         <div className="flex items-center gap-1.5">

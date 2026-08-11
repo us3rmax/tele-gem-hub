@@ -114,7 +114,7 @@ export function usePrivacyModels(search?: string, perPage: number = 50, filterFr
         ...m,
         proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
         proxied_cover: proxyPrivacyImage(m.cover_url),
-        proxied_media: m.media_url,
+        proxied_media: proxyPrivacyImage(m.media_url),
       })) as PrivacyModelWithProxy[],
     }),
   });
@@ -131,7 +131,7 @@ export function useFeaturedPrivacyModels() {
         ...m,
         proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
         proxied_cover: proxyPrivacyImage(m.cover_url),
-        proxied_media: m.media_url,
+        proxied_media: proxyPrivacyImage(m.media_url),
       })) as PrivacyModelWithProxy[],
   });
 }
@@ -147,7 +147,7 @@ export function useCreadoraPrivacyModels() {
         ...m,
         proxied_avatar: proxyPrivacyImage(m.avatar_url) || m.avatar_url,
         proxied_cover: proxyPrivacyImage(m.cover_url),
-        proxied_media: m.media_url,
+        proxied_media: proxyPrivacyImage(m.media_url),
       })) as PrivacyModelWithProxy[],
   });
 }
