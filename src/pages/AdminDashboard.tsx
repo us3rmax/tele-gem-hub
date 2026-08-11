@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateSlug } from "@/lib/slug";
 import { proxyPrivacyImage } from "@/hooks/use-privacy-models";
 
-  import {
+import {
   CheckCircle,
   XCircle,
   Clock,
@@ -150,6 +150,7 @@ interface Banner {
   id: string;
   title: string;
   image_url: string;
+  video_url?: string | null;
   link_url: string | null;
   position: string;
   is_active: boolean;
@@ -175,6 +176,7 @@ interface EditRequest {
     category: string;
     telegram_link: string;
     thumbnail_url: string | null;
+    slug?: string;
   };
   requester_email?: string;
 }
@@ -389,82 +391,6 @@ const AdminDashboard = () => {
       setDeleteUserLoading(false);
       setDeleteUserId(null);
     }
-  };
-
-  const cancelDeleteUser = () => {
-    deleteConfirmed.current = false;
-    setDeleteUserId(null);
-  };
-
-  const handleBannerSave = async () => {
-    if (!bannerForm.title.trim()) {
-      toast({ title: "Preencha o título", variant: "destructive" });
-      return;
-    }
-    
-    setBannerSaving(true);
-    let imageUrl = bannerForm.image_url;
-    let videoUrl = (editingBanner as any)?.video_url || "";
-
-    // Upload Photo if selected
-    if (bannerPhotoFile) {
-      const ext = bannerPhotoFile.name.split(".").pop();
-      const filePath = `public/${crypto.randomUUID()}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("banner-images")
-        .upload(filePath, bannerPhotoFile, { contentType: bannerPhotoFile.type });
-
-      if (uploadError) {
-        toast({ title: "Erro ao enviar imagem", description: uploadError.message, variant: "destructive" });
-        setBannerSaving(false);
-        return;
-      }
-      imageUrl = supabase.storage.from("banner-images").getPublicUrl(filePath).data.publicUrl;
-    }
-
-    // Upload Video if selected
-    if (bannerVideoFile) {
-      const ext = bannerVideoFile.name.split(".").pop();
-      const filePath = `public/${crypto.randomUUID()}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("banner-videos" as any)
-        .upload(filePath, bannerVideoFile, { contentType: bannerVideoFile.type });
-
-      if (uploadError) {
-        toast({ title: "Erro ao enviar vídeo", description: uploadError.message, variant: "destructive" });
-        setBannerSaving(false);
-        return;
-      }
-      videoUrl = supabase.storage.from("banner-videos" as any).getPublicUrl(filePath).data.publicUrl;
-    }
-
-    const payload: any = {
-      title: bannerForm.title,
-      image_url: imageUrl,
-      video_url: videoUrl,
-      link_url: bannerForm.link_url,
-      position: bannerForm.position,
-      is_active: true,
-      expires_at: bannerForm.expires_at ? new Date(bannerForm.expires_at).toISOString() : null,
-    };
-
-    let error;
-    if (editingBanner) {
-      const { error: updateError } = await supabase.from("banners" as any).update(payload).eq("id", editingBanner.id);
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase.from("banners" as any).insert(payload);
-      error = insertError;
-    }
-
-    if (error) {
-      toast({ title: "Erro ao salvar banner", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: editingBanner ? "Banner atualizado!" : "Banner criado!" });
-      fetchBanners();
-      setBannerModalOpen(false);
-    }
-    setBannerSaving(false);
   };
 
   const cancelDeleteUser = () => {
@@ -828,7 +754,7 @@ const AdminDashboard = () => {
       requester_email: profileMap.get(r.requested_by) || "Desconhecido",
     }));
 
-    setEditRequests(enriched);
+    setEditRequests(enriched as any);
     setEditRequestsLoading(false);
   };
 
@@ -1027,7 +953,8 @@ const AdminDashboard = () => {
     } else {
       toast({ title: `Cover de ${CATEGORY_LABELS[slug]} atualizado!` });
       await fetchCategories();
-      await purgeCloudflareCache([coverUrl]); // Purge specific URL
+      const { data: { publicUrl } } = supabase.storage.from("thumbnails").getPublicUrl(filePath);
+      await purgeCloudflareCache([publicUrl]); // Purge specific URL
     }
     setCategoryUploadingSlug(null);
   };
@@ -3067,7 +2994,9 @@ const AdminDashboard = () => {
                       Banners Hero (Vídeo)
                     </h3>
                     <div className="space-y-2">
-                      {banners.filter(b => b.position.startsWith("hero")).map((banner) => (
+                      {banners.filter(b => b.position.startsWith("hero")).map((banner) => {
+                        const expired = isExpired(banner);
+                        return (
                         <div key={banner.id} className="overflow-hidden rounded-xl border border-border bg-card">
                           <div className="flex gap-3 p-3">
                             <div className="flex h-16 w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-purple-500/10">
@@ -3099,7 +3028,8 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
