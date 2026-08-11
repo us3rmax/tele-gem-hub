@@ -243,7 +243,7 @@ const Modelos = () => {
   // Free profiles removed — already covered in Mais Buscadas tab
 
   // Section 3: Mais Buscadas (all Privacy models with tabs) — infinite loading
-  const PER_PAGE = 24;
+  const PER_PAGE = 32; // Changed to 32 to avoid empty spaces (4 per row)
   const [loadedCount, setLoadedCount] = useState(PER_PAGE);
   const { data: privacyData, isLoading: privacyLoading, isError: privacyError } = usePrivacyModels(
     searchTerm || undefined,
@@ -325,12 +325,14 @@ const Modelos = () => {
                       </div>
                     </div>
                   ))
-                : featuredModels.map((grupo) => (
-                    <ModelCard key={`g-${grupo.id}`} grupo={grupo} />
-                  ))}
-              {creadoraPrivacyModels.map((model) => (
-                <CreadoraPrivacyModelCard key={`p-${model.id}`} model={model} />
-              ))}
+                : [
+                    ...featuredModels.map((grupo) => (
+                      <ModelCard key={`g-${grupo.id}`} grupo={grupo} />
+                    )),
+                    ...creadoraPrivacyModels.map((model) => (
+                      <CreadoraPrivacyModelCard key={`p-${model.id}`} model={model} />
+                    ))
+                  ]}
             </div>
           </section>
         )}
@@ -346,7 +348,7 @@ const Modelos = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-              {featuredPrivacyLoading
+              {featuredLoading || creadoraLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
                       <Skeleton className="aspect-[3/4] w-full" />
@@ -357,8 +359,8 @@ const Modelos = () => {
                       </div>
                     </div>
                   ))
-                : featuredPrivacyModels.map((model, i) => (
-                    <PrivacyModelCard key={model.id} model={model} index={i} />
+                : [...creadoraPrivacyModels].map((model: any, i) => (
+                    <CreadoraPrivacyModelCard key={model.id} model={model} />
                   ))}
             </div>
           </section>
@@ -410,14 +412,12 @@ const Modelos = () => {
           {privacyLoading && privacyModels.length === 0 ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-xl bg-gray-900">
-                  <Skeleton className="aspect-[4/3] w-full" />
-                  <div className="flex items-center gap-3 px-3 py-2.5">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <div className="space-y-1">
-                      <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-2 w-16" />
-                    </div>
+                <div key={i} className="overflow-hidden rounded-xl bg-white">
+                  <Skeleton className="aspect-[3/4] w-full" />
+                  <div className="flex flex-col gap-2 p-4">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-9 w-full rounded-xl" />
                   </div>
                 </div>
               ))}
@@ -425,11 +425,21 @@ const Modelos = () => {
           ) : (
             <>
               {privacyModels.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-                  {privacyModels.map((model, i) => (
-                    <PrivacyModelCard key={model.id} model={model} index={i} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
+                    {privacyModels.slice(0, 24).map((model, i) => (
+                      <PrivacyModelCard key={model.id} model={model} index={i} />
+                    ))}
+                  </div>
+                  
+                  <BannerAd position="middle" />
+                  
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5 mt-5">
+                    {privacyModels.slice(24).map((model, i) => (
+                      <PrivacyModelCard key={model.id} model={model} index={i + 24} />
+                    ))}
+                  </div>
+                </>
               )}
 
               {/* Load More button */}

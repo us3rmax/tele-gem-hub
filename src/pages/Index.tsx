@@ -117,9 +117,11 @@ const Index = () => {
   // Filter out "gay" category groups from homepage (only visible when accessing the category page directly)
   const grupos = useMemo(() => {
     const raw = data?.groups ?? [];
-    if (categoryFilter) return raw;
+    // If searching or in a specific category (including 'gay'), show everything
+    if (searchTerm || categoryFilter) return raw;
+    // On the main home feed, hide 'gay' category
     return raw.filter((g: any) => g.category !== "gay");
-  }, [data?.groups, categoryFilter]);
+  }, [data?.groups, searchTerm, categoryFilter]);
 
   const totalCount = useMemo(() => {
     if (categoryFilter) return data?.totalCount ?? 0;

@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateSlug } from "@/lib/slug";
 import { proxyPrivacyImage } from "@/hooks/use-privacy-models";
 
-import {
+  import {
   CheckCircle,
   XCircle,
   Clock,
@@ -51,7 +51,6 @@ import {
   BarChart2,
   WifiOff,
   EyeOff,
-  Pencil,
   Users,
   ChevronDown,
   ChevronUp,
@@ -368,70 +367,104 @@ const AdminDashboard = () => {
     // Phase 2: confirmed — execute deletion
     deleteConfirmed.current = false;
     setDeleteUserLoading(true);
-    console.log("[DELETE USER] Starting deletion for:", userId);
     try {
       // 1. Delete groups
-      const r1 = await supabase.from("groups").delete().eq("submitted_by", userId);
-      console.log("[DELETE USER] Groups:", r1.error || "OK, deleted " + r1.data?.length + " rows");
-      if (r1.error) {
-        toast({ title: "Erro ao excluir grupos", description: r1.error.message, variant: "destructive" });
-        setDeleteUserLoading(false);
-        setDeleteUserId(null);
-        return;
-      }
-
+      await supabase.from("groups").delete().eq("submitted_by", userId);
       // 2. Delete submissions
-      const r2 = await supabase.from("group_submissions").delete().eq("submitted_by", userId);
-      console.log("[DELETE USER] Submissions:", r2.error || "OK, deleted " + r2.data?.length + " rows");
-      if (r2.error) {
-        toast({ title: "Erro ao excluir submissões", description: r2.error.message, variant: "destructive" });
-        setDeleteUserLoading(false);
-        setDeleteUserId(null);
-        return;
-      }
-
+      await supabase.from("group_submissions").delete().eq("submitted_by", userId);
       // 3. Delete user_roles
-      const r3 = await supabase.from("user_roles").delete().eq("user_id", userId);
-      console.log("[DELETE USER] Roles:", r3.error || "OK, deleted " + r3.data?.length + " rows");
-      if (r3.error) {
-        toast({ title: "Erro ao excluir roles", description: r3.error.message, variant: "destructive" });
-        setDeleteUserLoading(false);
-        setDeleteUserId(null);
-        return;
-      }
-
+      await supabase.from("user_roles").delete().eq("user_id", userId);
       // 4. Delete profile
-      const r4 = await supabase.from("profiles").delete().eq("id", userId);
-      console.log("[DELETE USER] Profile:", r4.error || "OK, deleted " + r4.data?.length + " rows");
-      if (r4.error) {
-        toast({ title: "Erro ao excluir perfil", description: r4.error.message, variant: "destructive" });
-        setDeleteUserLoading(false);
-        setDeleteUserId(null);
+      const { error: profileError } = await supabase.from("profiles").delete().eq("id", userId);
+      
+      if (profileError) {
+        toast({ title: "Erro ao excluir perfil", description: profileError.message, variant: "destructive" });
+      } else {
+        toast({ title: "Usuário excluído com sucesso!" });
+        setUsersData(prev => prev.filter(u => u.id !== userId));
+      }
+    } catch (err: any) {
+      toast({ title: "Erro inesperado", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleteUserLoading(false);
+      setDeleteUserId(null);
+    }
+  };
+
+  const cancelDeleteUser = () => {
+    deleteConfirmed.current = false;
+    setDeleteUserId(null);
+  };
+
+  const handleBannerSave = async () => {
+    if (!bannerForm.title.trim()) {
+      toast({ title: "Preencha o título", variant: "destructive" });
+      return;
+    }
+    
+    setBannerSaving(true);
+    let imageUrl = bannerForm.image_url;
+    let videoUrl = (editingBanner as any)?.video_url || "";
+
+    // Upload Photo if selected
+    if (bannerPhotoFile) {
+      const ext = bannerPhotoFile.name.split(".").pop();
+      const filePath = `public/${crypto.randomUUID()}.${ext}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("banner-images")
+        .upload(filePath, bannerPhotoFile, { contentType: bannerPhotoFile.type });
+
+      if (uploadError) {
+        toast({ title: "Erro ao enviar imagem", description: uploadError.message, variant: "destructive" });
+        setBannerSaving(false);
         return;
       }
-
-      // 5. Try to delete auth user (may fail without service role key — that's ok)
-      try {
-        const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-        if (authError) {
-          console.warn("[DELETE USER] Auth deletion skipped:", authError.message);
-        } else {
-          console.log("[DELETE USER] Auth user deleted.");
-        }
-      } catch (e) {
-        console.warn("[DELETE USER] Auth deletion failed.");
-      }
-
-      // 6. Refresh the list
-      await fetchUsers();
-      console.log("[DELETE USER] Done. User list refreshed.");
-      setDeleteUserId(null);
-      toast({ title: "Usuário excluído com sucesso!" });
-    } catch (err: any) {
-      console.error("[DELETE USER] Fatal error:", err);
-      toast({ title: "Erro ao excluir usuário", description: err.message, variant: "destructive" });
+      imageUrl = supabase.storage.from("banner-images").getPublicUrl(filePath).data.publicUrl;
     }
-    setDeleteUserLoading(false);
+
+    // Upload Video if selected
+    if (bannerVideoFile) {
+      const ext = bannerVideoFile.name.split(".").pop();
+      const filePath = `public/${crypto.randomUUID()}.${ext}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("banner-videos" as any)
+        .upload(filePath, bannerVideoFile, { contentType: bannerVideoFile.type });
+
+      if (uploadError) {
+        toast({ title: "Erro ao enviar vídeo", description: uploadError.message, variant: "destructive" });
+        setBannerSaving(false);
+        return;
+      }
+      videoUrl = supabase.storage.from("banner-videos" as any).getPublicUrl(filePath).data.publicUrl;
+    }
+
+    const payload: any = {
+      title: bannerForm.title,
+      image_url: imageUrl,
+      video_url: videoUrl,
+      link_url: bannerForm.link_url,
+      position: bannerForm.position,
+      is_active: true,
+      expires_at: bannerForm.expires_at ? new Date(bannerForm.expires_at).toISOString() : null,
+    };
+
+    let error;
+    if (editingBanner) {
+      const { error: updateError } = await supabase.from("banners" as any).update(payload).eq("id", editingBanner.id);
+      error = updateError;
+    } else {
+      const { error: insertError } = await supabase.from("banners" as any).insert(payload);
+      error = insertError;
+    }
+
+    if (error) {
+      toast({ title: "Erro ao salvar banner", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: editingBanner ? "Banner atualizado!" : "Banner criado!" });
+      fetchBanners();
+      setBannerModalOpen(false);
+    }
+    setBannerSaving(false);
   };
 
   const cancelDeleteUser = () => {
@@ -1089,6 +1122,33 @@ const AdminDashboard = () => {
   // --- Bulk Actions for Groups ---
 
   const handleBulkToggleFeatured = async (setFeatured: boolean) => {
+    // Se estiver na aba de Privacy, usar lógica de privacy
+    if (mainTab === "privacy_models") {
+      if (privacySelected.size === 0) return;
+      setBulkActionLoading(true);
+      const ids = Array.from(privacySelected);
+      const { error } = await supabase
+        .from("privacy_models")
+        .update({ 
+          featured: setFeatured,
+          featured_type: setFeatured ? 'creadora' : null 
+        })
+        .in("id", ids);
+      
+      if (!error) {
+        setPrivacyModels((prev) =>
+          prev.map((m) => (privacySelected.has(m.id) ? { ...m, featured: setFeatured, featured_type: setFeatured ? 'creadora' : null } : m))
+        );
+        toast({ title: `${ids.length} modelo(s) ${setFeatured ? 'destacado(s)' : 'removido(s) do destaque'}` });
+      } else {
+        toast({ title: "Erro ao atualizar modelos", variant: "destructive" });
+      }
+      setBulkActionLoading(false);
+      setPrivacySelected(new Set());
+      return;
+    }
+
+    // Lógica original para Grupos
     if (groupsSelected.size === 0) return;
     setBulkActionLoading(true);
     const ids = Array.from(groupsSelected);
@@ -1106,6 +1166,24 @@ const AdminDashboard = () => {
   };
 
   const handleBulkDelete = async () => {
+    // Se estiver na aba de Privacy, usar lógica de privacy
+    if (mainTab === "privacy_models") {
+      if (privacySelected.size === 0) return;
+      setBulkActionLoading(true);
+      const ids = Array.from(privacySelected);
+      const { error } = await supabase.from("privacy_models").delete().in("id", ids);
+      if (!error) {
+        setPrivacyModels((prev) => prev.filter((m) => !privacySelected.has(m.id)));
+        toast({ title: `${ids.length} modelo(s) excluído(s)!` });
+      } else {
+        toast({ title: "Erro ao excluir modelos", variant: "destructive" });
+      }
+      setBulkActionLoading(false);
+      setPrivacySelected(new Set());
+      return;
+    }
+
+    // Lógica original para Grupos
     if (groupsSelected.size === 0) return;
     setBulkActionLoading(true);
     const ids = Array.from(groupsSelected);
@@ -1474,26 +1552,22 @@ const AdminDashboard = () => {
     });
   };
 
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
   // Privacy Models state
   const [privacyModels, setPrivacyModels] = useState<any[]>([]);
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [privacySearch, setPrivacySearch] = useState("");
   const [privacySourceFilter, setPrivacySourceFilter] = useState<"all" | "manual" | "imported">("all");
   const [privacyFeaturedFilter, setPrivacyFeaturedFilter] = useState<"creadora" | "top_creator" | null>(null);
+  const [privacySelected, setPrivacySelected] = useState<Set<number>>(new Set());
 
   // Privacy Edit Modal state
   const [privacyEditModalOpen, setPrivacyEditModalOpen] = useState(false);
   const [privacyEditModel, setPrivacyEditModel] = useState<any>(null);
+
   const [privacyEditForm, setPrivacyEditForm] = useState({
     name: "", profile_name: "", privacy_link: "", gender: "female", is_verified: false,
+    avatar_url: "",
+    cover_url: "",
   });
   const [privacyEditSaving, setPrivacyEditSaving] = useState(false);
   const [privacyEditAvatarFile, setPrivacyEditAvatarFile] = useState<File | null>(null);
@@ -1525,6 +1599,8 @@ const AdminDashboard = () => {
   const privacyAvatarRef = useRef<HTMLInputElement>(null);
   const privacyCoverRef = useRef<HTMLInputElement>(null);
   const privacyMediaRef = useRef<HTMLInputElement>(null);
+
+  // No return here to avoid breaking hooks rules. Conditional rendering is done in the JSX.
 
   const fetchPrivacyModels = async (search = "") => {
     setPrivacyLoading(true);
@@ -1728,8 +1804,8 @@ const AdminDashboard = () => {
       name: privacyForm.name.trim(),
       profile_name: privacyForm.profile_name.trim(),
       privacy_link: privacyForm.privacy_link.trim(),
-      avatar_url: avatarUrl,
-      cover_url: coverUrl,
+      avatar_url: avatarUrl || privacyForm.avatar_url,
+      cover_url: coverUrl || privacyForm.cover_url,
       gender: privacyForm.gender || null,
       is_verified: privacyForm.is_verified,
       featured: false,
@@ -1759,6 +1835,8 @@ const AdminDashboard = () => {
       privacy_link: model.privacy_link || "",
       gender: model.gender || "female",
       is_verified: model.is_verified || false,
+      avatar_url: model.avatar_url || "",
+      cover_url: model.cover_url || "",
     });
     setPrivacyEditAvatarFile(null);
     setPrivacyEditCoverFile(null);
@@ -1814,6 +1892,10 @@ const AdminDashboard = () => {
         gender: privacyEditForm.gender,
         is_verified: privacyEditForm.is_verified,
       };
+
+      // Use existing URLs from form if no new file is uploaded
+      updates.avatar_url = privacyEditForm.avatar_url;
+      updates.cover_url = privacyEditForm.cover_url;
 
       // Upload new avatar if provided
       if (privacyEditAvatarFile) {
@@ -1891,9 +1973,17 @@ const AdminDashboard = () => {
     return filtered;
   }, [privacyModels, privacySearch, privacySourceFilter, privacyFeaturedFilter]);
 
-  if (!user || !isAdmin) return null;
-
   const pendingCount = activeTab === "pending" ? submissions.length : null;
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -2719,6 +2809,131 @@ const AdminDashboard = () => {
           </TabsContent>
 
           {/* Banners tab */}
+          <TabsContent value="banners" className="mt-4 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Gerenciar Banners</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Banners de imagem e vídeo exibidos no site. Organizados por posição.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => openBannerModal()} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Adicionar Banner
+              </Button>
+            </div>
+
+            {bannersLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : banners.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-center">
+                <LayoutDashboard className="h-12 w-12 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground">Nenhum banner cadastrado.</p>
+              </div>
+            ) : (
+              <>
+                {/* Stats bar */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-foreground">{banners.length}</p>
+                    <p className="text-xs text-muted-foreground">Total</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-green-500">{banners.filter(b => b.is_active && !isExpired(b)).length}</p>
+                    <p className="text-xs text-muted-foreground">Ativos</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-500">{banners.filter(b => !b.is_active && !isExpired(b)).length}</p>
+                    <p className="text-xs text-muted-foreground">Inativos</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3 text-center">
+                    <p className="text-2xl font-bold text-red-500">{banners.filter(b => isExpired(b)).length}</p>
+                    <p className="text-xs text-muted-foreground">Expirados</p>
+                  </div>
+                </div>
+
+                {/* Grouped banners */}
+                {["hero", "top", "middle", "bottom"].map((pos) => {
+                  const posBanners = banners.filter(b => b.position === pos);
+                  if (posBanners.length === 0) return null;
+                  const posLabels: Record<string, string> = { 
+                    hero: "Banner Hero (Vídeo)", 
+                    top: "Topo", 
+                    middle: "Meio", 
+                    bottom: "Rodapé" 
+                  };
+                  return (
+                    <div key={pos} className="space-y-3">
+                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary text-xs font-bold">
+                          {pos === "hero" ? "🎬" : pos === "top" ? "↑" : pos === "middle" ? "↕" : "↓"}
+                        </span>
+                        {posLabels[pos]} ({posBanners.length})
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {posBanners.map((banner) => {
+                          const expired = isExpired(banner);
+                          return (
+                            <div key={banner.id} className="overflow-hidden rounded-xl border border-border bg-card flex flex-col">
+                              <div className="relative h-32 w-full bg-secondary overflow-hidden">
+                                {banner.video_url ? (
+                                  <video src={banner.video_url} muted loop autoPlay className="h-full w-full object-cover" />
+                                ) : (
+                                  <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" />
+                                )}
+                                <div className="absolute top-2 right-2">
+                                  <Switch checked={banner.is_active && !expired} onCheckedChange={() => handleBannerToggle(banner)} disabled={expired} />
+                                </div>
+                                {expired && (
+                                  <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-[1px]">
+                                    <Badge variant="destructive">Expirado</Badge>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-3 flex-1 space-y-2">
+                                <div>
+                                  <h4 className="text-sm font-semibold text-foreground truncate">{banner.title}</h4>
+                                  <p className="text-[10px] text-muted-foreground truncate">{banner.link_url}</p>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    {banner.is_active && !expired ? (
+                                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                    ) : (
+                                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+                                    )}
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {expired ? "Expirado" : banner.is_active ? "Ativo" : "Pausado"}
+                                    </span>
+                                  </div>
+                                  {banner.expires_at && (
+                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                      <Clock className="h-3 w-3" /> {formatDate(banner.expires_at)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 p-2 border-t border-border bg-muted/30">
+                                <Button size="sm" variant="ghost" className="h-7 flex-1 text-xs gap-1" onClick={() => openBannerModal(banner)}>
+                                  <Pencil className="h-3 w-3" /> Editar
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-7 flex-1 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteBannerId(banner.id)}>
+                                  <Trash2 className="h-3 w-3" /> Excluir
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </TabsContent>
+
           {/* Categorias tab */}
           <TabsContent value="categorias" className="mt-4 space-y-4">
             <div>
@@ -3917,6 +4132,24 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-2">
+              <Label>URL da Foto (Avatar)</Label>
+              <Input
+                value={privacyForm.avatar_url}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, avatar_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>URL da Capa</Label>
+              <Input
+                value={privacyForm.cover_url}
+                onChange={(e) => setPrivacyForm((f) => ({ ...f, cover_url: e.target.value }))}
+                placeholder="https://..."
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Foto (Avatar)</Label>
               <div className="flex items-center gap-3">
                 <input
@@ -4097,6 +4330,22 @@ const AdminDashboard = () => {
                   value={privacyEditForm.name}
                   onChange={(e) => handlePrivacyEditChange("name", e.target.value)}
                   placeholder="Nome da modelo"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>URL do Avatar (opcional se subir arquivo)</Label>
+                <Input
+                  value={privacyEditForm.avatar_url}
+                  onChange={(e) => handlePrivacyEditChange("avatar_url", e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>URL da Capa (opcional se subir arquivo)</Label>
+                <Input
+                  value={privacyEditForm.cover_url}
+                  onChange={(e) => handlePrivacyEditChange("cover_url", e.target.value)}
+                  placeholder="https://..."
                 />
               </div>
               <div className="space-y-2">
