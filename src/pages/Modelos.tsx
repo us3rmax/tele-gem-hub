@@ -232,13 +232,19 @@ const Modelos = () => {
   const { data: featuredData, isLoading: featuredLoading } = useFeaturedGroups();
   const featuredModels = useMemo(() => featuredData || [], [featuredData]);
 
-  // Section 1b: Creadora Privacy models (featured_type = 'creadora' - page próprio)
+  // Section 1b: Creadora Privacy models (featured_type = 'creadora' - estrela)
   const { data: creadoraData, isLoading: creadoraLoading } = useCreadoraPrivacyModels();
   const creadoraPrivacyModels = useMemo(() => creadoraData || [], [creadoraData]);
 
-  // Section 2: Top Creators (featured Privacy models with featured_type = 'top_creator')
+  // Section 2: Top Creators (featured Privacy models with featured_type = 'top_creator' - coroa)
   const { data: featuredPrivacyData, isLoading: featuredPrivacyLoading } = useFeaturedPrivacyModels();
-  const featuredPrivacyModels = useMemo(() => featuredPrivacyData || [], [featuredPrivacyData]);
+  
+  // Logic to ensure no repetition: if in Creadora (Star), don't show in Top Creators (Crown)
+  const topCreatorsModels = useMemo(() => {
+    const data = featuredPrivacyData || [];
+    const creadoraIds = new Set(creadoraPrivacyModels.map(m => m.id));
+    return data.filter(m => !creadoraIds.has(m.id));
+  }, [featuredPrivacyData, creadoraPrivacyModels]);
 
   // Free profiles removed — already covered in Mais Buscadas tab
 
@@ -338,7 +344,7 @@ const Modelos = () => {
         )}
 
         {/* Section 2: Top Creators (featured Privacy models) */}
-        {featuredPrivacyModels.length > 0 && (
+        {topCreatorsModels.length > 0 && (
           <section className="rounded-2xl border border-sky-200 bg-white p-3">
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
@@ -348,7 +354,7 @@ const Modelos = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-              {featuredLoading || creadoraLoading
+              {featuredPrivacyLoading
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
                       <Skeleton className="aspect-[3/4] w-full" />
@@ -359,7 +365,7 @@ const Modelos = () => {
                       </div>
                     </div>
                   ))
-                : [...creadoraPrivacyModels].map((model: any, i) => (
+                : topCreatorsModels.map((model) => (
                     <CreadoraPrivacyModelCard key={model.id} model={model} />
                   ))}
             </div>
