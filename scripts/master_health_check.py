@@ -343,6 +343,7 @@ def check_cloudflare():
     ghost = [rt for rt in routes
              if rt.get("pattern", "").startswith("www.canais18.com/")
              and rt.get("pattern") != "www.canais18.com/*"
+             and rt.get("pattern") != "www.canais18.com/modelo/*"
              and rt.get("pattern") != "www.canais18.com/sitemap.xml"]
     if ghost:
         fail("CF Workers fantasmas",

@@ -110,18 +110,18 @@ const Index = () => {
   const searchTerm = searchParams.get("search") || "";
   const categoryFilter = searchParams.get("category") || "";
 
-  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 30 });
-  const { data: premiumGrupos = [] } = usePremiumGroups();
-
-
-  // Filter out "gay" category groups from homepage (only visible when accessing the category page directly)
-  const grupos = useMemo(() => {
-    const raw = data?.groups ?? [];
-    // If searching or in a specific category (including 'gay'), show everything
-    if (searchTerm || categoryFilter) return raw;
-    // On the main home feed, hide 'gay' category
-    return raw.filter((g: any) => g.category !== "gay");
-  }, [data?.groups, searchTerm, categoryFilter]);
+	  const { data, isLoading, isError } = useGroups({ sort, search: searchTerm, page, perPage: 30 });
+	  const { data: premiumGrupos = [], isLoading: premiumLoading } = usePremiumGroups();
+	
+	
+	  // Filter out "gay" category groups from homepage (only visible when accessing the category page directly)
+	  const grupos = useMemo(() => {
+	    const raw = data?.groups ?? [];
+	    // If searching or in a specific category (including 'gay'), show everything
+	    if (searchTerm || categoryFilter) return raw;
+	    // On the main home feed, hide 'gay' category
+	    return raw.filter((g: any) => g.category !== "gay");
+	  }, [data?.groups, searchTerm, categoryFilter]);
 
   const totalCount = useMemo(() => {
     if (categoryFilter) return data?.totalCount ?? 0;
@@ -266,7 +266,7 @@ const Index = () => {
         <hr className="border-border/30" />
 
         <div id="grupos" className="scroll-mt-20"></div>
-{!isLoading && !searchTerm && !categoryFilter && <PremiumCarousel grupos={premiumGrupos} />}
+	{!premiumLoading && !searchTerm && !categoryFilter && premiumGrupos.length > 0 && <PremiumCarousel grupos={premiumGrupos} />}
 
 
         {searchTerm ? (

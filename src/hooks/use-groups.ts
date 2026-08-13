@@ -29,13 +29,11 @@ async function fetchPremiumGroups(): Promise<Grupo[]> {
   const { data } = await supabase
     .from("groups")
     .select("*")
-    .eq("is_premium", true)
+    .eq("featured", true)
     .or("hidden.is.null,hidden.eq.false")
-    .limit(50);
-  if (!data) return [];
-  const pinned = (data as any[]).filter((g) => g.is_pinned);
-  const unpinned = (data as any[]).filter((g) => !g.is_pinned).sort(() => Math.random() - 0.5);
-  return [...pinned, ...unpinned].slice(0, 10) as Grupo[];
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return (data as Grupo[]) || [];
 }
 
 async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
