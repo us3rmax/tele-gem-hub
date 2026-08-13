@@ -980,9 +980,9 @@ const AdminDashboard = () => {
     const { data, error } = await supabase
       .from("groups")
       .select(
-        "id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at, source, description, telegram_link",
+        "id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at, source, description, telegram_link, featured",
       )
-      .eq("is_premium", true)
+      .eq("featured", true)
       .order("is_pinned", { ascending: false });
     if (error) {
       console.error("Error fetching premium groups:", error);
