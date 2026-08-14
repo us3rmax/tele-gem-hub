@@ -1212,14 +1212,21 @@ const AdminDashboard = () => {
   };
 
   const handleTogglePremium = async (groupId: string, newValue: boolean) => {
-    const { error } = await supabase.from("groups").update({ is_premium: newValue }).eq("id", groupId);
+    // Sincronizar premium com destaque para aparecer no carrossel
+    const { error } = await supabase.from("groups").update({ 
+      is_premium: newValue,
+      featured: newValue 
+    }).eq("id", groupId);
+    
     if (error) {
       toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Status premium atualizado" });
+      toast({ title: newValue ? "Status Premium e Destaque ativado! ⭐" : "Premium e Destaque removidos" });
       if (!newValue) {
         setPremiumGroups((prev) => prev.filter((g) => g.id !== groupId));
       }
+      // Atualizar lista geral se estiver visível
+      setAllGroups(prev => prev.map(g => g.id === groupId ? { ...g, is_premium: newValue, featured: newValue } : g));
     }
   };
 
@@ -1230,11 +1237,18 @@ const AdminDashboard = () => {
       toast({ title: "Grupo não encontrado na base", variant: "destructive" });
       return;
     }
-    const { error: updateError } = await supabase.from("groups").update({ is_premium: true }).eq("id", data.id);
+    // Promover a Premium E Destaque (carrossel)
+    const { error: updateError } = await supabase.from("groups").update({ 
+      is_premium: true,
+      featured: true 
+    }).eq("id", data.id);
+    
     if (updateError) {
       toast({ title: "Erro ao promover", description: updateError.message, variant: "destructive" });
     } else {
-      toast({ title: "Grupo promovido a premium! ⭐" });
+      toast({ title: "Grupo promovido a Premium e Destaque! ⭐" });
+      // Atualizar estado local para refletir a mudança imediatamente
+      setAllGroups(prev => prev.map(g => g.id === data.id ? { ...g, is_premium: true, featured: true } : g));
     }
   };
 
