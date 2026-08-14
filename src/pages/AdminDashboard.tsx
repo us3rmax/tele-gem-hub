@@ -982,7 +982,7 @@ const AdminDashboard = () => {
       .select(
         "id, name, category, thumbnail_url, is_premium, is_pinned, member_count, created_at, source, description, telegram_link, featured",
       )
-      .eq("featured", true)
+      .eq("is_premium", true)
       .order("is_pinned", { ascending: false });
     if (error) {
       console.error("Error fetching premium groups:", error);

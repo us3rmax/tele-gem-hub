@@ -314,8 +314,8 @@ const Modelos = () => {
       {/* Main Content */}
       <main className="mx-auto max-w-7xl space-y-12 px-4 py-8">
 
-        {/* Section 1: Criadoras em Destaque (groups + Privacy creadora models) */}
-        {(featuredModels.length > 0 || creadoraPrivacyModels.length > 0) && (
+        {/* Section 1: Criadoras Privacy em Destaque (Privacy models ONLY) */}
+        {creadoraPrivacyModels.length > 0 && (
           <section>
             <div className="mb-5">
               <h2 className="flex items-center gap-2 text-lg font-bold text-white">
@@ -325,8 +325,8 @@ const Modelos = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
-              {featuredLoading || creadoraLoading
-                ? Array.from({ length: 8 }).map((_, i) => (
+              {creadoraLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-2xl border border-border/30 bg-white">
                       <Skeleton className="aspect-[3/4] w-full" />
                       <div className="space-y-2 p-4">
@@ -336,14 +336,9 @@ const Modelos = () => {
                       </div>
                     </div>
                   ))
-                : [
-                    ...featuredModels.map((grupo) => (
-                      <ModelCard key={`g-${grupo.id}`} grupo={grupo} />
-                    )),
-                    ...creadoraPrivacyModels.map((model) => (
-                      <CreadoraPrivacyModelCard key={`p-${model.id}`} model={model} />
-                    ))
-                  ]}
+                : creadoraPrivacyModels.map((model) => (
+                    <CreadoraPrivacyModelCard key={`p-${model.id}`} model={model} />
+                  ))}
             </div>
           </section>
         )}
