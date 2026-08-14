@@ -826,15 +826,26 @@ const AdminDashboard = () => {
 
   const toggleFeatured = async (group: AllGroup) => {
     const newVal = !group.featured;
+    // Para grupos, a estrela (featured) agora também marca como premium
     const { error } = await supabase
       .from("groups")
-      .update({ featured: newVal })
+      .update({ 
+        featured: newVal,
+        is_premium: newVal 
+      })
       .eq("id", group.id);
+    
     if (!error) {
       setAllGroups((prev) =>
-        prev.map((g) => (g.id === group.id ? { ...g, featured: newVal } : g))
+        prev.map((g) => (g.id === group.id ? { ...g, featured: newVal, is_premium: newVal } : g))
       );
-      toast({ title: newVal ? "⭐ Destacado!" : "Destaque removido", duration: 1500 });
+      // Atualizar também a lista premium se ela estiver carregada
+      if (newVal) {
+        setPremiumGroups((prev) => [...prev, { ...group, featured: newVal, is_premium: newVal }]);
+      } else {
+        setPremiumGroups((prev) => prev.filter(p => p.id !== group.id));
+      }
+      toast({ title: newVal ? "⭐ Destacado e Premium!" : "Removido de destaque e premium", duration: 1500 });
     }
   };
 
@@ -1079,12 +1090,23 @@ const AdminDashboard = () => {
     if (groupsSelected.size === 0) return;
     setBulkActionLoading(true);
     const ids = Array.from(groupsSelected);
-    const { error } = await supabase.from("groups").update({ featured: setFeatured }).in("id", ids);
+    const { error } = await supabase.from("groups").update({ 
+      featured: setFeatured,
+      is_premium: setFeatured 
+    }).in("id", ids);
+    
     if (!error) {
       setAllGroups((prev) =>
-        prev.map((g) => (groupsSelected.has(g.id) ? { ...g, featured: setFeatured } : g))
+        prev.map((g) => (groupsSelected.has(g.id) ? { ...g, featured: setFeatured, is_premium: setFeatured } : g))
       );
-      toast({ title: `${ids.length} grupo(s) ${setFeatured ? 'destacado(s)' : 'removido(s) do destaque'}` });
+      // Sincronizar aba premium
+      if (setFeatured) {
+        const selectedGroups = allGroups.filter(g => groupsSelected.has(g.id));
+        setPremiumGroups(prev => [...prev, ...selectedGroups.map(g => ({ ...g, featured: true, is_premium: true }))]);
+      } else {
+        setPremiumGroups(prev => prev.filter(g => !groupsSelected.has(g.id)));
+      }
+      toast({ title: `${ids.length} grupo(s) ${setFeatured ? 'destacado(s) e premium' : 'removido(s) de destaque e premium'}` });
     } else {
       toast({ title: "Erro ao atualizar", variant: "destructive" });
     }
