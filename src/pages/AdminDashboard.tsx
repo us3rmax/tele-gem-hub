@@ -60,6 +60,8 @@ import {
   Send,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
+import RevenueDashboard from "@/components/admin/RevenueDashboard";
+import { DollarSign } from "lucide-react";
 
 const CLOUDFLARE_ZONE_ID = "bb4b94d6f93ea90dd6151cb209edfba6"; // Provided by user
 
@@ -226,8 +228,9 @@ const AdminDashboard = () => {
     mainTab === "privacy_models" ? "privacy_models":
     mainTab === "usuarios"       ? "usuarios"      :
     mainTab === "bot_marketing"  ? "bot_marketing" :
+    mainTab === "faturamento"    ? "faturamento"   :
     "grupos_section"
-  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models" | "usuarios" | "bot_marketing";
+  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models" | "usuarios" | "bot_marketing" | "faturamento";
 
   const activeTab =
     mainTab === "grupos"         ? (_subToTab[subTab ?? ""] ?? "pending") :
@@ -237,6 +240,7 @@ const AdminDashboard = () => {
     mainTab === "privacy_models" ? "privacy_models" :
     mainTab === "usuarios"       ? "usuarios"   :
     mainTab === "bot_marketing"  ? "bot_marketing" :
+    mainTab === "faturamento"    ? "faturamento"   :
     "pending";
 
   // Submissions state
@@ -382,6 +386,7 @@ const AdminDashboard = () => {
   const [botLoading, setBotLoading] = useState(false);
   const [botMessage, setBotMessage] = useState("");
   const [botSending, setBotSending] = useState(false);
+  const [pendingBroadcastLoading, setPendingBroadcastLoading] = useState(false);
 
   const fetchBotGroups = async () => {
     setBotLoading(true);
@@ -397,7 +402,6 @@ const AdminDashboard = () => {
     if (!botMessage.trim() || botGroups.length === 0) return;
     setBotSending(true);
     
-    // Disparar via Edge Function (precisaremos criar verify-bot-broadcast)
     const { error } = await supabase.functions.invoke("bot-broadcast", {
       body: { message: botMessage }
     });
@@ -409,6 +413,52 @@ const AdminDashboard = () => {
       setBotMessage("");
     }
     setBotSending(false);
+  };
+
+  const handleSendPendingBroadcast = async () => {
+    setPendingBroadcastLoading(true);
+    try {
+      const { data: pendingSubs, error: subError } = await supabase
+        .from("group_submissions")
+        .select("telegram_link, name")
+        .eq("status", "pending");
+
+      if (subError) throw subError;
+      if (!pendingSubs || pendingSubs.length === 0) {
+        toast({ title: "Nenhum grupo pendente", description: "Não há grupos aguardando aprovação no momento." });
+        return;
+      }
+
+      const message = `⚠️ Olá! Seu grupo *${pendingSubs[0].name}* (e outros pendentes) está aguardando aprovação no Canais18.
+
+🚀 *Para agilizar:*
+1. Adicione nosso bot @canais18bot como ADMINISTRADOR do seu grupo.
+2. Grupos sem o bot admin são rejeitados automaticamente.
+
+💎 *Quer destaque máximo?*
+Acesse o site e escolha o plano **Premium (R$ 29,90)** para aparecer no topo e não precisar do bot!
+Ou o plano **Express (R$ 5,99)** para furar a fila agora!
+
+Acesse: https://www.canais18.com/my-groups`;
+
+      const { error: invokeError } = await supabase.functions.invoke("bot-broadcast", {
+        body: { 
+          message,
+          links: pendingSubs.map(s => s.telegram_link).filter(Boolean)
+        }
+      });
+
+      if (invokeError) throw invokeError;
+
+      toast({ 
+        title: "Mensagens enviadas!", 
+        description: `O bot está notificando ${pendingSubs.length} grupos pendentes.` 
+      });
+    } catch (err: any) {
+      toast({ title: "Erro no broadcast", description: err.message, variant: "destructive" });
+    } finally {
+      setPendingBroadcastLoading(false);
+    }
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -2050,7 +2100,12 @@ const AdminDashboard = () => {
               else if (v === "privacy_models") navigate("/admin/privacy_models");
               else if (v === "usuarios")        navigate("/admin/usuarios");
               else if (v === "bot_marketing")   navigate("/admin/bot_marketing");
+              else if (v === "faturamento")     navigate("/admin/faturamento");
             }}>          <TabsList className="w-full">
+            <TabsTrigger value="faturamento" className="flex-1 gap-2">
+              <DollarSign className="h-4 w-4" />
+              Faturamento
+            </TabsTrigger>
             <TabsTrigger value="grupos_section" className="flex-1 gap-2">
               <Search className="h-4 w-4" />
               Grupos
@@ -3087,6 +3142,10 @@ const AdminDashboard = () => {
             <SEODashboard />
           </TabsContent>
 
+          <TabsContent value="faturamento" className="mt-4">
+            <RevenueDashboard />
+          </TabsContent>
+
           <TabsContent value="bot_marketing" className="mt-4 space-y-6">
             <div className="flex items-center justify-between">
               <div>
@@ -3095,10 +3154,22 @@ const AdminDashboard = () => {
                   Gerencie a divulgação automática nos grupos onde o bot é administrador.
                 </p>
               </div>
-              <Button size="sm" variant="outline" onClick={fetchBotGroups} disabled={botLoading}>
-                {botLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
-                Atualizar Lista
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSendPendingBroadcast}
+                  disabled={pendingBroadcastLoading}
+                  className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+                >
+                  {pendingBroadcastLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Clock className="h-4 w-4 mr-2" />}
+                  Notificar Pendentes
+                </Button>
+                <Button size="sm" variant="outline" onClick={fetchBotGroups} disabled={botLoading}>
+                  {botLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Undo2 className="h-4 w-4 mr-2" />}
+                  Atualizar Lista
+                </Button>
+              </div>
             </div>
 
             {/* Stats bar */}
