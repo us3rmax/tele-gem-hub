@@ -200,15 +200,7 @@ const AdminDashboard = () => {
     return () => window.removeEventListener("error", handleError);
   }, []);
 
-  if (hasError) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
-        <h1 className="text-xl font-bold text-red-500 mb-2">Erro Crítico no Dashboard</h1>
-        <p className="text-muted-foreground mb-4">{errorMsg}</p>
-        <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
-      </div>
-    );
-  }
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -2000,21 +1992,28 @@ const AdminDashboard = () => {
 
   const pendingCount = activeTab === "pending" ? submissions.length : null;
 
+  // --- Render Logic (Moved after all hooks to avoid violations) ---
+
+  if (hasError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
+        <h1 className="text-xl font-bold text-red-500 mb-2">Erro Crítico no Dashboard</h1>
+        <p className="text-muted-foreground mb-4">{errorMsg}</p>
+        <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
+      </div>
+    );
+  }
+
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex flex-col min-h-screen items-center justify-center bg-background gap-4">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <p className="text-sm text-muted-foreground animate-pulse">Carregando painel administrativo...</p>
       </div>
     );
   }
 
   if (!user || !isAdmin) {
-    if (authLoading) return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    );
-    
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
         <Shield className="h-12 w-12 text-red-500 mb-4" />
