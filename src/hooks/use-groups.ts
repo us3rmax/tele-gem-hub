@@ -59,42 +59,51 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
 
   // ── Outros filtros ────────────────────────────────────────────────────────
   let countQuery = supabase.from("groups").select("*", { count: "exact", head: true });
-  if (!search) countQuery = countQuery.eq("is_premium", false);
+  // Removido o filtro is_premium=false para que grupos premium apareçam na lista geral
   if (search) countQuery = countQuery.ilike("name", `%${search}%`);
   countQuery = countQuery.or("hidden.is.null,hidden.eq.false");
   const { count } = await countQuery;
 
   let query = supabase.from("groups").select("*");
-  if (!search) query = query.eq("is_premium", false);
+  // Removido o filtro is_premium=false para que grupos premium apareçam na lista geral
   if (search) query = query.ilike("name", `%${search}%`);
   query = query.or("hidden.is.null,hidden.eq.false");
 
   // Nas primeiras 5 páginas, priorizar grupos com thumbnail
   if (page <= PHOTO_PRIORITY_PAGES) {
-    // Order: has_thumbnail DESC first, then by the requested sort
+    // Ordem: Premium primeiro, depois Thumbnail, depois o critério selecionado
     switch (sort) {
       case "vistos":
-        query = query.order("has_thumbnail", { ascending: false }).order("views", { ascending: false });
+        query = query
+          .order("is_premium", { ascending: false })
+          .order("has_thumbnail", { ascending: false })
+          .order("views", { ascending: false });
         break;
       case "votados":
-        query = query.order("has_thumbnail", { ascending: false }).order("member_count", { ascending: false });
+        query = query
+          .order("is_premium", { ascending: false })
+          .order("has_thumbnail", { ascending: false })
+          .order("member_count", { ascending: false });
         break;
       case "recentes":
       default:
-        query = query.order("has_thumbnail", { ascending: false }).order("created_at", { ascending: false });
+        query = query
+          .order("is_premium", { ascending: false })
+          .order("has_thumbnail", { ascending: false })
+          .order("created_at", { ascending: false });
     }
   } else {
-    // Páginas após a 5a, ordem normal
+    // Páginas após a 5a, ordem normal (Premium ainda fura fila)
     switch (sort) {
       case "vistos":
-        query = query.order("views", { ascending: false });
+        query = query.order("is_premium", { ascending: false }).order("views", { ascending: false });
         break;
       case "votados":
-        query = query.order("member_count", { ascending: false });
+        query = query.order("is_premium", { ascending: false }).order("member_count", { ascending: false });
         break;
       case "recentes":
       default:
-        query = query.order("created_at", { ascending: false });
+        query = query.order("is_premium", { ascending: false }).order("created_at", { ascending: false });
     }
   }
 

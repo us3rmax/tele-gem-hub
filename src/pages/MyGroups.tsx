@@ -26,7 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, Link2, Calendar, Send, Pencil, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { Loader2, Eye, Link2, Calendar, Send, Pencil, AlertTriangle, Image as ImageIcon, Clock, CheckCircle2, XCircle } from "lucide-react";
 import EmailConfirmationGuard from "@/components/EmailConfirmationGuard";
 
 const GROUP_CATEGORIES = ["Novinhas", "Amadoras", "Cornos", "Onlyfans", "Vazados", "Lésbicas", "Pack", "Putaria"];
@@ -45,6 +45,20 @@ interface UserGroup {
   created_at: string;
 }
 
+interface Submission {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  telegram_link: string;
+  thumbnail_url: string | null;
+  status: string;
+  plan: string | null;
+  payment_status: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+}
+
 interface EditRequest {
   id: string;
   group_id: string;
@@ -58,6 +72,7 @@ const MyGroups = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [groups, setGroups] = useState<UserGroup[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [pendingEdits, setPendingEdits] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
 
@@ -79,13 +94,12 @@ const MyGroups = () => {
     if (!user) return;
     setLoading(true);
 
-    // Fetch groups submitted by user (via submitted_by column)
+    // 1. Fetch approved/active groups
     const { data: directGroups } = await supabase
       .from("groups")
       .select("id, name, description, category, telegram_link, thumbnail_url, views, clicks_count, is_premium, is_verified, created_at, slug")
       .eq("submitted_by", user.id);
 
-    // Also fetch from approved submissions to find groups by telegram_link
     const { data: approvedSubs } = await supabase
       .from("group_submissions")
       .select("telegram_link")
@@ -112,6 +126,15 @@ const MyGroups = () => {
     }
 
     setGroups(allGroups);
+
+    // 2. Fetch all submissions (pending, approved, rejected, etc.)
+    const { data: subsData } = await supabase
+      .from("group_submissions")
+      .select("id, name, description, category, telegram_link, thumbnail_url, status, plan, payment_status, rejection_reason, created_at")
+      .eq("submitted_by", user.id)
+      .order("created_at", { ascending: false });
+
+    setSubmissions((subsData as Submission[]) || []);
 
     // Fetch pending edit requests for these groups
     if (allGroups.length > 0) {
@@ -170,7 +193,6 @@ const MyGroups = () => {
     if (editForm.category !== editingGroup.category) changes.category = editForm.category;
     if (editForm.telegram_link !== editingGroup.telegram_link) changes.telegram_link = editForm.telegram_link;
 
-    // Upload new photo if selected
     if (editPhotoFile) {
       const ext = editPhotoFile.name.split(".").pop();
       const filePath = `${user.id}/${crypto.randomUUID()}.${ext}`;
@@ -230,10 +252,10 @@ const MyGroups = () => {
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
       <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={() => {}} activeSort="" />
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+      <main className="mx-auto max-w-4xl space-y-8 px-4 py-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Meus Grupos</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Acompanhe o desempenho dos seus canais</p>
+          <h1 className="text-2xl font-bold text-foreground">Meus Grupos & Envios</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Acompanhe o desempenho dos seus canais ativos e o status dos envios recentes</p>
         </div>
 
         <EmailConfirmationGuard user={user}>
@@ -241,71 +263,153 @@ const MyGroups = () => {
           <div className="flex justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : groups.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <p className="text-lg text-muted-foreground">Você ainda não tem grupos aprovados</p>
-            <Button onClick={() => navigate("/submit")}>
-              <Send className="mr-2 h-4 w-4" />
-              Enviar Primeiro Grupo
-            </Button>
-          </div>
         ) : (
-          <div className="space-y-4">
-            {groups.map((group) => (
-              <div key={group.id} className="overflow-hidden rounded-xl border border-border bg-card">
-                <div className="flex gap-4 p-4">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
-                    {group.thumbnail_url ? (
-                      <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    )}
-                  </div>
+          <div className="space-y-8">
+            {/* SEÇÃO 1: Grupos Aprovados / Ativos */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                Canais Aprovados no Ar ({groups.length})
+              </h2>
 
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-foreground">{group.name}</h3>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {group.is_premium && (
-                          <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-bold">⭐ Premium</Badge>
+              {groups.length === 0 ? (
+                <div className="rounded-xl border border-border bg-card p-8 text-center">
+                  <p className="text-sm text-muted-foreground">Você ainda não tem grupos aprovados no ar.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {groups.map((group) => (
+                    <div key={group.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                      <div className="flex gap-4 p-4">
+                        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                          {group.thumbnail_url ? (
+                            <img src={group.thumbnail_url} alt={group.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <h3 className="text-lg font-bold text-foreground">{group.name}</h3>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {group.is_premium && (
+                                <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30 font-bold">⭐ Premium</Badge>
+                              )}
+                              {pendingEdits[group.id] && (
+                                <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30">✏️ Edição Pendente</Badge>
+                              )}
+                              <Badge variant="outline">{group.category}</Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4 text-sm">
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Eye className="h-4 w-4" />
+                              <span className="font-semibold text-foreground">{group.views}</span> visualizações
+                            </span>
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Link2 className="h-4 w-4" />
+                              <span className="font-semibold text-foreground">{group.clicks_count}</span> cliques
+                            </span>
+                            <span className="flex items-center gap-1.5 text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              {formatDate(group.created_at)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end border-t border-border px-4 py-3">
+                        {pendingEdits[group.id] ? (
+                          <p className="text-xs text-orange-500">Você já tem uma solicitação de edição pendente para este grupo</p>
+                        ) : (
+                          <Button size="sm" variant="outline" onClick={() => openEditModal(group)}>
+                            <Pencil className="mr-1 h-3 w-3" />
+                            Solicitar Edição
+                          </Button>
                         )}
-                        {pendingEdits[group.id] && (
-                          <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30">✏️ Edição Pendente</Badge>
-                        )}
-                        <Badge variant="outline">{group.category}</Badge>
                       </div>
                     </div>
-
-                    {/* Stats */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Eye className="h-4 w-4" />
-                        <span className="font-semibold text-foreground">{group.views}</span> visualizações
-                      </span>
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Link2 className="h-4 w-4" />
-                        <span className="font-semibold text-foreground">{group.clicks_count}</span> cliques
-                      </span>
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        {formatDate(group.created_at)}
-                      </span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                <div className="flex items-center justify-end border-t border-border px-4 py-3">
-                  {pendingEdits[group.id] ? (
-                    <p className="text-xs text-orange-500">Você já tem uma solicitação de edição pendente para este grupo</p>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => openEditModal(group)}>
-                      <Pencil className="mr-1 h-3 w-3" />
-                      Solicitar Edição
-                    </Button>
-                  )}
+            {/* SEÇÃO 2: Histórico de Envios (Pendentes, Pagamento, Rejeitados) */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-500" />
+                Histórico de Envios & Submissões ({submissions.length})
+              </h2>
+
+              {submissions.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 py-8 text-center rounded-xl border border-border bg-card p-8">
+                  <p className="text-sm text-muted-foreground">Nenhum envio recente encontrado.</p>
+                  <Button onClick={() => navigate("/submit")}>
+                    <Send className="mr-2 h-4 w-4" />
+                    Enviar Novo Canal
+                  </Button>
                 </div>
-              </div>
-            ))}
+              ) : (
+                <div className="space-y-3">
+                  {submissions.map((sub) => {
+                    const isPending = sub.status === "pending";
+                    const isApproved = sub.status === "approved";
+                    const isRejected = sub.status === "rejected";
+                    const isWaitingPayment = sub.payment_status === "pending" || sub.payment_status === "waiting";
+
+                    return (
+                      <div key={sub.id} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary">
+                            {sub.thumbnail_url ? (
+                              <img src={sub.thumbnail_url} alt={sub.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-foreground">{sub.name}</h4>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                              <span>{sub.category}</span>
+                              <span>•</span>
+                              <span>{formatDate(sub.created_at)}</span>
+                              {sub.plan && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-primary font-medium uppercase">{sub.plan}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {isApproved ? (
+                            <Badge className="bg-green-500/20 text-green-500 border-green-500/30">
+                              <CheckCircle2 className="mr-1 h-3 w-3" /> Aprovado
+                            </Badge>
+                          ) : isRejected ? (
+                            <Badge className="bg-red-500/20 text-red-500 border-red-500/30">
+                              <XCircle className="mr-1 h-3 w-3" /> Rejeitado
+                            </Badge>
+                          ) : isWaitingPayment ? (
+                            <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">
+                              <Clock className="mr-1 h-3 w-3" /> Aguardando PIX
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-orange-500/20 text-orange-500 border-orange-500/30">
+                              <Clock className="mr-1 h-3 w-3" /> Em Análise
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
         </EmailConfirmationGuard>
@@ -326,7 +430,6 @@ const MyGroups = () => {
           </Alert>
 
           <div className="space-y-4">
-            {/* Photo upload */}
             <div className="space-y-2">
               <Label>Nova Foto do Canal (opcional)</Label>
               {editingGroup?.thumbnail_url && (

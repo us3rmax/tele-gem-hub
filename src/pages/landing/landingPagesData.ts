@@ -2319,7 +2319,7 @@ export const LANDING_PAGES: (LandingPageProps & { rota: string })[] = [
       { question: "E gratis?", answer: "Sim. Todos os grupos listados no canais18.com sao gratuitos." },
       { question: "Com que frequencia os grupos sao atualizados?", answer: "Os grupos ativos publicam conteudo novo diariamente." }
     ],
-  }
+  },
   {
     rota: "/grupos-de-putaria-telegram",
     title: "Grupos de Putaria no Telegram: +1.900 Grupos para Entrar Agora",
@@ -2426,11 +2426,7 @@ export const LANDING_PAGES: (LandingPageProps & { rota: string })[] = [
         telegram_link: "https://t.me/+WzKfbGlR4q0wYjEx",
         member_count: 13375,
         category: "putaria",
-        description: "🛡️
-MODELO VERIFICADA
-
-Este perfil foi verificado e confirmado pela plataforma Telegrupos,
-garantindo autentici",
+        description: "🛡️ MODELO VERIFICADA  Este perfil foi verificado e confirmado pela plataforma Telegrupos, garantindo autentici",
       },
       {
         name: "MACETADA NELES",
@@ -2602,9 +2598,7 @@ garantindo autentici",
         telegram_link: "https://t.me/+9ihGzmUVaE9hOWJh",
         member_count: 18404,
         category: "vazados",
-        description: "🔥 Só Conteúdos Amad0res! 🔥
-🎥 Todos os tipos de víd3os amad0r3s reunidos em um s0 lugar.
-📂 T0d4s 4s cat3gorias,",
+        description: "🔥 Só Conteúdos Amad0res! 🔥 🎥 Todos os tipos de víd3os amad0r3s reunidos em um s0 lugar. 📂 T0d4s 4s cat3gorias,",
       },
       {
         name: "Previas da Bruna",
@@ -3162,11 +3156,7 @@ garantindo autentici",
         telegram_link: "https://t.me/+wcdeYuCOj6o1MGZh",
         member_count: 13647,
         category: "vazados",
-        description: "𝗩𝗔𝗭𝗔𝗗𝗜𝗡𝗛𝗢𝗦 𝟮𝟰𝗛 𝗣𝗢𝗥 𝗗𝗜𝗔
-
-𝟭𝟬𝟬% 𝗚𝗥𝗔𝗧𝗨𝗜𝗧𝗢
-
-𝗔𝗦 𝗠𝗘𝗟𝗛𝗢𝗥𝗘𝗦 𝗘 𝗠𝗔𝗜𝗦 𝗦𝗘𝗟𝗘𝗖𝗜𝗢𝗡𝗔𝗗𝗔𝗦𝗘𝗦𝗣𝗘𝗖𝗜𝗔𝗟𝗜𝗭𝗔𝗗𝗢𝗦 𝗘𝗠 𝗩𝗔𝗭𝗔𝗥 𝗩𝗜𝗗𝗘𝗢𝗦 𝗔𝗠𝗔𝗗𝗢𝗥𝗘𝗦v",
+        description: "𝗩𝗔𝗭𝗔𝗗𝗜𝗡𝗛𝗢𝗦 𝟮𝟰𝗛 𝗣𝗢𝗥 𝗗𝗜𝗔  𝟭𝟬𝟬% 𝗚𝗥𝗔𝗧𝗨𝗜𝗧𝗢  𝗔𝗦 𝗠𝗘𝗟𝗛𝗢𝗥𝗘𝗦 𝗘 𝗠𝗔𝗜𝗦 𝗦𝗘𝗟𝗘𝗖𝗜𝗢𝗡𝗔𝗗𝗔𝗦𝗘𝗦𝗣𝗘𝗖𝗜𝗔𝗟𝗜𝗭𝗔𝗗𝗢𝗦 𝗘𝗠 𝗩𝗔𝗭𝗔𝗥 𝗩𝗜𝗗𝗘𝗢𝗦 𝗔𝗠𝗔𝗗𝗢𝗥𝗘𝗦v",
       },
       {
         name: "Happyleaks",
@@ -3198,9 +3188,7 @@ garantindo autentici",
         telegram_link: "https://t.me/+efcUpsbaOWw1ZDMx",
         member_count: 10310,
         category: "vazados",
-        description: "✅✅✅✅
-
-🌟VENHAM PARA O MELHOR GRUPO DE GORDINHAS QUENTES DA INTERNET🌟🔥OS VÍDEOS VAZADOS DAS GORDINHAS MAIS S*FA*",
+        description: "✅✅✅✅  🌟VENHAM PARA O MELHOR GRUPO DE GORDINHAS QUENTES DA INTERNET🌟🔥OS VÍDEOS VAZADOS DAS GORDINHAS MAIS S*FA*",
       },
       {
         name: "V4zad0s Am4d0res 🔥🫦",

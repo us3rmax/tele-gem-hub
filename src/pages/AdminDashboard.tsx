@@ -57,6 +57,7 @@ import {
   MousePointerClick,
   Shield,
   Eye,
+  Send,
 } from "lucide-react";
 import SEODashboard from "@/components/admin/SEODashboard";
 
@@ -184,7 +185,30 @@ interface EditRequest {
 // --- Component ---
 
 const AdminDashboard = () => {
+  console.log("AdminDashboard mounting...");
   const { user, isAdmin, loading: authLoading } = useAuth();
+  const [hasError, setHasError] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error("AdminDashboard runtime error:", event.error);
+      setHasError(true);
+      setErrorMsg(event.error?.message || "Erro desconhecido");
+    };
+    window.addEventListener("error", handleError);
+    return () => window.removeEventListener("error", handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
+        <h1 className="text-xl font-bold text-red-500 mb-2">Erro Crítico no Dashboard</h1>
+        <p className="text-muted-foreground mb-4">{errorMsg}</p>
+        <Button onClick={() => window.location.reload()}>Recarregar Página</Button>
+      </div>
+    );
+  }
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -1970,7 +1994,22 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user || !isAdmin) return null;
+  if (!user || !isAdmin) {
+    if (authLoading) return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+    
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
+        <Shield className="h-12 w-12 text-red-500 mb-4" />
+        <h1 className="text-xl font-bold text-foreground mb-2">Acesso Negado</h1>
+        <p className="text-muted-foreground mb-6">Você não tem permissão para acessar esta área.</p>
+        <Button onClick={() => navigate("/")}>Voltar para a Home</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -2800,131 +2839,7 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
-          {/* Banners tab */}
-          <TabsContent value="banners" className="mt-4 space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-foreground">Gerenciar Banners</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Banners de imagem e vídeo exibidos no site. Organizados por posição.
-                </p>
-              </div>
-              <Button size="sm" onClick={() => openBannerModal()} className="gap-1.5">
-                <Plus className="h-4 w-4" />
-                Adicionar Banner
-              </Button>
-            </div>
 
-            {bannersLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : banners.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 py-16 text-center">
-                <LayoutDashboard className="h-12 w-12 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">Nenhum banner cadastrado.</p>
-              </div>
-            ) : (
-              <>
-                {/* Stats bar */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <p className="text-2xl font-bold text-foreground">{banners.length}</p>
-                    <p className="text-xs text-muted-foreground">Total</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <p className="text-2xl font-bold text-green-500">{banners.filter(b => b.is_active && !isExpired(b)).length}</p>
-                    <p className="text-xs text-muted-foreground">Ativos</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <p className="text-2xl font-bold text-amber-500">{banners.filter(b => !b.is_active && !isExpired(b)).length}</p>
-                    <p className="text-xs text-muted-foreground">Inativos</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-card p-3 text-center">
-                    <p className="text-2xl font-bold text-red-500">{banners.filter(b => isExpired(b)).length}</p>
-                    <p className="text-xs text-muted-foreground">Expirados</p>
-                  </div>
-                </div>
-
-                {/* Grouped banners */}
-                {["hero", "top", "middle", "bottom"].map((pos) => {
-                  const posBanners = banners.filter(b => b.position === pos);
-                  if (posBanners.length === 0) return null;
-                  const posLabels: Record<string, string> = { 
-                    hero: "Banner Hero (Vídeo)", 
-                    top: "Topo", 
-                    middle: "Meio", 
-                    bottom: "Rodapé" 
-                  };
-                  return (
-                    <div key={pos} className="space-y-3">
-                      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded bg-primary/10 text-primary text-xs font-bold">
-                          {pos === "hero" ? "🎬" : pos === "top" ? "↑" : pos === "middle" ? "↕" : "↓"}
-                        </span>
-                        {posLabels[pos]} ({posBanners.length})
-                      </h3>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {posBanners.map((banner) => {
-                          const expired = isExpired(banner);
-                          return (
-                            <div key={banner.id} className="overflow-hidden rounded-xl border border-border bg-card flex flex-col">
-                              <div className="relative h-32 w-full bg-secondary overflow-hidden">
-                                {banner.video_url ? (
-                                  <video src={banner.video_url} muted loop autoPlay className="h-full w-full object-cover" />
-                                ) : (
-                                  <img src={banner.image_url} alt={banner.title} className="h-full w-full object-cover" />
-                                )}
-                                <div className="absolute top-2 right-2">
-                                  <Switch checked={banner.is_active && !expired} onCheckedChange={() => handleBannerToggle(banner)} disabled={expired} />
-                                </div>
-                                {expired && (
-                                  <div className="absolute inset-0 bg-background/60 flex items-center justify-center backdrop-blur-[1px]">
-                                    <Badge variant="destructive">Expirado</Badge>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="p-3 flex-1 space-y-2">
-                                <div>
-                                  <h4 className="text-sm font-semibold text-foreground truncate">{banner.title}</h4>
-                                  <p className="text-[10px] text-muted-foreground truncate">{banner.link_url}</p>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    {banner.is_active && !expired ? (
-                                      <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                                    ) : (
-                                      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-                                    )}
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {expired ? "Expirado" : banner.is_active ? "Ativo" : "Pausado"}
-                                    </span>
-                                  </div>
-                                  {banner.expires_at && (
-                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                      <Clock className="h-3 w-3" /> {formatDate(banner.expires_at)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1 p-2 border-t border-border bg-muted/30">
-                                <Button size="sm" variant="ghost" className="h-7 flex-1 text-xs gap-1" onClick={() => openBannerModal(banner)}>
-                                  <Pencil className="h-3 w-3" /> Editar
-                                </Button>
-                                <Button size="sm" variant="ghost" className="h-7 flex-1 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteBannerId(banner.id)}>
-                                  <Trash2 className="h-3 w-3" /> Excluir
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-          </TabsContent>
 
           {/* Categorias tab */}
           <TabsContent value="categorias" className="mt-4 space-y-4">
@@ -3582,22 +3497,22 @@ const AdminDashboard = () => {
                     if (!usersSearch) return true;
                     return u.email.toLowerCase().includes(usersSearch.toLowerCase());
                   })
-                  .map((user) => (
-                    <div key={user.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                  .map((uData) => (
+                    <div key={uData.id} className="overflow-hidden rounded-xl border border-border bg-card">
                       {/* User header row */}
                       <button
                         className="w-full flex items-center gap-3 p-3 hover:bg-accent/50 transition-colors text-left"
-                        onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)}
+                        onClick={() => setExpandedUser(expandedUser === uData.id ? null : uData.id)}
                       >
                         {/* Avatar placeholder */}
-                        <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold ${user.is_admin ? "bg-amber-500/20 text-amber-500" : "bg-blue-500/20 text-blue-500"}`}>
-                          {user.email.charAt(0).toUpperCase()}
+                        <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold ${uData.is_admin ? "bg-amber-500/20 text-amber-500" : "bg-blue-500/20 text-blue-500"}`}>
+                          {uData.email.charAt(0).toUpperCase()}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-foreground truncate">{user.email}</span>
-                            {user.is_admin && (
+                            <span className="text-sm font-medium text-foreground truncate">{uData.email}</span>
+                            {uData.is_admin && (
                               <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-500 border-amber-500/30">
                                 <Shield className="h-2.5 w-2.5 mr-0.5" /> Admin
                               </Badge>
@@ -3605,7 +3520,7 @@ const AdminDashboard = () => {
                           </div>
                           <div className="flex items-center gap-3 mt-0.5">
                             <span className="text-[11px] text-muted-foreground">
-                              {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                              {new Date(uData.created_at).toLocaleDateString("pt-BR")}
                             </span>
                           </div>
                         </div>
@@ -3613,34 +3528,34 @@ const AdminDashboard = () => {
                         {/* Stats */}
                         <div className="hidden sm:flex items-center gap-4">
                           <div className="text-center">
-                            <p className="text-sm font-bold text-foreground">{user.total_submissions}</p>
+                            <p className="text-sm font-bold text-foreground">{uData.total_submissions}</p>
                             <p className="text-[10px] text-muted-foreground">Submissões</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-green-500">{user.approved}</p>
+                            <p className="text-sm font-bold text-green-500">{uData.approved}</p>
                             <p className="text-[10px] text-muted-foreground">Aprovadas</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-amber-500">{user.pending}</p>
+                            <p className="text-sm font-bold text-amber-500">{uData.pending}</p>
                             <p className="text-[10px] text-muted-foreground">Pendentes</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-red-500">{user.rejected}</p>
+                            <p className="text-sm font-bold text-red-500">{uData.rejected}</p>
                             <p className="text-[10px] text-muted-foreground">Rejeitadas</p>
                           </div>
                           <div className="text-center">
                             <p className="text-sm font-bold text-blue-500 flex items-center gap-0.5">
-                              <MousePointerClick className="h-3 w-3" /> {user.total_clicks}
+                              <MousePointerClick className="h-3 w-3" /> {uData.total_clicks}
                             </p>
                             <p className="text-[10px] text-muted-foreground">Cliques</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-sm font-bold text-purple-500">{user.total_groups_visible}</p>
+                            <p className="text-sm font-bold text-purple-500">{uData.total_groups_visible}</p>
                             <p className="text-[10px] text-muted-foreground">Grupos</p>
                           </div>
-                          {user.paid_submissions > 0 && (
+                          {uData.paid_submissions > 0 && (
                             <div className="text-center">
-                              <p className="text-sm font-bold text-yellow-500">{user.paid_submissions}</p>
+                              <p className="text-sm font-bold text-yellow-500">{uData.paid_submissions}</p>
                               <p className="text-[10px] text-muted-foreground">Pagas</p>
                             </div>
                           )}
@@ -3648,7 +3563,7 @@ const AdminDashboard = () => {
 
                         {/* Expand indicator */}
                         <div className="shrink-0">
-                          {expandedUser === user.id ? (
+                          {expandedUser === uData.id ? (
                             <ChevronUp className="h-4 w-4 text-muted-foreground" />
                           ) : (
                             <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -3661,11 +3576,11 @@ const AdminDashboard = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteUser(user.id);
+                            handleDeleteUser(uData.id);
                           }}
                           disabled={deleteUserLoading}
                           className={`text-[11px] flex items-center gap-1 transition-colors ${
-                            deleteUserId === user.id
+                            deleteUserId === uData.id
                               ? "text-red-500 font-bold"
                               : "text-muted-foreground hover:text-red-400"
                           }`}
@@ -3675,7 +3590,7 @@ const AdminDashboard = () => {
                               <Loader2 className="h-3 w-3 animate-spin" />
                               Excluindo...
                             </>
-                          ) : deleteUserId === user.id ? (
+                          ) : deleteUserId === uData.id ? (
                             <>
                               <Trash2 className="h-3 w-3" />
                               Confirmar exclusão
@@ -3687,7 +3602,7 @@ const AdminDashboard = () => {
                             </>
                           )}
                         </button>
-                        {deleteUserId === user.id && (
+                        {deleteUserId === uData.id && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -3701,20 +3616,20 @@ const AdminDashboard = () => {
                       </div>
 
                       {/* Expanded details */}
-                      {expandedUser === user.id && (
+                      {expandedUser === uData.id && (
                         <div className="border-t border-border p-3 space-y-3">
                           {/* Mobile stats (shown only on small screens) */}
                           <div className="sm:hidden grid grid-cols-3 gap-2">
                             <div className="text-center p-2 rounded-lg bg-secondary/50">
-                              <p className="text-sm font-bold text-foreground">{user.total_submissions}</p>
+                              <p className="text-sm font-bold text-foreground">{uData.total_submissions}</p>
                               <p className="text-[10px] text-muted-foreground">Submissões</p>
                             </div>
                             <div className="text-center p-2 rounded-lg bg-secondary/50">
-                              <p className="text-sm font-bold text-green-500">{user.approved}</p>
+                              <p className="text-sm font-bold text-green-500">{uData.approved}</p>
                               <p className="text-[10px] text-muted-foreground">Aprovadas</p>
                             </div>
                             <div className="text-center p-2 rounded-lg bg-secondary/50">
-                              <p className="text-sm font-bold text-blue-500">{user.total_clicks}</p>
+                              <p className="text-sm font-bold text-blue-500">{uData.total_clicks}</p>
                               <p className="text-[10px] text-muted-foreground">Cliques</p>
                             </div>
                           </div>
@@ -3722,11 +3637,11 @@ const AdminDashboard = () => {
                           {/* Groups submitted by this user */}
                           <div>
                             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                              Grupos Submetidos ({user.total_groups_visible})
+                              Grupos Submetidos ({uData.total_groups_visible})
                             </h4>
-                            {user.groups && user.groups.length > 0 ? (
+                            {uData.groups && uData.groups.length > 0 ? (
                               <div className="space-y-1.5">
-                                {user.groups.map((g) => (
+                                {uData.groups.map((g) => (
                                   <div key={g.id} className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30">
                                     <Eye className="h-3.5 w-3.5 text-green-500 shrink-0" />
                                     <div className="flex-1 min-w-0">
@@ -3751,9 +3666,9 @@ const AdminDashboard = () => {
 
                           {/* User info */}
                           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                            <span>ID: <code className="text-[10px] bg-secondary/50 px-1 rounded">{user.id.slice(0, 8)}...</code></span>
-                            <span>Role: {user.role || "user"}</span>
-                            <span>Cadastro: {new Date(user.created_at).toLocaleString("pt-BR")}</span>
+                            <span>ID: <code className="text-[10px] bg-secondary/50 px-1 rounded">{uData.id.slice(0, 8)}...</code></span>
+                            <span>Role: {uData.role || "user"}</span>
+                            <span>Cadastro: {new Date(uData.created_at).toLocaleString("pt-BR")}</span>
                           </div>
                         </div>
                       )}
