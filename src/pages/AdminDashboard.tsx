@@ -209,8 +209,9 @@ const AdminDashboard = () => {
     mainTab === "seo"            ? "seo"           :
     mainTab === "privacy_models" ? "privacy_models":
     mainTab === "usuarios"       ? "usuarios"      :
+    mainTab === "bot_marketing"  ? "bot_marketing" :
     "grupos_section"
-  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models" | "usuarios";
+  ) as "grupos_section" | "categorias" | "banners" | "seo" | "privacy_models" | "usuarios" | "bot_marketing";
 
   const activeTab =
     mainTab === "grupos"         ? (_subToTab[subTab ?? ""] ?? "pending") :
@@ -219,6 +220,7 @@ const AdminDashboard = () => {
     mainTab === "seo"            ? "seo"        :
     mainTab === "privacy_models" ? "privacy_models" :
     mainTab === "usuarios"       ? "usuarios"   :
+    mainTab === "bot_marketing"  ? "bot_marketing" :
     "pending";
 
   // Submissions state
@@ -359,6 +361,40 @@ const AdminDashboard = () => {
   const [deleteUserLoading, setDeleteUserLoading] = useState(false);
   const deleteConfirmed = useRef(false);
 
+  // Bot Marketing state
+  const [botGroups, setBotGroups] = useState<any[]>([]);
+  const [botLoading, setBotLoading] = useState(false);
+  const [botMessage, setBotMessage] = useState("");
+  const [botSending, setBotSending] = useState(false);
+
+  const fetchBotGroups = async () => {
+    setBotLoading(true);
+    const { data, error } = await supabase
+      .from("bot_groups")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error) setBotGroups(data || []);
+    setBotLoading(false);
+  };
+
+  const handleSendBotBroadcast = async () => {
+    if (!botMessage.trim() || botGroups.length === 0) return;
+    setBotSending(true);
+    
+    // Disparar via Edge Function (precisaremos criar verify-bot-broadcast)
+    const { error } = await supabase.functions.invoke("bot-broadcast", {
+      body: { message: botMessage }
+    });
+
+    if (error) {
+      toast({ title: "Erro ao disparar mensagens", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Disparo iniciado!", description: "As mensagens estão sendo enviadas aos grupos." });
+      setBotMessage("");
+    }
+    setBotSending(false);
+  };
+
   const handleDeleteUser = async (userId: string) => {
     // Phase 1: ask for confirmation
     if (!deleteConfirmed.current || deleteUserId !== userId) {
@@ -466,6 +502,8 @@ const AdminDashboard = () => {
       fetchPrivacyModels();
     } else if (activeTab === "usuarios") {
       fetchUsers();
+    } else if (activeTab === "bot_marketing") {
+      fetchBotGroups();
     } else {
       fetchSubmissions(activeTab);
     }
@@ -1956,6 +1994,7 @@ const AdminDashboard = () => {
               else if (v === "seo")        navigate("/admin/seo/analytics");
               else if (v === "privacy_models") navigate("/admin/privacy_models");
               else if (v === "usuarios")        navigate("/admin/usuarios");
+              else if (v === "bot_marketing")   navigate("/admin/bot_marketing");
             }}>          <TabsList className="w-full">
             <TabsTrigger value="grupos_section" className="flex-1 gap-2">
               <Search className="h-4 w-4" />
@@ -1980,6 +2019,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="usuarios" className="flex-1 gap-2">
               <Users className="h-4 w-4" />
               Usuários
+            </TabsTrigger>
+            <TabsTrigger value="bot_marketing" className="flex-1 gap-2">
+              <Send className="h-4 w-4" />
+              Bot Marketing
             </TabsTrigger>
           </TabsList>
 
@@ -3111,6 +3154,104 @@ const AdminDashboard = () => {
 
           <TabsContent value="seo" className="mt-4">
             <SEODashboard />
+          </TabsContent>
+
+          <TabsContent value="bot_marketing" className="mt-4 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Bot Marketing (@canais18bot)</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Gerencie a divulgação automática nos grupos onde o bot é administrador.
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={fetchBotGroups} disabled={botLoading}>
+                {botLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+                Atualizar Lista
+              </Button>
+            </div>
+
+            {/* Stats bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-lg border border-border bg-card p-4 text-center">
+                <p className="text-3xl font-bold text-primary">{botGroups.length}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mt-1">Grupos Conquistados</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4 text-center">
+                <p className="text-3xl font-bold text-green-500">
+                  {botGroups.reduce((acc, g) => acc + (g.member_count || 0), 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mt-1">Alcance Estimado</p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4 text-center">
+                <p className="text-3xl font-bold text-amber-500">{botGroups.filter(g => g.is_active).length}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mt-1">Bots Ativos</p>
+              </div>
+            </div>
+
+            {/* Broadcast Area */}
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Send className="h-5 w-5" />
+                <h3 className="font-bold">Disparar Divulgação em Massa</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                A mensagem abaixo será enviada para todos os <strong>{botGroups.length}</strong> grupos onde o bot está ativo.
+              </p>
+              <div className="space-y-2">
+                <Label>Sua Mensagem</Label>
+                <Textarea 
+                  placeholder="Escreva aqui sua divulgação... Use emojis para chamar atenção!" 
+                  className="min-h-[150px] bg-background border-primary/20 focus:border-primary"
+                  value={botMessage}
+                  onChange={(e) => setBotMessage(e.target.value)}
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] text-muted-foreground">
+                    ⚠️ O disparo possui um delay de 3s entre grupos para evitar bloqueios do Telegram.
+                  </p>
+                  <Button 
+                    onClick={handleSendBotBroadcast} 
+                    disabled={botSending || !botMessage.trim() || botGroups.length === 0}
+                    className="gap-2"
+                  >
+                    {botSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {botSending ? "Enviando..." : "Iniciar Disparo"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Groups List */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Grupos Onde o Bot é Admin
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {botLoading ? (
+                  <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+                ) : botGroups.length === 0 ? (
+                  <p className="text-center py-8 text-sm text-muted-foreground border border-dashed rounded-xl">Nenhum grupo encontrado. Adicione o bot como admin para começar.</p>
+                ) : (
+                  botGroups.map((group) => (
+                    <div key={group.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                          {group.title?.charAt(0) || "G"}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-foreground">{group.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{group.chat_id} • {group.invite_link}</p>
+                        </div>
+                      </div>
+                      <Badge className={group.is_active ? "bg-green-500/20 text-green-500" : "bg-red-500/20 text-red-500"}>
+                        {group.is_active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           {/* Privacy Models tab */}
