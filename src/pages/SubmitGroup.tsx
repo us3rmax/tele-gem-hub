@@ -294,7 +294,7 @@ const SubmitGroup = () => {
               </Button>
             </div>
             <div className="rounded-lg bg-yellow-500/10 p-3 text-xs text-yellow-200 border border-yellow-500/20">
-              <p>⚠️ <strong>Atenção:</strong> Se o bot não for administrador, seu grupo não será aprovado e você não poderá usar o sistema de mensagens programadas.</p>
+              <p>⚠️ <strong>Atenção:</strong> Se o bot não for administrador, seu grupo não será aprovado </p>
             </div>
           </div>
         </div>
