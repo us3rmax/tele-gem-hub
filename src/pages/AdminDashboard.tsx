@@ -423,20 +423,23 @@ const AdminDashboard = () => {
     setDeleteUserLoading(true);
     try {
       // 1. Delete groups
-      await supabase.from("groups").delete().eq("submitted_by", userId);
+      const { error: gErr } = await supabase.from("groups").delete().eq("submitted_by", userId);
+      if (gErr) throw gErr;
+
       // 2. Delete submissions
-      await supabase.from("group_submissions").delete().eq("submitted_by", userId);
+      const { error: sErr } = await supabase.from("group_submissions").delete().eq("submitted_by", userId);
+      if (sErr) throw sErr;
+
       // 3. Delete user_roles
-      await supabase.from("user_roles").delete().eq("user_id", userId);
+      const { error: rErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (rErr) throw rErr;
+
       // 4. Delete profile
       const { error: profileError } = await supabase.from("profiles").delete().eq("id", userId);
+      if (profileError) throw profileError;
       
-      if (profileError) {
-        toast({ title: "Erro ao excluir perfil", description: profileError.message, variant: "destructive" });
-      } else {
-        toast({ title: "Usuário excluído com sucesso!" });
-        setUsersData(prev => prev.filter(u => u.id !== userId));
-      }
+      toast({ title: "Usuário excluído com sucesso!" });
+      setUsersData(prev => prev.filter(u => u.id !== userId));
     } catch (err: any) {
       toast({ title: "Erro inesperado", description: err.message, variant: "destructive" });
     } finally {
