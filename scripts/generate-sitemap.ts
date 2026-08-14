@@ -79,6 +79,7 @@ async function fetchAllGroups() {
     const { data, error } = await supabase
       .from("groups")
       .select("id, name, created_at")
+      .eq("hidden", false)
       .range(offset, offset + batchSize - 1);
 
     if (error) throw error;
