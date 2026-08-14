@@ -418,44 +418,65 @@ const AdminDashboard = () => {
   const handleSendPendingBroadcast = async () => {
     setPendingBroadcastLoading(true);
     try {
+      // 1. Buscar submissões pendentes e os e-mails dos usuários via profiles
       const { data: pendingSubs, error: subError } = await supabase
         .from("group_submissions")
-        .select("telegram_link, name")
+        .select(`
+          name,
+          submitted_by,
+          profiles:submitted_by (
+            email
+          )
+        `)
         .eq("status", "pending");
 
       if (subError) throw subError;
-      if (!pendingSubs || pendingSubs.length === 0) {
-        toast({ title: "Nenhum grupo pendente", description: "Não há grupos aguardando aprovação no momento." });
+      
+      // Filtrar e-mails únicos e válidos
+      const emails = Array.from(new Set(
+        pendingSubs
+          ?.map((s: any) => s.profiles?.email)
+          .filter(Boolean)
+      ));
+
+      if (emails.length === 0) {
+        toast({ title: "Nenhum e-mail encontrado", description: "Não há grupos pendentes com e-mails válidos.", variant: "destructive" });
         return;
       }
 
-      const message = `⚠️ Olá! Seu grupo *${pendingSubs[0].name}* (e outros pendentes) está aguardando aprovação no Canais18.
+      const subject = "⚠️ Seu grupo está aguardando aprovação no Canais18";
+      const message = `Olá! Notamos que você tem grupos aguardando aprovação em nosso portal.
 
-🚀 *Para agilizar:*
-1. Adicione nosso bot @canais18bot como ADMINISTRADOR do seu grupo.
-2. Grupos sem o bot admin são rejeitados automaticamente.
+Para que seu grupo seja aprovado mais rápido, você tem duas opções:
 
-💎 *Quer destaque máximo?*
-Acesse o site e escolha o plano **Premium (R$ 29,90)** para aparecer no topo e não precisar do bot!
-Ou o plano **Express (R$ 5,99)** para furar a fila agora!
+1. ADICIONAR O BOT (Grátis/Express): Adicione o @canais18bot como ADMINISTRADOR do seu grupo. Isso é obrigatório para validação.
+2. PLANO PREMIUM: Assine o plano Premium por R$ 29,90/semana. Com ele, você NÃO precisa adicionar o bot e seu grupo ganha destaque no topo do site.
 
-Acesse: https://www.canais18.com/my-groups`;
+Você também pode optar pelo plano Express (R$ 5,99) apenas para furar a fila de espera.
 
-      const { error: invokeError } = await supabase.functions.invoke("bot-broadcast", {
+Veja o status dos seus envios e escolha seu plano aqui:
+https://www.canais18.com/my-groups
+
+Atenciosamente,
+Equipe Canais18`;
+
+      // 2. Disparar via Edge Function de e-mail (usando o serviço que já deve estar configurado no Supabase)
+      const { error: invokeError } = await supabase.functions.invoke("send-email-broadcast", {
         body: { 
-          message,
-          links: pendingSubs.map(s => s.telegram_link).filter(Boolean)
+          emails,
+          subject,
+          message
         }
       });
 
       if (invokeError) throw invokeError;
 
       toast({ 
-        title: "Mensagens enviadas!", 
-        description: `O bot está notificando ${pendingSubs.length} grupos pendentes.` 
+        title: "E-mails enviados!", 
+        description: `Notificação enviada para ${emails.length} usuários pendentes.` 
       });
     } catch (err: any) {
-      toast({ title: "Erro no broadcast", description: err.message, variant: "destructive" });
+      toast({ title: "Erro no envio de e-mail", description: err.message, variant: "destructive" });
     } finally {
       setPendingBroadcastLoading(false);
     }
