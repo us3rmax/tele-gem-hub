@@ -66,6 +66,12 @@ const SubmitGroup = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
 
+  // Estados para o Pagamento
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pixData, setPixData] = useState<{ qr_code_base64: string; pix_copia_cola: string; id: string } | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'error'>('pending');
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth/login");
@@ -215,28 +221,115 @@ const SubmitGroup = () => {
       insertPayload.payment_status = "pending";
     }
 
-    const { error } = await supabase.from("group_submissions").insert(insertPayload);
+    const { data: submissionData, error } = await supabase
+      .from("group_submissions")
+      .insert(insertPayload)
+      .select()
+      .single();
 
     if (error) {
       toast({ title: "Erro ao enviar", description: error.message, variant: "destructive" });
-    } else {
-      const successMsg = selectedPromo
-        ? "Grupo enviado! Você receberá instruções de pagamento por email."
-        : "Aguarde aprovação (24-48h)";
-      toast({ title: "Canal enviado!", description: successMsg });
-      setName("");
-      setCategory("");
-      setTelegramLink("");
-      setDescription("");
-      removePhoto();
-      setErrors({});
-      setSelectedPromo(null);
-      turnstileRef.current?.reset();
-      setTurnstileToken(null);
-      fetchSubmissions();
-      supabase.functions.invoke("notify-admin", { method: "POST" }).catch(() => {});
+      setSubmitting(false);
+      return;
     }
+
+    // Se tiver pagamento selecionado, gera o PIX
+    if (selectedPromo && submissionData) {
+      setPaymentLoading(true);
+      setShowPaymentModal(true);
+      
+      try {
+        const { data: paymentResponse, error: paymentError } = await supabase.functions.invoke("payment-handler", {
+          body: {
+            submissionId: submissionData.id,
+            amount: selectedPromo === "premium" ? 29.9 : 5.99,
+            description: `Canais18 - ${selectedPromo === "premium" ? "Destaque Semanal" : "Aprovação Imediata"}`
+          },
+          method: 'POST',
+          headers: {
+            // A função espera a rota /create-pix
+          }
+        });
+
+        // Como a URL na função usa pathname.endsWith('/create-pix'), 
+        // precisamos garantir que a chamada atinja esse endpoint.
+        // O invoke do supabase-js não permite mudar o path facilmente, 
+        // então vamos usar fetch direto se necessário, ou ajustar a função.
+        // Vou usar fetch direto para garantir o path.
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-handler/create-pix`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({
+            submissionId: submissionData.id,
+            amount: selectedPromo === "premium" ? 29.9 : 5.99,
+            description: `Canais18 - ${selectedPromo === "premium" ? "Destaque Semanal" : "Aprovação Imediata"}`
+          })
+        });
+
+        const pixResult = await response.json();
+
+        if (pixResult.success) {
+          setPixData({
+            qr_code_base64: pixResult.transaction.qr_code_base64,
+            pix_copia_cola: pixResult.transaction.pix_copia_cola,
+            id: pixResult.transaction.id
+          });
+          
+          // Inicia polling para verificar pagamento
+          const interval = setInterval(async () => {
+            const { data: sub } = await supabase
+              .from("group_submissions")
+              .select("payment_status")
+              .eq("id", submissionData.id)
+              .single();
+            
+            if (sub?.payment_status === "paid") {
+              setPaymentStatus("paid");
+              clearInterval(interval);
+              toast({ title: "Pagamento Confirmado!", description: "Seu grupo já foi aprovado e está no ar." });
+              setTimeout(() => {
+                setShowPaymentModal(false);
+                resetForm();
+              }, 3000);
+            }
+          }, 5000);
+
+          // Limpa intervalo após 15 minutos
+          setTimeout(() => clearInterval(interval), 15 * 60 * 1000);
+        } else {
+          throw new Error(pixResult.error || "Erro ao gerar PIX");
+        }
+      } catch (err: any) {
+        toast({ title: "Erro no pagamento", description: err.message, variant: "destructive" });
+        setPaymentStatus("error");
+      } finally {
+        setPaymentLoading(false);
+      }
+    } else {
+      toast({ title: "Canal enviado!", description: "Aguarde aprovação manual." });
+      resetForm();
+    }
+    
     setSubmitting(false);
+  };
+
+  const resetForm = () => {
+    setName("");
+    setCategory("");
+    setTelegramLink("");
+    setDescription("");
+    removePhoto();
+    setErrors({});
+    setSelectedPromo(null);
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
+    fetchSubmissions();
+    supabase.functions.invoke("notify-admin", { method: "POST" }).catch(() => {});
   };
 
   const statusBadge = (status: string) => {
@@ -549,6 +642,81 @@ const SubmitGroup = () => {
           onCropComplete={handleCropComplete}
           onCancel={handleCropCancel}
         />
+      )}
+
+      {/* Modal de Pagamento PIX */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-card p-6 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-foreground">Pagamento via PIX</h3>
+              <button 
+                onClick={() => setShowPaymentModal(false)}
+                className="rounded-full p-1 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-6 text-center">
+              {paymentLoading ? (
+                <div className="flex flex-col items-center py-12">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="mt-4 text-sm text-muted-foreground">Gerando seu QR Code...</p>
+                </div>
+              ) : paymentStatus === 'paid' ? (
+                <div className="flex flex-col items-center py-8 text-green-500">
+                  <CheckCircle className="h-20 w-20" />
+                  <h4 className="mt-4 text-2xl font-bold">Pagamento Confirmado!</h4>
+                  <p className="text-sm text-muted-foreground">Seu grupo já está ativo no site.</p>
+                </div>
+              ) : pixData ? (
+                <>
+                  <div className="mx-auto flex aspect-square w-64 items-center justify-center rounded-2xl bg-white p-4">
+                    <img 
+                      src={`data:image/png;base64,${pixData.qr_code_base64}`} 
+                      alt="QR Code PIX" 
+                      className="h-full w-full"
+                    />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-foreground">Escaneie o QR Code ou copie o código abaixo:</p>
+                    <div className="flex items-center gap-2 rounded-xl bg-secondary p-2">
+                      <code className="flex-1 truncate text-left text-xs text-muted-foreground px-2">
+                        {pixData.pix_copia_cola}
+                      </code>
+                      <Button 
+                        size="sm" 
+                        variant="primary"
+                        onClick={() => {
+                          navigator.clipboard.writeText(pixData.pix_copia_cola);
+                          toast({ title: "Copiado!", description: "Código PIX copiado para a área de transferência." });
+                        }}
+                      >
+                        Copiar
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 rounded-lg bg-primary/10 py-2 text-xs text-primary font-medium">
+                    <Clock className="h-3 w-3 animate-pulse" />
+                    Aguardando confirmação do pagamento...
+                  </div>
+                </>
+              ) : (
+                <div className="py-12 text-destructive">
+                  <XCircle className="mx-auto h-12 w-12" />
+                  <p className="mt-4">Ocorreu um erro ao gerar o pagamento. Tente novamente.</p>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-8 text-center text-[10px] text-muted-foreground">
+              Pagamento processado com segurança via AtenasPay.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
