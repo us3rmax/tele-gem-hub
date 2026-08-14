@@ -430,9 +430,8 @@ const SubmitGroup = () => {
                 <h4 className="font-bold text-foreground">Aprovação Imediata</h4>
                 <p className="text-lg font-bold text-primary">R$ 5,99</p>
                 <ul className="mt-2 flex-1 space-y-1 text-xs text-muted-foreground">
-                  <li>✓ Pule a fila de espera</li>
-                  <li>✓ Aprovação em poucos minutos</li>
-                  <li>✓ Postagem instantânea</li>
+                  <li>✓ Pule a fila de espera (24-48h)</li>
+                  <li>✓ Aprovação e postagem imediata</li>
                 </ul>
                 <div className="mt-4 flex items-center gap-2">
                   <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "express" ? "border-primary bg-primary" : "border-muted-foreground"}`}>
