@@ -58,7 +58,7 @@ const SubmitGroup = () => {
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPromo, setSelectedPromo] = useState<"premium" | null>(null);
+  const [selectedPromo, setSelectedPromo] = useState<"premium" | "express" | null>(null);
   const [botError, setBotError] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
@@ -210,8 +210,8 @@ const SubmitGroup = () => {
 
     if (selectedPromo) {
       insertPayload.is_paid = true;
-      insertPayload.payment_type = "premium";
-      insertPayload.payment_amount = 29.9;
+      insertPayload.payment_type = selectedPromo;
+      insertPayload.payment_amount = selectedPromo === "premium" ? 29.9 : 5.99;
       insertPayload.payment_status = "pending";
     }
 
@@ -406,47 +406,89 @@ const SubmitGroup = () => {
           </div>
 
           {/* Promotion Options */}
-          <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
             <div>
-              <h3 className="text-base font-bold text-foreground">💎 Opções de Destaque <span className="text-xs font-normal text-muted-foreground">(Opcional)</span></h3>
-              <p className="text-xs text-muted-foreground">Aumente a visibilidade do seu canal</p>
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                Opções de Destaque e Aprovação
+              </h3>
+              <p className="text-sm text-muted-foreground">Acelere o crescimento do seu canal</p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setSelectedPromo(selectedPromo === "premium" ? null : "premium")}
-              className={`rounded-xl border-2 p-4 text-left transition-all ${
-                selectedPromo === "premium"
-                  ? "border-yellow-500 bg-yellow-500/10"
-                  : "border-border hover:border-yellow-500/50"
-              }`}
-            >
-              <div className="mb-2 text-2xl">⭐</div>
-              <h4 className="font-bold text-foreground">Canal em Destaque</h4>
-              <p className="text-lg font-bold text-yellow-500">R$ 29,90<span className="text-xs font-normal text-muted-foreground">/mês</span></p>
-              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-                <li>✓ Aparece no carrossel de destaques</li>
-                <li>✓ Badge 'Premium' dourado</li>
-                <li>✓ Prioridade nas buscas</li>
-                <li>✓ 3x mais visualizações</li>
-              </ul>
-              <div className="mt-3 flex items-center gap-2">
-                <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "premium" ? "border-yellow-500 bg-yellow-500" : "border-muted-foreground"}`}>
-                  {selectedPromo === "premium" && <span className="text-[10px] text-white">✓</span>}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Plano Express */}
+              <button
+                type="button"
+                onClick={() => setSelectedPromo(selectedPromo === "express" ? null : "express")}
+                className={`relative flex flex-col rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedPromo === "express"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="mb-2 text-2xl">⚡</div>
+                <h4 className="font-bold text-foreground">Aprovação Imediata</h4>
+                <p className="text-lg font-bold text-primary">R$ 5,99</p>
+                <ul className="mt-2 flex-1 space-y-1 text-xs text-muted-foreground">
+                  <li>✓ Pule a fila de espera</li>
+                  <li>✓ Aprovação em poucos minutos</li>
+                  <li>✓ Postagem instantânea</li>
+                </ul>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "express" ? "border-primary bg-primary" : "border-muted-foreground"}`}>
+                    {selectedPromo === "express" && <span className="text-[10px] text-white">✓</span>}
+                  </div>
+                  <span className="text-xs font-medium text-foreground">Selecionar</span>
                 </div>
-                <span className="text-xs font-medium text-foreground">Adicionar Destaque</span>
-              </div>
-            </button>
+              </button>
+
+              {/* Plano Premium */}
+              <button
+                type="button"
+                onClick={() => setSelectedPromo(selectedPromo === "premium" ? null : "premium")}
+                className={`relative flex flex-col rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedPromo === "premium"
+                    ? "border-yellow-500 bg-yellow-500/10"
+                    : "border-border hover:border-yellow-500/50"
+                }`}
+              >
+                <div className="absolute -right-2 -top-2 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-bold text-black">
+                  MELHOR VALOR
+                </div>
+                <div className="mb-2 text-2xl">⭐</div>
+                <h4 className="font-bold text-foreground">Destaque Semanal</h4>
+                <p className="text-lg font-bold text-yellow-500">R$ 29,90<span className="text-xs font-normal text-muted-foreground">/semana</span></p>
+                <ul className="mt-2 flex-1 space-y-1 text-xs text-muted-foreground">
+                  <li>✓ <strong>Aprovação Imediata</strong></li>
+                  <li>✓ Carrossel de destaques (1 semana)</li>
+                  <li>✓ Badge 'Premium' dourado</li>
+                  <li>✓ <strong>10x mais visualizações</strong></li>
+                </ul>
+                <div className="mt-4 flex items-center gap-2">
+                  <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "premium" ? "border-yellow-500 bg-yellow-500" : "border-muted-foreground"}`}>
+                    {selectedPromo === "premium" && <span className="text-[10px] text-white">✓</span>}
+                  </div>
+                  <span className="text-xs font-medium text-foreground">Selecionar</span>
+                </div>
+              </button>
+            </div>
 
             {selectedPromo && (
-              <div className="flex items-center justify-between rounded-lg bg-secondary px-4 py-2">
-                <span className="text-sm font-medium text-foreground">Total:</span>
-                <span className="text-lg font-bold text-foreground">R$ 29,90</span>
+              <div className="flex items-center justify-between rounded-xl bg-secondary px-4 py-3 border border-border">
+                <span className="text-sm font-medium text-foreground">Total a pagar:</span>
+                <span className="text-xl font-bold text-foreground">
+                  {selectedPromo === "premium" ? "R$ 29,90" : "R$ 5,99"}
+                </span>
               </div>
             )}
 
-            <Button type="button" variant="outline" className="w-full" onClick={() => navigate("/advertise")}>
-              📢 Anunciar com Banner — Quer máxima visibilidade? Anuncie com banner →
+            <Button 
+              type="button" 
+              variant="ghost" 
+              className="w-full text-xs text-muted-foreground hover:text-primary" 
+              onClick={() => navigate("/advertise")}
+            >
+              📢 Quer máxima visibilidade? Anuncie com banner →
             </Button>
           </div>
 
