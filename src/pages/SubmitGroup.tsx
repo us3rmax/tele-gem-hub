@@ -385,7 +385,7 @@ const SubmitGroup = () => {
               className="hidden"
             />
             {errors.photo && <p className="text-xs text-destructive">{errors.photo}</p>}
-            <p className="text-sm italic text-yellow-500">⚠️ Não envie fotos explícitas na capa (nudez visível será rejeitada)</p>
+
           </div>
 
           {/* Description */}
