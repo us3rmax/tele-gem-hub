@@ -430,7 +430,7 @@ const SubmitGroup = () => {
                 <h4 className="font-bold text-foreground">Aprovação Imediata</h4>
                 <p className="text-lg font-bold text-primary">R$ 5,99</p>
                 <ul className="mt-2 flex-1 space-y-1 text-xs text-muted-foreground">
-                  <li>✓ Pule a fila de espera (24-48h)</li>
+                  <li>✓ Pule a fila de espera</li>
                   <li>✓ Aprovação e postagem imediata</li>
                 </ul>
                 <div className="mt-4 flex items-center gap-2">
