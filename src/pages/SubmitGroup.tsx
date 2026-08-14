@@ -370,41 +370,8 @@ const SubmitGroup = () => {
           </p>
         </div>
 
-        {/* Telegram Bot Instructions */}
-        <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">1</span>
-            Passo Obrigatório: Adicione nosso Bot
-          </h2>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Para validar seu grupo e permitir divulgações automáticas, você deve adicionar nosso bot como <strong>Administrador</strong> do seu grupo:
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button 
-                className="flex-1 gap-2 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white"
-                onClick={() => window.open("https://t.me/canais18bot?startgroup=true", "_blank")}
-              >
-                <Send className="h-4 w-4" />
-                Adicionar @canais18bot
-              </Button>
-            </div>
-            <div className="rounded-lg bg-yellow-500/10 p-3 text-xs text-yellow-200 border border-yellow-500/20">
-              <p>⚠️ <strong>Atenção:</strong> Se o bot não for administrador, seu grupo não será aprovado </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-border"></div>
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-background px-4 text-sm font-bold text-foreground uppercase tracking-widest">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground inline-flex mr-2">2</span>
-              Preencha os Dados
-            </span>
-          </div>
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground">Preencha os dados do seu canal abaixo para começar.</p>
         </div>
 
         {!user.email_confirmed_at && (
@@ -558,6 +525,7 @@ const SubmitGroup = () => {
                   <li>✓ Carrossel de destaques (1 semana)</li>
                   <li>✓ Badge 'Premium' dourado</li>
                   <li>✓ <strong>10x mais visualizações</strong></li>
+                  <li>✓ 🚀 <strong>Não precisa adicionar o bot</strong></li>
                 </ul>
                 <div className="mt-4 flex items-center gap-2">
                   <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${selectedPromo === "premium" ? "border-yellow-500 bg-yellow-500" : "border-muted-foreground"}`}>
@@ -599,6 +567,32 @@ const SubmitGroup = () => {
             onExpire={() => setTurnstileToken(null)}
             options={{ size: "invisible" }}
           />
+
+          {/* Telegram Bot Instructions - Only shown if not premium */}
+          {selectedPromo !== "premium" && (
+            <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 shadow-sm">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
+                <Clock className="h-5 w-5 text-primary" />
+                Passo Obrigatório para Planos Grátis/Express
+              </h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Para validar seu grupo e permitir divulgações automáticas, você deve adicionar nosso bot como <strong>Administrador</strong>:
+                </p>
+                <Button 
+                  type="button"
+                  className="w-full gap-2 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white"
+                  onClick={() => window.open("https://t.me/canais18bot?startgroup=true", "_blank")}
+                >
+                  <Send className="h-4 w-4" />
+                  Adicionar @canais18bot como Admin
+                </Button>
+                <div className="rounded-lg bg-yellow-500/10 p-3 text-[10px] text-yellow-200 border border-yellow-500/20">
+                  <p>⚠️ <strong>Atenção:</strong> Se o bot não for administrador, seu grupo será rejeitado automaticamente. </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={submitting || botError || !user.email_confirmed_at}>
             {submitting ? (
