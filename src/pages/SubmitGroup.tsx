@@ -270,8 +270,45 @@ const SubmitGroup = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground">Enviar Canal para Aprovação</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Seu canal será revisado antes de aparecer no site
+            Siga os passos abaixo para cadastrar seu canal e divulgar automaticamente
           </p>
+        </div>
+
+        {/* Telegram Bot Instructions */}
+        <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-6 shadow-sm">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">1</span>
+            Passo Obrigatório: Adicione nosso Bot
+          </h2>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Para validar seu grupo e permitir divulgações automáticas, você deve adicionar nosso bot como <strong>Administrador</strong> do seu grupo:
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button 
+                className="flex-1 gap-2 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white"
+                onClick={() => window.open("https://t.me/canais18bot?startgroup=true", "_blank")}
+              >
+                <Send className="h-4 w-4" />
+                Adicionar @canais18bot
+              </Button>
+            </div>
+            <div className="rounded-lg bg-yellow-500/10 p-3 text-xs text-yellow-200 border border-yellow-500/20">
+              <p>⚠️ <strong>Atenção:</strong> Se o bot não for administrador, seu grupo não será aprovado e você não poderá usar o sistema de mensagens programadas.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-border"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-background px-4 text-sm font-bold text-foreground uppercase tracking-widest">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground inline-flex mr-2">2</span>
+              Preencha os Dados
+            </span>
+          </div>
         </div>
 
         {!user.email_confirmed_at && (
