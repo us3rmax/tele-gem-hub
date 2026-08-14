@@ -602,6 +602,9 @@ Equipe Canais18`;
   const handleApprove = async (sub: Submission) => {
     setActionLoading(sub.id);
     const uniqueSlug = `${generateSlug(sub.name)}-${sub.id.replace(/-/g, "").slice(0, 8)}`;
+    const isPremium = sub.payment_type === "premium";
+    const isExpress = sub.payment_type === "express";
+    
     const { error: insertError } = await supabase.from("groups").insert({
       name: sub.name,
       description: sub.description,
@@ -609,7 +612,9 @@ Equipe Canais18`;
       telegram_link: sub.telegram_link,
       thumbnail_url: sub.thumbnail_url,
       slug: uniqueSlug,
-      is_premium: false,
+      is_premium: isPremium,
+      featured: isPremium,
+      is_express: isExpress,
       is_verified: false,
       member_count: 0,
       views: 0,
