@@ -274,8 +274,11 @@ const SubmitGroup = () => {
         const pixResult = await response.json();
 
         if (pixResult.success) {
+          // A AtenasPay pode retornar como qr_code ou qr_code_base64
+          const qrCode = pixResult.transaction.qr_code_base64 || pixResult.transaction.qr_code;
+          
           setPixData({
-            qr_code_base64: pixResult.transaction.qr_code_base64,
+            qr_code_base64: qrCode,
             pix_copia_cola: pixResult.transaction.pix_copia_cola,
             id: pixResult.transaction.id
           });
@@ -674,7 +677,9 @@ const SubmitGroup = () => {
                 <>
                   <div className="mx-auto flex aspect-square w-64 items-center justify-center rounded-2xl bg-white p-4">
                     <img 
-                      src={`data:image/png;base64,${pixData.qr_code_base64}`} 
+                      src={pixData.qr_code_base64?.startsWith('data:image') 
+                        ? pixData.qr_code_base64 
+                        : `data:image/png;base64,${pixData.qr_code_base64}`} 
                       alt="QR Code PIX" 
                       className="h-full w-full"
                     />
