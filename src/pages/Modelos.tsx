@@ -9,7 +9,7 @@ import { useFeaturedGroups } from "@/hooks/use-groups";
 import { useFeaturedPrivacyModels, useCreadoraPrivacyModels, usePrivacyModels, type PrivacyModel, type PrivacyModelWithProxy } from "@/hooks/use-privacy-models";
 
 import { groupPath } from "@/lib/slug";
-import { Search, CheckCircle, ExternalLink } from "lucide-react";
+import { Search, CheckCircle, ExternalLink, Bookmark } from "lucide-react";
 import type { Grupo } from "@/data/mock";
 
 function formatLikes(n: number) {
