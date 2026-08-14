@@ -75,14 +75,12 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
     switch (sort) {
       case "vistos":
         query = query
-          .order("is_premium", { ascending: false })
           .order("is_express", { ascending: false })
           .order("has_thumbnail", { ascending: false })
           .order("views", { ascending: false });
         break;
       case "votados":
         query = query
-          .order("is_premium", { ascending: false })
           .order("is_express", { ascending: false })
           .order("has_thumbnail", { ascending: false })
           .order("member_count", { ascending: false });
@@ -90,30 +88,25 @@ async function fetchGroups({ sort, search, page, perPage }: UseGroupsParams) {
       case "recentes":
       default:
         query = query
-          .order("is_premium", { ascending: false })
           .order("is_express", { ascending: false })
           .order("has_thumbnail", { ascending: false })
           .order("created_at", { ascending: false });
     }
   } else {
-    // Páginas após a 5a, ordem normal (Premium ainda fura fila)
     switch (sort) {
       case "vistos":
         query = query
-          .order("is_premium", { ascending: false })
           .order("is_express", { ascending: false })
           .order("views", { ascending: false });
         break;
       case "votados":
         query = query
-          .order("is_premium", { ascending: false })
           .order("is_express", { ascending: false })
           .order("member_count", { ascending: false });
         break;
       case "recentes":
       default:
         query = query
-          .order("is_premium", { ascending: false })
           .order("is_express", { ascending: false })
           .order("created_at", { ascending: false });
     }
