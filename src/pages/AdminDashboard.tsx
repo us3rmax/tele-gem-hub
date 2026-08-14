@@ -449,7 +449,7 @@ const AdminDashboard = () => {
 
 Para que seu grupo seja aprovado mais rápido, você tem duas opções:
 
-1. ADICIONAR O BOT (Grátis/Express): Adicione o @canais18bot como ADMINISTRADOR do seu grupo. Isso é obrigatório para validação.
+1. ADICIONAR O BOT (Grátis/Express): Adicione o @canais18_bot como ADMINISTRADOR do seu grupo. Isso é obrigatório para validação.
 2. PLANO PREMIUM: Assine o plano Premium por R$ 29,90/semana. Com ele, você NÃO precisa adicionar o bot e seu grupo ganha destaque no topo do site.
 
 Você também pode optar pelo plano Express (R$ 5,99) apenas para furar a fila de espera.
@@ -3170,7 +3170,7 @@ Equipe Canais18`;
           <TabsContent value="bot_marketing" className="mt-4 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-foreground">Bot Marketing (@canais18bot)</h2>
+                <h2 className="text-lg font-bold text-foreground">Bot Marketing (@canais18_bot)</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Gerencie a divulgação automática nos grupos onde o bot é administrador.
                 </p>

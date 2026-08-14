@@ -582,10 +582,10 @@ const SubmitGroup = () => {
                 <Button 
                   type="button"
                   className="w-full gap-2 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white"
-                  onClick={() => window.open("https://t.me/canais18bot?startgroup=true", "_blank")}
+                  onClick={() => window.open("https://t.me/canais18_bot?startgroup=true", "_blank")}
                 >
                   <Send className="h-4 w-4" />
-                  Adicionar @canais18bot como Admin
+                  Adicionar @canais18_bot como Admin
                 </Button>
                 <div className="rounded-lg bg-yellow-500/10 p-3 text-[10px] text-yellow-200 border border-yellow-500/20">
                   <p>⚠️ <strong>Atenção:</strong> Se o bot não for administrador, seu grupo será rejeitado automaticamente. </p>
