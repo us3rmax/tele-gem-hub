@@ -418,24 +418,32 @@ const AdminDashboard = () => {
   const handleSendPendingBroadcast = async () => {
     setPendingBroadcastLoading(true);
     try {
-      // 1. Buscar submissões pendentes e os e-mails dos usuários via profiles
+      // 1. Buscar submissões pendentes
       const { data: pendingSubs, error: subError } = await supabase
         .from("group_submissions")
-        .select(`
-          name,
-          submitted_by,
-          profiles:submitted_by (
-            email
-          )
-        `)
+        .select("submitted_by")
         .eq("status", "pending");
 
       if (subError) throw subError;
       
-      // Filtrar e-mails únicos e válidos
+      const userIds = Array.from(new Set(pendingSubs?.map((s: any) => s.submitted_by).filter(Boolean)));
+
+      if (userIds.length === 0) {
+        toast({ title: "Nenhum usuário encontrado", description: "Não há grupos pendentes com usuários associados.", variant: "destructive" });
+        return;
+      }
+
+      // 2. Buscar e-mails dos usuários na tabela profiles
+      const { data: profilesData, error: profileError } = await supabase
+        .from("profiles")
+        .select("email")
+        .in("id", userIds);
+
+      if (profileError) throw profileError;
+
       const emails = Array.from(new Set(
-        pendingSubs
-          ?.map((s: any) => s.profiles?.email)
+        profilesData
+          ?.map((p: any) => p.email)
           .filter(Boolean)
       ));
 
