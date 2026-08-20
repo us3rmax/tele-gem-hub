@@ -60,6 +60,8 @@ const SubmitGroup = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPromo, setSelectedPromo] = useState<"premium" | "express" | null>(null);
   const [botError, setBotError] = useState(false);
+  const [isBotAdmin, setIsBotAdmin] = useState(false);
+  const [verifyingBot, setVerifyingBot] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -407,12 +409,54 @@ const SubmitGroup = () => {
 
           <div className="space-y-2">
             <Label htmlFor="telegram_link">Link do Telegram *</Label>
-            <Input id="telegram_link" value={telegramLink} onChange={(e) => {
-              const val = e.target.value;
-              setTelegramLink(val);
-              setBotError(val.trim().toLowerCase().endsWith("_bot"));
-            }} placeholder="https://t.me/seu_canal" />
+            <div className="flex gap-2">
+              <Input 
+                id="telegram_link" 
+                value={telegramLink} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setTelegramLink(val);
+                  setBotError(val.trim().toLowerCase().endsWith("_bot"));
+                  setIsBotAdmin(false); // Reseta ao mudar o link
+                }} 
+                placeholder="https://t.me/seu_canal" 
+              />
+              {selectedPromo !== "premium" && (
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  onClick={async () => {
+                    if (!telegramLink.startsWith("https://t.me/")) {
+                      toast({ title: "Link inválido", description: "Use o formato https://t.me/nome_do_grupo", variant: "destructive" });
+                      return;
+                    }
+                    setVerifyingBot(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("verify-bot-admin", {
+                        body: { telegramLink }
+                      });
+                      if (error) throw error;
+                      if (data.isAdmin) {
+                        setIsBotAdmin(true);
+                        toast({ title: "✅ Bot Verificado!", description: "Agora você pode enviar seu grupo." });
+                      } else {
+                        toast({ title: "❌ Bot não é Admin", description: data.message, variant: "destructive" });
+                      }
+                    } catch (err: any) {
+                      toast({ title: "Erro na verificação", description: "Certifique-se que o bot é admin e tente novamente.", variant: "destructive" });
+                    } finally {
+                      setVerifyingBot(false);
+                    }
+                  }}
+                  disabled={verifyingBot || botError || !telegramLink.trim()}
+                  className={isBotAdmin ? "bg-green-600 hover:bg-green-700" : ""}
+                >
+                  {verifyingBot ? <Loader2 className="h-4 w-4 animate-spin" /> : isBotAdmin ? <CheckCircle className="h-4 w-4" /> : "Verificar Bot"}
+                </Button>
+              )}
+            </div>
             {botError && <p className="text-xs text-destructive">❌ Não é permitido envio de bots. Envie um grupo ou canal.</p>}
+            {isBotAdmin && <p className="text-xs text-green-500 font-medium">✅ Bot administrador detectado!</p>}
             {errors.telegramLink && !botError && <p className="text-xs text-destructive">{errors.telegramLink}</p>}
           </div>
 
@@ -594,9 +638,15 @@ const SubmitGroup = () => {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={submitting || botError || !user.email_confirmed_at}>
+          <Button 
+            type="submit" 
+            className={`w-full ${!isBotAdmin && selectedPromo !== "premium" ? "opacity-50 cursor-not-allowed" : ""}`} 
+            disabled={submitting || botError || !user.email_confirmed_at || (!isBotAdmin && selectedPromo !== "premium")}
+          >
             {submitting ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
+            ) : !isBotAdmin && selectedPromo !== "premium" ? (
+              <><AlertTriangle className="mr-2 h-4 w-4" />Adicione o Bot como Admin Primeiro</>
             ) : (
               <><Send className="mr-2 h-4 w-4" />Enviar Canal</>
             )}
