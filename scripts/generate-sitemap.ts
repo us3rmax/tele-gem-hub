@@ -70,7 +70,7 @@ function generateSlug(name: string): string {
 
 async function fetchAllGroups() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const allGroups: { id: string; name: string; created_at: string }[] = [];
+  const allGroups: { slug: string; name: string; created_at: string; telegram_link: string | null }[] = [];
   const batchSize = 1000;
   let offset = 0;
   let hasMore = true;
@@ -78,8 +78,10 @@ async function fetchAllGroups() {
   while (hasMore) {
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, created_at")
-      .eq("hidden", false)
+      .select("slug, name, created_at, telegram_link")
+      .or("hidden.is.null,hidden.eq.false")
+      .not("slug", "is", null)
+      .not("telegram_link", "is", null)
       .range(offset, offset + batchSize - 1);
 
     if (error) throw error;
@@ -119,15 +121,24 @@ async function fetchAllPrivacyModels() {
   return allModels;
 }
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function buildXml(
-  groups: { id: string; name: string; created_at: string }[],
+  groups: { slug: string; name: string; created_at: string; telegram_link: string | null }[],
   privacyModels: { id: string; name: string }[]
 ) {
   const today = new Date().toISOString().split("T")[0];
 
   const staticUrls = STATIC_PAGES.map(
     (page) => `  <url>
-    <loc>${BASE_URL}${page.path}</loc>
+    <loc>${escapeXml(BASE_URL + page.path)}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
@@ -135,15 +146,14 @@ function buildXml(
   ).join("\n");
 
   const groupUrls = groups
+    .filter((group) => group.slug)
     .map((group) => {
-      const slug = generateSlug(group.name);
-      const compactId = group.id.replace(/-/g, "");
-      const path = slug ? `/group/${slug}-${compactId}` : `/group/${compactId}`;
+      const path = `/group/${encodeURIComponent(group.slug)}`;
       const lastmod = group.created_at
         ? group.created_at.split("T")[0]
         : today;
       return `  <url>
-    <loc>${BASE_URL}${path}</loc>
+    <loc>${escapeXml(BASE_URL + path)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

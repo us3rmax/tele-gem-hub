@@ -7,6 +7,7 @@ interface SEOProps {
   ogImage?: string;
   ogType?: string;
   canonicalUrl?: string;
+  noindex?: boolean;
   jsonLd?: Record<string, unknown>;
 }
 
@@ -19,6 +20,7 @@ const SEO = ({
   ogImage = `${SITE_URL}/favicon.ico`,
   ogType = "website",
   canonicalUrl,
+  noindex = false,
   jsonLd,
 }: SEOProps) => {
   const url = canonicalUrl || (typeof window !== "undefined" ? window.location.href : SITE_URL);
@@ -31,7 +33,7 @@ const SEO = ({
       <title>{title}</title>
       <meta name="description" content={description} />
       {keywords && <meta name="keywords" content={keywords} />}
-      <meta name="robots" content="index, follow" />
+      <meta name="robots" content={noindex ? "noindex, follow" : "index, follow"} />
       <link rel="canonical" href={url} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />

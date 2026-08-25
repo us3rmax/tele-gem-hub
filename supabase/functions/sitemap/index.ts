@@ -69,7 +69,7 @@ function generateSlug(name: string): string {
  */
 async function fetchVisibleGroups() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const allGroups: { id: string; name: string; created_at: string; description: string | null }[] = [];
+  const allGroups: { slug: string; name: string; created_at: string; description: string | null; telegram_link: string | null }[] = [];
   const batchSize = 1000;
   let offset = 0;
   let hasMore = true;
@@ -77,8 +77,10 @@ async function fetchVisibleGroups() {
   while (hasMore) {
     const { data, error } = await supabase
       .from("groups")
-      .select("id, name, created_at, description")
-      .neq("hidden", true)
+      .select("slug, name, created_at, description, telegram_link")
+      .or("hidden.is.null,hidden.eq.false")
+      .not("slug", "is", null)
+      .not("telegram_link", "is", null)
       .range(offset, offset + batchSize - 1);
     if (error) throw error;
     if (data && data.length > 0) {
@@ -129,6 +131,15 @@ async function fetchModelPages() {
   return Array.from(modelSet.values());
 }
 
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function buildUrlBlock(
   path: string,
   lastmod: string,
@@ -136,7 +147,7 @@ function buildUrlBlock(
   priority: string,
 ): string {
   return `  <url>
-    <loc>${BASE_URL}${path}</loc>
+    <loc>${escapeXml(BASE_URL + path)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
@@ -175,10 +186,8 @@ Deno.serve(async () => {
     ).join("\n");
 
     // ── Group pages (only visible ones, with proper changefreq) ──
-    const groupUrls = groups.map((group) => {
-      const slug = generateSlug(group.name);
-      const compactId = group.id.replace(/-/g, "");
-      const urlPath = slug ? `/group/${slug}-${compactId}` : `/group/${compactId}`;
+    const groupUrls = groups.filter((group) => group.slug).map((group) => {
+      const urlPath = `/group/${encodeURIComponent(group.slug)}`;
       const lastmod = group.created_at ? group.created_at.split("T")[0] : today;
       const priority = group.description ? "0.7" : "0.5";
       return buildUrlBlock(urlPath, lastmod, "weekly", priority);

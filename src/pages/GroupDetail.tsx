@@ -39,7 +39,7 @@ const GroupDetail = () => {
     if (grupo?.id) {
       supabase.from("groups").update({ views: (grupo.views || 0) + 1 }).eq("id", grupo.id).then(() => {});
     }
-  }, [grupo?.id]);
+  }, [grupo?.id, grupo?.views]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -71,6 +71,11 @@ const GroupDetail = () => {
   if (isError || !grupo) {
     return (
       <div className="min-h-screen bg-background">
+        <SEO
+          title="Grupo não encontrado | Canais18"
+          description="O grupo solicitado não está disponível."
+          noindex
+        />
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
         <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onSort={setSort} activeSort={sort} />
         <div className="flex flex-col items-center justify-center py-32">

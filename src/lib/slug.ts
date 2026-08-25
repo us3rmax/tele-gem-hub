@@ -16,12 +16,7 @@ export function generateSlug(name: string): string {
  * Create a group URL path with slug.
  * Format: /group/{slug}
  */
-export function groupPath(grupo: { id: string; name: string; slug: string }): string {
-  // Fallback: se o slug não existir, usa o ID para evitar link 'undefined'
-  if (!grupo.slug) {
-    const compactId = grupo.id.replace(/-/g, "");
-    return `/group/${compactId}`;
-  }
+export function groupPath(grupo: { slug: string }): string {
   return `/group/${grupo.slug}`;
 }
 

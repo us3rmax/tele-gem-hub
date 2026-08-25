@@ -21,22 +21,8 @@ function extractIdFromSlug(slugParam: string): string {
   return slugParam;
 }
 
-function generateSlug(name: string): string {
-  let slug = name.toLowerCase();
-  slug = slug.replace(/[^\x20-\x7E]/g, "");
-  slug = slug.replace(/[\s_]+/g, "-");
-  slug = slug.replace(/[^a-z0-9-]/g, "");
-  slug = slug.replace(/-+/g, "-");
-  slug = slug.replace(/^-+|-+$/g, "");
-  slug = slug.slice(0, 60).replace(/-+$/, "");
-  return slug;
-}
-
-function groupPath(grupo: { id: string; name: string; slug?: string }): string {
-  if (grupo.slug) return `/group/${grupo.slug}`;
-  const s = generateSlug(grupo.name);
-  const compactId = grupo.id.replace(/-/g, "");
-  return `/group/${s}-${compactId}`;
+function groupPath(grupo: { slug?: string }): string | null {
+  return grupo.slug ? `/group/${grupo.slug}` : null;
 }
 
 function escapeHtml(str: string): string {
@@ -83,7 +69,22 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   const grupo = rows?.[0];
 
   if (!grupo) {
-    return Response.redirect("https://www.canais18.com/grupos-telegram", 301);
+    return new Response("Grupo não encontrado", {
+      status: 404,
+      headers: { "Content-Type": "text/plain; charset=UTF-8", "X-Robots-Tag": "noindex" },
+    });
+  }
+
+  const canonicalPath = groupPath(grupo);
+  if (!canonicalPath) {
+    return new Response("Grupo sem slug canônico", {
+      status: 410,
+      headers: { "Content-Type": "text/plain; charset=UTF-8", "X-Robots-Tag": "noindex" },
+    });
+  }
+
+  if (slug !== grupo.slug) {
+    return Response.redirect(`https://www.canais18.com${canonicalPath}`, 301);
   }
 
   const indexRes = await ctx.env.ASSETS.fetch(new Request("https://www.canais18.com/index.html"));
@@ -93,7 +94,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
   // Isso evita que a página do grupo tenha o H1 da Home + o H1 do Grupo (duplicidade)
   html = html.replace(/<div id="ssg-hero-content"[\s\S]*?<\/div>/i, "");
 
-  const canonicalUrl = `https://www.canais18.com${groupPath(grupo)}`;
+  const canonicalUrl = `https://www.canais18.com${canonicalPath}`;
   const compactId = grupo.id.replace(/-/g, "").slice(-6);
   const seoDescription = grupo.description
     ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? "..." : "")
