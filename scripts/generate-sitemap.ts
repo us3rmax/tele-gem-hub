@@ -70,7 +70,7 @@ function generateSlug(name: string): string {
 
 async function fetchAllGroups() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const allGroups: { slug: string; name: string; created_at: string; telegram_link: string | null }[] = [];
+  const allGroups: { slug: string; name: string; created_at: string; description: string | null; telegram_link: string | null; broken: boolean | null }[] = [];
   const batchSize = 1000;
   let offset = 0;
   let hasMore = true;
@@ -78,9 +78,11 @@ async function fetchAllGroups() {
   while (hasMore) {
     const { data, error } = await supabase
       .from("groups")
-      .select("slug, name, created_at, telegram_link")
+      .select("slug, name, created_at, description, telegram_link, broken")
       .or("hidden.is.null,hidden.eq.false")
+      .or("broken.is.null,broken.eq.false")
       .not("slug", "is", null)
+      .not("name", "is", null)
       .not("telegram_link", "is", null)
       .range(offset, offset + batchSize - 1);
 
@@ -93,7 +95,12 @@ async function fetchAllGroups() {
       hasMore = false;
     }
   }
-  return allGroups;
+  return allGroups.filter((group) => {
+    const description = (group.description || "").trim();
+    const telegramLink = (group.telegram_link || "").trim();
+    const validTelegramLink = /^https?:\/\/(t\.me|telegram\.me)\//i.test(telegramLink);
+    return Boolean(group.slug && group.name?.trim() && description.length >= 40 && validTelegramLink);
+  });
 }
 
 async function fetchAllPrivacyModels() {
@@ -131,7 +138,7 @@ function escapeXml(value: string): string {
 }
 
 function buildXml(
-  groups: { slug: string; name: string; created_at: string; telegram_link: string | null }[],
+  groups: { slug: string; name: string; created_at: string; description: string | null; telegram_link: string | null; broken: boolean | null }[],
   privacyModels: { id: string; name: string }[]
 ) {
   const today = new Date().toISOString().split("T")[0];

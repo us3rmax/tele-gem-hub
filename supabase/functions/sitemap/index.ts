@@ -65,11 +65,15 @@ function generateSlug(name: string): string {
 }
 
 /**
- * Fetch ONLY visible (non-hidden) groups for the sitemap.
+ * Fetch only public, canonical and indexable groups for the sitemap.
+ *
+ * A visible row is not automatically a valid SEO URL: broken records,
+ * missing descriptions and malformed Telegram links can render as soft 404s
+ * or low-value pages. Those records must stay out of the sitemap.
  */
 async function fetchVisibleGroups() {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const allGroups: { slug: string; name: string; created_at: string; description: string | null; telegram_link: string | null }[] = [];
+  const allGroups: { slug: string; name: string; created_at: string; description: string | null; telegram_link: string | null; broken: boolean | null }[] = [];
   const batchSize = 1000;
   let offset = 0;
   let hasMore = true;
@@ -77,9 +81,11 @@ async function fetchVisibleGroups() {
   while (hasMore) {
     const { data, error } = await supabase
       .from("groups")
-      .select("slug, name, created_at, description, telegram_link")
+      .select("slug, name, created_at, description, telegram_link, broken")
       .or("hidden.is.null,hidden.eq.false")
+      .or("broken.is.null,broken.eq.false")
       .not("slug", "is", null)
+      .not("name", "is", null)
       .not("telegram_link", "is", null)
       .range(offset, offset + batchSize - 1);
     if (error) throw error;
@@ -91,7 +97,12 @@ async function fetchVisibleGroups() {
       hasMore = false;
     }
   }
-  return allGroups;
+  return allGroups.filter((group) => {
+    const description = (group.description || "").trim();
+    const telegramLink = (group.telegram_link || "").trim();
+    const validTelegramLink = /^https?:\/\/(t\.me|telegram\.me)\//i.test(telegramLink);
+    return Boolean(group.slug && group.name?.trim() && description.length >= 40 && validTelegramLink);
+  });
 }
 
 /**
@@ -186,7 +197,7 @@ Deno.serve(async () => {
     ).join("\n");
 
     // ── Group pages (only visible ones, with proper changefreq) ──
-    const groupUrls = groups.filter((group) => group.slug).map((group) => {
+    const groupUrls = groups.map((group) => {
       const urlPath = `/group/${encodeURIComponent(group.slug)}`;
       const lastmod = group.created_at ? group.created_at.split("T")[0] : today;
       const priority = group.description ? "0.7" : "0.5";
