@@ -8,7 +8,7 @@ interface SEOProps {
   ogType?: string;
   canonicalUrl?: string;
   noindex?: boolean;
-  jsonLd?: Record<string, unknown>;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 const SITE_URL = "https://www.canais18.com";

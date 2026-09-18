@@ -171,37 +171,20 @@ const Index = () => {
           "@context": "https://schema.org",
           "@graph": [
             {
-              "@type": "WebSite",
-              "@id": "https://www.canais18.com/#website",
-              "name": "Canais18",
-              "alternateName": "Canais Telegram 18+",
-              "url": "https://www.canais18.com",
-              "description": "Maior diretório de grupos e canais adultos do Telegram no Brasil. Links verificados diariamente.",
-              "inLanguage": "pt-BR",
-              "publisher": { "@id": "https://www.canais18.com/#organization" }
-            },
-            {
               "@type": "Organization",
-              "@id": "https://www.canais18.com/#organization",
               "name": "Canais18",
               "url": "https://www.canais18.com",
               "logo": {
                 "@type": "ImageObject",
-                "url": "https://www.canais18.com/logo.png",
-                "width": 512,
-                "height": 512
+                "url": "https://www.canais18.com/favicon.ico"
               },
-              "sameAs": []
+              "description": "Diretório verificado de canais Telegram adultos no Brasil. Encontre canais por categoria, membros e popularidade."
             },
             {
-              "@type": "WebPage",
-              "@id": `${seo.canonicalUrl}#webpage`,
-              "url": seo.canonicalUrl,
-              "name": seo.title,
-              "description": seo.description,
-              "isPartOf": { "@id": "https://www.canais18.com/#website" },
+              "@type": "WebSite",
+              "name": "Canais18",
+              "url": "https://www.canais18.com",
               "inLanguage": "pt-BR",
-              "publisher": { "@id": "https://www.canais18.com/#organization" },
               "potentialAction": {
                 "@type": "SearchAction",
                 "target": {
@@ -210,13 +193,6 @@ const Index = () => {
                 },
                 "query-input": "required name=search_term_string"
               }
-            },
-            {
-              "@type": "BreadcrumbList",
-              "@id": `${seo.canonicalUrl}#breadcrumb`,
-              "itemListElement": [
-                { "@type": "ListItem", "position": 1, "name": "Início", "item": "https://www.canais18.com" }
-              ]
             }
           ]
         }}

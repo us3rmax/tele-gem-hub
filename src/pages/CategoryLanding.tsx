@@ -880,6 +880,44 @@ const CategoryLanding = () => {
         description={config.description}
         keywords={config.keywords}
         canonicalUrl={`https://www.canais18.com${location.pathname}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "CollectionPage",
+              "name": config.seoTitle,
+              "description": config.description,
+              "url": `https://www.canais18.com${location.pathname}`,
+              "inLanguage": "pt-BR",
+              "isPartOf": {
+                "@type": "WebSite",
+                "name": "Canais18",
+                "url": "https://www.canais18.com"
+              },
+              "about": {
+                "@type": "Thing",
+                "name": config.seoCategory || config.categoryLink || "Grupos do Telegram"
+              }
+            },
+            {
+              "@type": "BreadcrumbList",
+              "itemListElement": [
+                {
+                  "@type": "ListItem",
+                  "position": 1,
+                  "name": "Canais18",
+                  "item": "https://www.canais18.com"
+                },
+                {
+                  "@type": "ListItem",
+                  "position": 2,
+                  "name": config.title,
+                  "item": `https://www.canais18.com${location.pathname}`
+                }
+              ]
+            }
+          ]
+        }}
       />
 
       <Navbar onMenuClick={() => setSidebarOpen(true)} />
