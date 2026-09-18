@@ -119,66 +119,30 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
 
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://www.canais18.com/#website",
-        "name": "Canais18",
-        "url": "https://www.canais18.com",
-        "description": "Maior diretório de grupos e canais adultos do Telegram no Brasil.",
-        "inLanguage": "pt-BR",
-        "publisher": { "@id": "https://www.canais18.com/#organization" }
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://www.canais18.com/#organization",
-        "name": "Canais18",
-        "url": "https://www.canais18.com",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://www.canais18.com/logo.png",
-          "width": 512,
-          "height": 512
-        },
-        "sameAs": []
-      },
-      {
-        "@type": "WebPage",
-        "@id": `${canonicalUrl}#webpage`,
-        "url": canonicalUrl,
-        "name": uniqueTitle,
-        "description": seoDescription,
-        "isPartOf": { "@id": "https://www.canais18.com/#website" },
-        "image": grupo.thumbnail_url || undefined,
-        "datePublished": grupo.created_at,
-        "dateModified": grupo.created_at,
-        "inLanguage": "pt-BR",
-        "publisher": { "@id": "https://www.canais18.com/#organization" }
-      },
-      {
-        "@type": "OnlineCommunity",
-        "@id": `${canonicalUrl}#community`,
-        "name": grupo.name,
-        "description": seoDescription,
-        "url": grupo.telegram_link,
-        "numberOfMembers": grupo.member_count,
-        "isPartOf": {
-          "@type": "WebSite",
-          "@id": "https://www.canais18.com/#website"
-        },
-        ...(grupo.thumbnail_url ? { image: grupo.thumbnail_url } : {}),
-        "inLanguage": "pt-BR"
-      },
-      {
-        "@type": "BreadcrumbList",
-        "@id": `${canonicalUrl}#breadcrumb`,
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Início", "item": "https://www.canais18.com" },
-          { "@type": "ListItem", "position": 2, "name": grupo.category, "item": `https://www.canais18.com/?category=${encodeURIComponent(grupo.category)}` },
-          { "@type": "ListItem", "position": 3, "name": grupo.name, "item": canonicalUrl },
-        ]
+    "@type": "ItemPage",
+    "name": `${grupo.name} — Grupo Telegram +18 | Canais18`,
+    "description": seoDescription,
+    "url": canonicalUrl,
+    "image": grupo.thumbnail_url || undefined,
+    "datePublished": grupo.created_at,
+    "dateModified": grupo.created_at,
+    "inLanguage": "pt-BR",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Canais18",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.canais18.com/favicon.ico"
       }
-    ]
+    },
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Canais18", "item": "https://www.canais18.com" },
+        { "@type": "ListItem", "position": 2, "name": grupo.category, "item": `https://www.canais18.com/?category=${encodeURIComponent(grupo.category)}` },
+        { "@type": "ListItem", "position": 3, "name": grupo.name, "item": canonicalUrl }
+      ]
+    }
   });
 
   const seoTags = `
