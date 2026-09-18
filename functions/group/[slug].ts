@@ -10,6 +10,8 @@ interface Group {
   views: number | null;
   is_premium: boolean | null;
   created_at: string;
+  hidden: boolean | null;
+  broken: boolean | null;
 }
 
 function extractIdFromSlug(slugParam: string): string {
@@ -87,6 +89,19 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     return Response.redirect(`https://www.canais18.com${canonicalPath}`, 301);
   }
 
+  // Only groups with a stable public record and real editorial content may
+  // be indexed. Keep the page available for users/admin review, but mark
+  // incomplete, hidden or broken records as noindex.
+  const description = (grupo.description || "").trim();
+  const telegramLink = (grupo.telegram_link || "").trim();
+  const indexable = Boolean(
+    (grupo.hidden === false || grupo.hidden === null) &&
+    (grupo.broken === false || grupo.broken === null) &&
+    grupo.name?.trim() &&
+    description.length >= 40 &&
+    /^https?:\/\/(t\.me|telegram\.me)\//i.test(telegramLink)
+  );
+
   const indexRes = await ctx.env.ASSETS.fetch(new Request("https://www.canais18.com/index.html"));
   let html = await indexRes.text();
 
@@ -96,7 +111,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
 
   const canonicalUrl = `https://www.canais18.com${canonicalPath}`;
   const compactId = grupo.id.replace(/-/g, "").slice(-6);
-  const seoDescription = grupo.description
+  const seoDescription = indexable && grupo.description
     ? grupo.description.slice(0, 155) + (grupo.description.length > 155 ? "..." : "")
     : `Acesse agora o canal ${escapeHtml(grupo.name)} no Telegram. No Canais18 você encontra os melhores grupos de ${escapeHtml(grupo.category)} com ${formatMembers(grupo.member_count)} membros ativos. Ref: ${compactId}.`;
 
@@ -175,7 +190,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     <meta property="og:url" content="${canonicalUrl}" />
     <meta property="og:type" content="article" />
     ${grupo.thumbnail_url ? `<meta property="og:image" content="${escapeHtml(grupo.thumbnail_url)}" />` : ""}
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="${indexable ? "index, follow" : "noindex, follow"}" />
     <script type="application/ld+json">${jsonLd}</script>`;
 
   const googleBotContent = `
@@ -198,7 +213,7 @@ export const onRequestGet: PagesFunction<{ SUPABASE_URL: string; SUPABASE_ANON_K
     headers: {
       "Content-Type": "text/html;charset=UTF-8",
       "Cache-Control": "public, max-age=3600, s-maxage=3600",
-      "X-Robots-Tag": "index, follow",
+      "X-Robots-Tag": indexable ? "index, follow" : "noindex, follow",
     },
   });
 };
